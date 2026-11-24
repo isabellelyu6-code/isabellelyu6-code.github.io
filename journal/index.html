@@ -535,6 +535,29 @@ async function enterAccount(acc,key,isNew){
   if(OFFLINE)toast('离线模式：显示的是这台设备上次同步的内容',4000);
   applyHubTheme();startRealtime();setTimeout(autoBackup,5000);
 }
+/* titles that are just a date (2025.3.12 / 2025年3月12日 周三 / 3-12 / 20250312 / March 12, 2025 …) are diary entries; everything else is an essay */
+const MON='jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?';
+function isDateTitle(t){let x=String(t||'').trim().toLowerCase();if(!x)return null;
+  x=x.replace(/(星期|周|礼拜)[一二三四五六日天]/g,'').replace(new RegExp('\\b(mon|tues?|wed(nes)?|thu(rs)?|fri|sat(ur)?|sun)(day)?\\b','g'),'');
+  x=x.replace(/\d{2,4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*[日号]?/g,'').replace(/\d{1,2}\s*月\s*\d{1,2}\s*[日号]?/g,'')
+   .replace(/\b\d{4}[.\-\/_]\d{1,2}[.\-\/_]\d{1,2}\b/g,'').replace(/\b\d{1,2}[.\-\/_]\d{1,2}([.\-\/_]\d{2,4})?\b/g,'').replace(/\b(19|20)\d{6}\b/g,'').replace(/\b\d{6}\b/g,'')
+   .replace(new RegExp('\\b\\d{1,2}(st|nd|rd|th)?\\s+('+MON+')\\.?(,?\\s*\\d{4})?','g'),'').replace(new RegExp('\\b('+MON+')\\.?\\s+\\d{1,2}(st|nd|rd|th)?(,?\\s*\\d{4})?','g'),'');
+  return /^[\s,，.。·\-–—_\/()（）]*$/.test(x)}
+async function autoSplit(){
+  const groups={d:[],e:[],n:[]};for(const e of S.entries){const r=isDateTitle(e.title);(r===null?groups.n:r?groups.d:groups.e).push(e)}
+  const sample=L=>L.slice(0,6).map(e=>`<li>${esc(e.title)}</li>`).join('')+(L.length>6?`<li class="muted">…还有 ${L.length-6} 篇</li>`:'');
+  modal(`<h3>按标题分区</h3><p class="muted">标题是日期的放进「日记」，其他的放进「随笔」。只改分区，内容不变。</p>
+   <div class="field"><b>日记 · ${groups.d.length} 篇</b><ul class="muted" style="margin:4px 0 0;padding-left:20px">${sample(groups.d)}</ul></div>
+   <div class="field"><b>随笔 · ${groups.e.length} 篇</b><ul class="muted" style="margin:4px 0 0;padding-left:20px">${sample(groups.e)}</ul></div>
+   ${groups.n.length?`<div class="field"><b>没有标题 · ${groups.n.length} 篇</b><select id="asN" style="margin-top:6px"><option value="d">放进日记</option><option value="e">放进随笔</option><option value="">不动</option></select></div>`:''}
+   <div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">开始分区</button></div>`);
+  $('#modalBox').onclick=async ev=>{const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
+    const nn=$('#asN')?$('#asN').value:'';$('#modalBox').onclick=null;closeModal();
+    const nbFor=async(name,ci)=>{let nb=S.notebooks.find(n=>n.name===name);if(!nb){nb={id:uid(),name,color:COLORS[ci],created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);await Store.put('notebooks',nb)}return nb};
+    const D=await nbFor('日记',0),E=await nbFor('随笔',3);
+    const todo=[...groups.d.map(e=>[e,D]),...groups.e.map(e=>[e,E]),...(nn?groups.n.map(e=>[e,nn==='d'?D:E]):[])].filter(([e,nb])=>e.nb!==nb.id);
+    let i=0,fail=0;for(const [e,nb] of todo){e.nb=nb.id;try{await Store.put('entries',e)}catch(err){fail++}if(++i%20===0)toast(`正在分区… ${i}/${todo.length}`)}
+    render();toast(fail?`完成，但有 ${fail} 篇没保存上，请再点一次`:`分好了：日记 ${groups.d.length+(nn==='d'?groups.n.length:0)} 篇，随笔 ${groups.e.length+(nn==='e'?groups.n.length:0)} 篇`,5000)}}
 /* theme chosen in Lyra settings (shared account) */
 const JBGS={night:['#0f1b2d','#0b1524','#152439','#1a2c45','#263b58'],deep:['#0a0f1a','#070b14','#111827','#162033','#22304a'],slate:['#151a22','#10141b','#1d232d','#242b37','#323b4a'],ocean:['#0c2230','#081a25','#112d3d','#163a4d','#22506a'],forest:['#0f1f1c','#0a1715','#16302a','#1b3a33','#28524a'],plum:['#1a1428','#130e1f','#231b36','#2c2242','#3d3159']};
 async function applyHubTheme(){let st=null;try{st=await Store.get('hubMeta','settings')}catch(e){}if(!st)return;const r=document.documentElement.style;
@@ -814,7 +837,7 @@ function renderSettings(){
   <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
   <h3>导出与备份</h3><p class="muted">JSON 是完整备份（含照片），可以在任何地方用本应用再导入到某个账号；导出的文件<b>不加密</b>，请妥善保存。Markdown 方便阅读或放进其他笔记软件。</p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button></div>
   <h3>分区</h3>${S.notebooks.map(n=>`<div class="nbrow"><div><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
   <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
@@ -1096,7 +1119,7 @@ document.addEventListener('click',async ev=>{
     else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
     else if(a==='pickimport')$('#fileImport').click();
     else if(a==='paste')pasteImport();
-    else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='autosplit')autoSplit();else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
     else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
     else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
     else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
