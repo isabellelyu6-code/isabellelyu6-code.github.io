@@ -1,0 +1,43 @@
+# Ego 日记 (Ego Journal)
+
+**在线使用 Live:** https://isabellelyu6-code.github.io/Journal/
+
+An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
+
+## 功能 Features
+- **分区 Notebooks**: create as many as you want, each with its own colour; move entries between them
+- **检索 Search**: full-text search over titles, body, places, `#tags`, and notebook names, with highlighted matches; filters for favourites, photos, mood, and a calendar day
+- **识别 Recognition**: photograph a handwritten or printed page and turn it into text. It uses Claude when running as a Claude artifact; otherwise it uses [Tesseract.js](https://github.com/naptha/tesseract.js) in the browser (`chi_sim+eng`)
+- **智能标签 Smart tags** (Claude artifact only): suggests a title, tags, and a mood
+- Mood (7-point scale like Apple's State of Mind), places, tags, favourites, photos, voice dictation
+- Calendar with mood dots, streaks, "on this day", and a yearly review (entries, words, months, moods, tags)
+- Writing prompts
+- **Import**: `.txt` / `.md` files, which are split into entries automatically at date lines such as `2025-11-24`, `2025年11月24日 星期一`, `11月24日`, `2025/11/24 20:30`; a JSON backup; or photos (one entry each, with optional OCR). You can also paste a large block of text
+- **Export**: a full JSON backup (including photos) or Markdown
+
+## 账号与加密 Accounts & encryption
+- Create as many accounts as you need, each with a username and password.
+- Each account has a random 256-bit data key. Every notebook, entry, and photo is encrypted with AES-GCM before it is saved.
+- The data key is wrapped with a key derived from your password (PBKDF2-SHA256, 310,000 iterations). The password itself is never stored.
+- Changing the password only re-wraps the data key. **Forgetting the password means the data cannot be recovered.**
+- JSON exports are *not* encrypted, so keep them safe.
+
+## 数据存储 Storage
+- **As a Claude artifact**: encrypted records are kept in the artifact's private per-user database (`data/users/<id>/acc-<account>/...`) and sync across your devices.
+- **Self-hosted** (open `index.html`, or host it on GitHub Pages or any static host): encrypted records are kept in the browser's IndexedDB on that device (`ego-accounts`, `ego-acc-<account>`). Export backups regularly.
+
+## 自己部署 Self-host
+It's a single file with no build step and no server:
+```
+git clone https://github.com/isabellelyu6-code/Journal
+# push to GitHub → Settings → Pages → deploy from branch
+```
+
+## Data model
+```json
+{ "app": "ego-journal", "version": 1,
+  "notebooks": [{ "id", "name", "color", "created", "order" }],
+  "entries":   [{ "id", "nb", "date": "YYYY-MM-DDTHH:MM", "title", "body", "mood": 1-7|null,
+                  "tags": [], "place", "photos": [photoId], "thumbs": {photoId: dataURL}, "fav", "created", "updated" }],
+  "photos":    [{ "id", "data": "data:image/jpeg;base64,..." }] }
+```
