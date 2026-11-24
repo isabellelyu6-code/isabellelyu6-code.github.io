@@ -892,6 +892,7 @@ async function addImported(items,nb){let n=0;for(const it of items){const e=fixE
 async function importBackup(obj){let n=0;
   for(const nb of obj.notebooks||[])if(nb&&nb.id&&typeof nb.name==='string'){if(!nbById(nb.id))S.notebooks.push({id:String(nb.id),name:nb.name.slice(0,30),color:COLORS.includes(nb.color)?nb.color:COLORS[0],created:nb.created||Date.now(),order:S.notebooks.length});await Store.put('notebooks',structuredClone(nbById(nb.id)))}
   for(const p of obj.photos||[])if(p&&p.id&&typeof p.data==='string'&&p.data.startsWith('data:image/')){await Store.put('photos',{id:String(p.id),data:p.data});S.photos.set(p.id,p.data)}
+  for(const r of obj.reports||[])if(r&&typeof r.id==='string'&&r.id.startsWith('rep:')&&typeof r.text==='string'){const rec={id:r.id,text:r.text.slice(0,50000),n:+r.n||0,created:+r.created||Date.now()};S.reports.set(rec.id,rec);await Store.put('meta',rec)}
   for(const raw of obj.entries||[]){if(!raw||!raw.id||typeof raw.date!=='string')continue;const e=fixEntry({...raw,id:String(raw.id),title:String(raw.title||''),body:String(raw.body||''),place:String(raw.place||''),tags:(raw.tags||[]).map(String),photos:(raw.photos||[]).map(String),thumbs:Object.fromEntries(Object.entries(raw.thumbs||{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))),mood:Number.isInteger(raw.mood)&&raw.mood>=1&&raw.mood<=7?raw.mood:null,fav:!!raw.fav});
     if(!nbById(e.nb))e.nb=S.notebooks[0].id;const i=S.entries.findIndex(x=>x.id===e.id);if(i<0)S.entries.push(e);else S.entries[i]=e;await Store.put('entries',e);n++}
   return n}
@@ -982,7 +983,7 @@ async function saveFile(name,text,type){
 }
 async function exportJson(){toast('正在打包照片…',10000);const photos=[];
   for(const e of S.entries)for(const p of e.photos){let d=S.photos.get(p);if(!d){try{const o=await Store.get('photos',p);d=o&&o.data}catch(err){}}if(d)photos.push({id:p,data:d})}
-  const obj={app:'ego-journal',version:1,exported:new Date().toISOString(),notebooks:S.notebooks,entries:S.entries,photos};
+  const obj={app:'ego-journal',version:1,exported:new Date().toISOString(),notebooks:S.notebooks,entries:S.entries,photos,reports:[...S.reports.values()]};
   await saveFile(`ego-journal-${dayKey(new Date())}.json`,JSON.stringify(obj),'application/json')}
 function exportMd(){const list=[...S.entries].sort((a,b)=>a.date.localeCompare(b.date));
   const md='# Ego 日记\n\n'+list.map(e=>`## ${e.date.replace('T',' ')}${e.title?' · '+e.title:''}\n\n`+`*${nbById(e.nb)?.name||''}${e.mood?' · '+MOODS[e.mood-1].n:''}${e.place?' · '+e.place:''}${e.tags.length?' · '+e.tags.map(t=>'#'+t).join(' '):''}*\n\n${e.body}\n`).join('\n');
