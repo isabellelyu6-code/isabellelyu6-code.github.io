@@ -1030,7 +1030,10 @@ async function importMap(o){let made=0,set=0,miss=[];const byName=n=>S.notebooks
   const EB=S.entries.map(e=>[e,bi((e.title||'')+(e.body||''))]);const hit={};
   for(const r of o.assign||[]){const nb=byName(r.nb);if(!nb)continue;const tb=bi(r.text);if(tb.size<12){miss.push(r);continue}
     let best=null,bs=0,second=0;for(const [e,B] of EB){if(r.date&&e.date.slice(0,10)!==r.date)continue;let k=0;for(const x of tb)if(B.has(x))k++;const v=k/tb.size;if(v>bs){second=bs;bs=v;best=e}else if(v>second)second=v}
-    if(best&&bs>=.5&&bs-second>=.15){add(best,nb);const key=nb.id+best.id;if(!hit[key]){hit[key]=1;set++}}else miss.push(r)}
+    const th=o.loose?.4:.5;
+    if(best&&bs>=th&&bs-second>=.15){add(best,nb);const key=nb.id+best.id;if(!hit[key]){hit[key]=1;set++}}
+    else if(o.loose&&best&&bs>=.5){for(const [e,B] of EB){let k=0;for(const x of tb)if(B.has(x))k++;if(k/tb.size>=bs-.06){add(e,nb);const key=nb.id+e.id;if(!hit[key]){hit[key]=1;set++}}}}
+    else miss.push(r)}
   if(o.cleanup){for(const name of o.cleanup){const nb=byName(name);if(nb&&!S.entries.some(e=>inNb(e,nb.id)&&!e._t)){/* keep */}}}
   for(const e of S.entries)if(e._t){delete e._t;if(o.drop){const rm=o.drop.map(byName).filter(Boolean).map(n=>n.id);const L=nbsOf(e).filter(x=>!rm.includes(x));if(L.length){e.nb=L[0];e.also=L.slice(1)}}await Store.put('entries',structuredClone(e)).catch(()=>{})}
   render();window.__lastMap={made,set,miss:miss.length,missed:miss.slice(0,40)};toast(`分区表：新建 ${made} 个分区，对上 ${set} 篇${miss.length?`，${miss.length} 条没对上`:''}`,6000)}
