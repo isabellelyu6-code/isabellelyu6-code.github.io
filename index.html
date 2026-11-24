@@ -21,9 +21,9 @@
    PICTURE: the top band is the terminal itself beside today's schedule and the trip countdown, under faint snow
    COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent (also all dates), twilight rose, sun gold; Noto Serif SC titles, JetBrains Mono for the prompt, Noto Sans SC elsewhere
    LAYOUT: phone — terminal, today, sites, plans, work stacked; desktop — terminal + today side by side, plans and work in two columns */
-:root{color-scheme:dark;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--warn:#f0b47c;--bad:#f0a0a8}
+:root{color-scheme:dark;--bf:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--warn:#f0b47c;--bad:#f0a0a8}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--bf);overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 a{color:inherit}
@@ -642,6 +642,23 @@ function acctModal(){
   };
 }
 /* ---------- time / greeting ---------- */
+/* ---------- fonts (shared by Lyra and the journal; saved in the account) ---------- */
+const FONTS={
+  sans:['黑体','"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif',''],
+  serif:['宋体','"Noto Serif SC","Songti SC",serif',''],
+  wenkai:['文楷','"LXGW WenKai Screen","Kaiti SC","KaiTi",serif','https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/style.css'],
+  xiaowei:['小薇','"ZCOOL XiaoWei","Noto Serif SC",serif','https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap'],
+  kuaile:['快乐体','"ZCOOL KuaiLe","Noto Sans SC",sans-serif','https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap'],
+  brush:['毛笔','"Ma Shan Zheng","Kaiti SC",serif','https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap'],
+  hand:['手写','"Long Cang","Kaiti SC",cursive','https://fonts.googleapis.com/css2?family=Long+Cang&display=swap'],
+  system:['系统','system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif','']
+};
+const BODY_FONTS=['sans','serif','wenkai','xiaowei','system'];
+const HEAD_FONTS=['serif','sans','wenkai','xiaowei','kuaile','brush','hand'];
+function loadFont(k){const f=FONTS[k];if(!f||!f[2]||document.querySelector(`link[data-font="${k}"]`))return;const l=document.createElement('link');l.rel='stylesheet';l.href=f[2];l.dataset.font=k;document.head.appendChild(l)}
+function applyFonts(st){const r=document.documentElement.style;const b=FONTS[st&&st.bodyFont]?st.bodyFont:'sans',h=FONTS[st&&st.headFont]?st.headFont:'serif';loadFont(b);loadFont(h);r.setProperty('--bf',FONTS[b][1]);r.setProperty('--hf',FONTS[h][1])}
+function fontChips(cur,list,attr,sample){return `<div class="chips wrapc fontc">${list.map(k=>{loadFont(k);return `<button class="chip" ${attr}="${k}" aria-pressed="${cur===k}" style="font-family:${FONTS[k][1].replace(/"/g,'&quot;')}">${FONTS[k][0]}${sample?` <small style="opacity:.6">${sample}</small>`:''}</button>`}).join('')}</div>`}
+
 /* ---------- settings (saved in the encrypted account, synced) ---------- */
 const ACCENTS=[['极光绿','#86d9c3'],['玫瑰','#e9b0c2'],['暖金','#e8c98e'],['冰蓝','#8fb8f0'],['薰衣草','#b9a4f0'],['珊瑚','#f0a08a']];
 const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439','--card2':'#1a2c45','--line':'#263b58'}],
@@ -652,14 +669,14 @@ const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439
  plum:['夜紫',{'--bg':'#1a1428','--bg2':'#130e1f','--card':'#231b36','--card2':'#2c2242','--line':'#3d3159'}]};
 const MODS=[['sky','天气 · 日出日落'],['terminal','指令框'],['today','课表'],['trip','旅行倒计时'],['sites','我的'],['plans','计划'],['work','DDL'],['grades','成绩']];
 const LOWER=['sites','plans','work','grades'];
-const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
+const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',bodyFont:'sans',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
 let SET=structuredClone(DEF_SET);
 function inkFor(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#08261b';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1a24':'#ffffff'}
 function applySettings(){
   const st=document.documentElement.style;const a=/^#[0-9a-f]{6}$/i.test(SET.accent)?SET.accent:DEF_SET.accent;st.setProperty('--acc',a);st.setProperty('--accInk',inkFor(a));
   const B=(BGS[SET.bg]||BGS.night)[1];for(const k in B)st.setProperty(k,B[k]);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content',B['--bg']);
-  st.setProperty('--hf',SET.headFont==='sans'?'"Noto Sans SC","PingFang SC",sans-serif':'"Noto Serif SC","Songti SC",serif');
+  applyFonts(SET);
   document.body.style.zoom={s:.92,m:1,l:1.1}[SET.size]||1;
   const hid=new Set(SET.hidden||[]);
   const el={sky:$('#sky'),terminal:$('#mod-terminal'),today:$('#mod-today'),trip:$('#trip'),sites:$('#sites-s'),plans:$('#plans-s'),work:$('#work-s'),grades:$('#grades-s')};
@@ -680,8 +697,8 @@ function settingsModal(){
   modal(`<h3>设置</h3><p class="sethint">所有设置都存在你的账号里，换设备也一样。</p>
   <div class="setg"><h4>主题色</h4><div class="sw2">${ACCENTS.map(([n,c])=>`<button data-acc="${c}" style="--c:${c}" aria-pressed="${SET.accent===c}" title="${n}"><i></i><span>${n}</span></button>`).join('')}<label class="cust"><input type="color" id="accC" value="${esc(SET.accent)}"><span>自定义</span></label></div></div>
   <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}</div></div>
-  <div class="setg two2"><div><h4>标题字体</h4><div class="chips wrapc"><button class="chip" data-hf="serif" aria-pressed="${SET.headFont!=='sans'}" style="font-family:'Noto Serif SC',serif">宋体</button><button class="chip" data-hf="sans" aria-pressed="${SET.headFont==='sans'}">黑体</button></div></div>
-    <div><h4>大小</h4><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-size="${k}" aria-pressed="${SET.size===k}">${n}</button>`).join('')}</div></div></div>
+  <div class="setg"><h4>字体</h4><p class="sethint">主页和日记一起改。</p><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
+  <div class="setg two2"><div><h4>大小</h4><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-size="${k}" aria-pressed="${SET.size===k}">${n}</button>`).join('')}</div></div></div>
   <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
     <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
     <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
@@ -698,6 +715,7 @@ function settingsModal(){
     if(d.acc){SET.accent=d.acc;saveSettings();return re()}
     if(d.bg){SET.bg=d.bg;saveSettings();return re()}
     if(d.hf){SET.headFont=d.hf;saveSettings();return re()}
+    if(d.bf){SET.bodyFont=d.bf;saveSettings();return re()}
     if(d.size){SET.size=d.size;saveSettings();return re()}
     if(d.c24){SET.clock24=d.c24==='1';saveSettings();tick();renderSky();return re()}
     if(d.unit){SET.unit=d.unit;saveSettings();renderSky();return re()}
