@@ -36,6 +36,14 @@ button{cursor:pointer;border:0;background:none}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
 .jside{display:none}
+.nbsvg{display:inline-block;vertical-align:-2px;color:var(--c,var(--mut))}
+.nbi{display:inline-flex;margin-right:5px}.nbi .nbsvg{color:var(--c,currentColor)}
+.rail .nb .ico .nbsvg,.nbm .ico .nbsvg{color:var(--c)}
+.rail .nb[aria-current=true] .ico .nbsvg{color:var(--ink)}
+.icgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px}
+.icgrid button{height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--ink2)}
+.icgrid button[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--card))}
+.icgrid .none{color:var(--mut)}
 .stat[data-stat]{cursor:pointer;transition:border-color .15s,transform .15s}.stat[data-stat]:hover{border-color:var(--acc);transform:translateY(-1px)}
 .box.wide{max-width:720px}
 .dhead{display:flex;justify-content:space-between;margin-bottom:-6px}.dhead .btn{height:32px;font-size:13px}
@@ -66,7 +74,7 @@ body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--b
 .ctx{position:fixed;z-index:90;min-width:190px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
 .ctx button{display:flex;align-items:center;gap:9px;width:100%;height:34px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;color:var(--ink)}
 .ctx button:hover,.ctx button:focus{background:color-mix(in srgb,var(--acc) 16%,transparent);outline:none}
-.ctx button.danger{color:#f0a0a8}.ctx .ci{width:18px;text-align:center;color:var(--mut);font-size:13px}
+.ctx button.danger{color:#f0a0a8}.ctx .ci{width:18px;display:inline-grid;place-items:center;text-align:center;color:var(--mut);font-size:13px}
 .ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 @keyframes ctxin{from{opacity:0;transform:scale(.97)}}
 @keyframes vin{from{opacity:0;transform:translateY(4px)}}
@@ -537,7 +545,40 @@ const nbById=id=>S.notebooks.find(n=>n.id===id);
 const nbsOf=e=>[e.nb,...(Array.isArray(e.also)?e.also:[])].filter((x,i,a)=>x&&a.indexOf(x)===i);
 const inNb=(e,id)=>e.nb===id||(Array.isArray(e.also)&&e.also.includes(id));
 function nbCounts(){const c={};for(const e of S.entries)for(const id of nbsOf(e))c[id]=(c[id]||0)+1;return c}
-const nbLabel=n=>(n.icon?`<span class="nbi">${esc(n.icon)}</span>`:'')+esc(n.name);
+/* one line-icon set for partitions (no emoji) */
+const NBI={
+ book:'<path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v11.5H8.5A3.5 3.5 0 0 1 5 16z"/><path d="M5 16a3.5 3.5 0 0 1 3.5-3.5H19"/>',
+ pen:'<path d="M15.5 4.5l4 4L9 19H5v-4z"/><path d="M13.5 6.5l4 4"/>',
+ feather:'<path d="M19 5c-6 0-11 5-11 11v3"/><path d="M8 16h6.5c2.5 0 4.5-5 4.5-11"/><path d="M8 12h7"/>',
+ thought:'<path d="M7 16.5a4.5 4.5 0 0 1-.6-8.96A5.5 5.5 0 0 1 17 8a4.25 4.25 0 0 1-.25 8.5z"/><circle cx="7" cy="19.5" r="1.1"/>',
+ bulb:'<path d="M9 17h6M10 20.5h4"/><path d="M12 3.5a6 6 0 0 0-3.6 10.8c.4.3.6.8.6 1.3V17h6v-1.4c0-.5.2-1 .6-1.3A6 6 0 0 0 12 3.5z"/>',
+ film:'<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3.5 9.5h4M3.5 14.5h4M16.5 9.5h4M16.5 14.5h4"/>',
+ music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+ mic:'<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>',
+ quote:'<path d="M6 18c2.5-1 4-3.5 4-6.5V7H5v5h4M15 18c2.5-1 4-3.5 4-6.5V7h-5v5h4"/>',
+ sparkle:'<path d="M12 3.5l1.8 5.2 5.2 1.8-5.2 1.8L12 17.5l-1.8-5.2L5 10.5l5.2-1.8z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+ heart:'<path d="M12 19.5s-7.5-4.4-7.5-10A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 7.5 2.5c0 5.6-7.5 10-7.5 10z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+ moon:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+ plane:'<path d="M10.5 13.5L4 11l1.5-1.5 6 .5 4-4.5a1.8 1.8 0 0 1 2.5 2.5l-4.5 4 .5 6L12.5 19.5l-2.5-6.5"/>',
+ mountain:'<path d="M3 19l6.5-11 4 6.5 2-3L21 19z"/><path d="M8 10.5l1.5 1.5 1.5-1.5"/>',
+ camera:'<path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ cake:'<path d="M4.5 20v-6.5h15V20M3 20h18M4.5 16.5c1.5 0 1.5 1 3 1s1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1"/><path d="M8 13.5V10M12 13.5V10M16 13.5V10M8 7.5v-.5M12 7.5v-.5M16 7.5v-.5"/>',
+ anchor:'<circle cx="12" cy="5.5" r="2"/><path d="M12 7.5v13M8 11h8M4.5 13a7.5 7.5 0 0 0 15 0"/>',
+ smile:'<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14a4 4 0 0 0 7 0M9 9.5v.5M15 9.5v.5"/>',
+ star:'<path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4L12 16.3 7.2 18.8l1-5.4-4-3.7 5.4-.7z"/>',
+ pin:'<path d="M12 20.5s-6-5.6-6-10.5a6 6 0 0 1 12 0c0 4.9-6 10.5-6 10.5z"/><circle cx="12" cy="10" r="2.2"/>',
+ leaf:'<path d="M5 19c0-8 5-13.5 14-14 0 9-5.5 14-14 14z"/><path d="M5 19l8-8"/>',
+ coffee:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M9 3.5v2.5M12.5 3.5v2.5"/>',
+ gamepad:'<path d="M7 8h10a4 4 0 0 1 3.9 4.9l-1 4.2a2 2 0 0 1-3.4.9L14 15.5h-4L7.5 18a2 2 0 0 1-3.4-.9l-1-4.2A4 4 0 0 1 7 8z"/><path d="M8 11v3M6.5 12.5h3M16 11.5v.01M17.5 13v.01"/>',
+ people:'<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.8a3 3 0 0 1 0 5.4M18 19a5.5 5.5 0 0 0-2.5-4.6"/>',
+ snow:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/><path d="M9.5 4.5l2.5 2 2.5-2M9.5 19.5l2.5-2 2.5 2"/>'
+};
+const EMO2NBI={'🦋':'book','🖊':'pen','🖊️':'pen','📓':'book','📝':'feather','🤔':'thought','📚':'bulb','🎞':'film','🎞️':'film','🎸':'music','🎼':'mic','💬':'quote','✨':'sparkle','❤️':'heart','❤':'heart','☀️':'sun','☀':'sun','🖼':'camera','🖼️':'camera','🎵':'music','🏔':'mountain','🏔️':'mountain','📷':'camera','🎂':'cake','⚓':'anchor','🙂':'smile','✈️':'plane','✈':'plane'};
+const nbIconKey=n=>NBI[n.icon]?n.icon:(EMO2NBI[n.icon]||'');
+const nbSvg=(k,sz=16)=>NBI[k]?`<svg class="nbsvg" viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NBI[k]}</svg>`:'';
+const nbLabel=n=>(nbIconKey(n)?`<span class="nbi">${nbSvg(nbIconKey(n),14)}</span>`:'')+esc(n.name);
+const nbIco=n=>nbIconKey(n)?nbSvg(nbIconKey(n)):'<i></i>';
 const nbColor=id=>nbById(id)?.color||'#a9b8cc';
 
 /* ---------- init ---------- */
@@ -895,11 +936,11 @@ function render(){
   $('#tabs').innerHTML=VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}">${i}<span>${n}</span></button>`).join('');
   const counts=nbCounts();
   const full=S.notebooks.filter(n=>counts[n.id]||S.nb===n.id),empty=S.notebooks.filter(n=>!counts[n.id]&&S.nb!==n.id);let showEmpty=false;try{showEmpty=localStorage.getItem('lyra-empty')==='1'}catch(e){}
-  const nbBtn=n=>`<button class="nb" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}"><span class="ico">${n.icon?esc(n.icon):'<i></i>'}</span><span class="nm">${esc(n.name)}</span><em>${counts[n.id]||0}</em></button>`;
+  const nbBtn=n=>`<button class="nb" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}"><span class="ico">${nbIco(n)}</span><span class="nm">${esc(n.name)}</span><em>${counts[n.id]||0}</em></button>`;
   $('#rail').innerHTML=`<div class="rtop"><a class="back" href="${esc(HOME_URL)}">← Lyra</a><div class="brand">Lyra <i>日记</i></div>
     <div class="rviews">${VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}" title="${n}">${i}<span>${n}</span></button>`).join('')}</div></div>
     <div class="rlist"><div class="lab"><span>分区</span><button class="lab-add" data-act="newnb" title="新建分区">＋</button></div>
-    <button class="nb all" data-nb="all" aria-current="${S.view==='journal'&&S.nb==='all'}"><span class="ico">✦</span><span class="nm">全部</span><em>${S.entries.length}</em></button>
+    <button class="nb all" data-nb="all" aria-current="${S.view==='journal'&&S.nb==='all'}"><span class="ico">${nbSvg('star')}</span><span class="nm">全部</span><em>${S.entries.length}</em></button>
     ${full.map(nbBtn).join('')}
     ${empty.length?`<button class="more" data-act="toggleempty">${showEmpty?'收起':'还有'} ${empty.length} 个空分区 ${showEmpty?'▴':'▾'}</button>${showEmpty?empty.map(nbBtn).join(''):''}`:''}</div>
     <div class="rfoot"><span>${esc(S.account?.name||'')}</span><button data-act="logout">退出</button></div>`;
@@ -923,7 +964,7 @@ function renderAside(){const now=new Date(),y=now.getFullYear(),mo=now.getMonth(
   return `<div class="as-stats"><div><b>${st.cur}</b><span>连续天数</span></div><div><b>${inM}</b><span>本月</span></div><div><b>${inY}</b><span>${y} 年</span></div></div>
    <div class="as-card"><h4>${mo+1} 月${S.nb!=='all'&&nbById(S.nb)?` · ${esc(nbById(S.nb).name)}`:''}</h4><div class="mcal"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>${cells}</div></div>
    ${otd.length?`<div class="as-card"><h4>那年今日</h4>${otd.map(e=>`<button class="as-row" data-open="${esc(e.id)}"><b>${e.date.slice(0,4)}</b><span>${esc(e.title||snippet(e.body,[]).slice(0,24)||'无标题')}</span></button>`).join('')}</div>`:''}
-   ${top.length&&S.nb==='all'?`<div class="as-card"><h4>写得最多的分区</h4>${top.map(n=>`<button class="as-bar" data-nb="${esc(n.id)}" style="--c:${esc(n.color)}"><span>${n.icon?esc(n.icon)+' ':''}${esc(n.name)}</span><i style="width:${cnt[n.id]/mx*100}%"></i><em>${cnt[n.id]}</em></button>`).join('')}</div>`:''}`}
+   ${top.length&&S.nb==='all'?`<div class="as-card"><h4>写得最多的分区</h4>${top.map(n=>`<button class="as-bar" data-nb="${esc(n.id)}" style="--c:${esc(n.color)}"><span>${nbLabel(n)}</span><i style="width:${cnt[n.id]/mx*100}%"></i><em>${cnt[n.id]}</em></button>`).join('')}</div>`:''}`}
 /* ---------- journal view ---------- */
 function renderJournal(){
   const t=new Date(),st=streaks(),otd=onThisDay();
@@ -938,7 +979,7 @@ function renderJournal(){
   </section>`;
   const counts=nbCounts();
   let showE=false;try{showE=localStorage.getItem('lyra-empty')==='1'}catch(e){}const emptyN=S.notebooks.filter(n=>!counts[n.id]&&S.nb!==n.id).length;
-  const nbchips=`<div class="nbtabs nbchips"><button class="nbtab" style="--c:var(--acc)" data-nb="all" aria-pressed="${S.nb==='all'}">✦ 全部<span>${S.entries.length}</span></button>${S.notebooks.filter(n=>counts[n.id]||S.nb===n.id||showE).map(n=>`<button class="nbtab" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-pressed="${S.nb===n.id}">${n.icon?esc(n.icon)+' ':''}${esc(n.name)}<span>${counts[n.id]||0}</span></button>`).join('')}${emptyN?`<button class="nbtab add" data-act="toggleempty">${showE?'收起空分区':`+${emptyN} 空分区`}</button>`:''}<button class="nbtab add" data-act="newnb">＋</button></div>`;
+  const nbchips=`<div class="nbtabs nbchips"><button class="nbtab" style="--c:var(--acc)" data-nb="all" aria-pressed="${S.nb==='all'}">全部<span>${S.entries.length}</span></button>${S.notebooks.filter(n=>counts[n.id]||S.nb===n.id||showE).map(n=>`<button class="nbtab" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-pressed="${S.nb===n.id}">${nbLabel(n)}<span>${counts[n.id]||0}</span></button>`).join('')}${emptyN?`<button class="nbtab add" data-act="toggleempty">${showE?'收起空分区':`+${emptyN} 空分区`}</button>`:''}<button class="nbtab add" data-act="newnb">＋</button></div>`;
   const filt=`<div class="chips">${S.day?`<button class="chip" aria-pressed="true" data-act="clearday">${esc(S.day)} ✕</button>`:''}
     <button class="chip" data-act="selmode" aria-pressed="${!!S.sel}">${S.sel?'退出多选':'多选'}</button><button class="chip" data-f="fav" aria-pressed="${S.f.fav}">收藏</button>
     <button class="chip" data-f="photo" aria-pressed="${S.f.photo}">有照片</button>
@@ -1007,7 +1048,7 @@ function renderInsights(){
   <div class="stat" role="button" tabindex="0" data-stat="s"><span>连续</span><b>${st.cur}<i>天</i></b><em>最长 ${st.best} 天</em></div></div>`})()}
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
   <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有心情记录</p>'}
-  <h3>分区</h3>${nbc.filter(([,c])=>c).sort((x,y)=>y[1]-x[1]).map(([n,c])=>`<div class="hbar"><span>${n.icon?esc(n.icon)+' ':''}${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
+  <h3>分区</h3>${nbc.filter(([,c])=>c).sort((x,y)=>y[1]-x[1]).map(([n,c])=>`<div class="hbar"><span>${nbLabel(n)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
   <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
   <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
 }
@@ -1056,7 +1097,7 @@ function renderSettings(){
   <p style="margin:8px 0 4px">正文</p>${fontChips((HUBST&&HUBST.bodyFont)||'sans',BODY_FONTS,'data-bf','今天')}
   <p style="margin:8px 0 4px">标题</p>${fontChips((HUBST&&HUBST.headFont)||'serif',HEAD_FONTS,'data-hfont','日记')}
   <p style="margin:8px 0 4px">大小</p><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-fsz="${k}" aria-pressed="${((HUBST&&HUBST.size)||'m')===k}">${n}</button>`).join('')}</div>
-  <h3>分区</h3><div class="nblist">${(()=>{const c=nbCounts();return S.notebooks.map((n,i)=>`<div class="nbline" style="--c:${esc(n.color)}"><button class="nbm" data-nbedit="${esc(n.id)}"><span class="ico">${n.icon?esc(n.icon):'<i></i>'}</span><span class="nm">${esc(n.name)}</span><em>${c[n.id]||0}</em></button><button class="ib" data-nbup="${esc(n.id)}" ${i?'':'disabled'} aria-label="上移">↑</button></div>`).join('')})()}</div>
+  <h3>分区</h3><div class="nblist">${(()=>{const c=nbCounts();return S.notebooks.map((n,i)=>`<div class="nbline" style="--c:${esc(n.color)}"><button class="nbm" data-nbedit="${esc(n.id)}"><span class="ico">${nbIco(n)}</span><span class="nm">${esc(n.name)}</span><em>${c[n.id]||0}</em></button><button class="ib" data-nbup="${esc(n.id)}" ${i?'':'disabled'} aria-label="上移">↑</button></div>`).join('')})()}</div>
   <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
   <h3>连续记录</h3>${missingHtml()}<p class="muted">从这天起算作连续。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="date" id="sfFrom" value="${esc((S.settings.streakFill||{}).from||'')}" style="max-width:200px"><button class="btn line" data-act="sfsave">保存</button>${S.settings.streakFill?'<button class="btn line" data-act="sfclear">清除</button>':''}</div>
@@ -1210,28 +1251,28 @@ function onLongPress(root,sel,fn){let T=null,sx=0,sy=0;root.addEventListener('to
   root.addEventListener('touchend',()=>{clearTimeout(T);T=null})}
 let LP=0;document.addEventListener('click',e=>{if(Date.now()-LP<600){e.preventDefault();e.stopPropagation()}},true);
 
-const ICN={open:'↗',fav:'★',unfav:'☆',add:'＋',copy:'⎘',sel:'☑',del:'🗑',edit:'✎',icon:'☺',up:'↑',down:'↓',hide:'⇥'};
+const ICN={open:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg>',fav:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4L12 16.3 7.2 18.8l1-5.4-4-3.7 5.4-.7z" fill="currentColor"/></svg>',unfav:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4L12 16.3 7.2 18.8l1-5.4-4-3.7 5.4-.7z"/></svg>',add:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',copy:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5H4v12h4"/></svg>',sel:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',del:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg>',edit:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5l4 4L9 19H5v-4z"/></svg>',up:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',down:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',hide:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 6.2A9.6 9.6 0 0 1 12 6c5 0 8.5 4.5 9 6-.3.9-1.3 2.4-2.9 3.8M6.5 7.6C4.6 8.9 3.4 10.7 3 12c.5 1.5 4 6 9 6 1.4 0 2.7-.3 3.8-.9"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1"/></svg>',tl:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14M5 12h10M5 18h6"/></svg>',tag:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.5" cy="8.5" r="1.3"/></svg>'};
 function delEntry(e){S.entries=S.entries.filter(x=>x!==e);render();let undone=false;
   const T=setTimeout(async()=>{if(undone)return;try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}},6500);
   toastAct(`已删除${e.title?'：'+e.title:''}`,'撤销',()=>{undone=true;clearTimeout(T);if(!S.entries.includes(e))S.entries.push(e);render()})}
 function entryMenu(e,cx,cy){ctxMenu(cx,cy,[
   {icon:ICN.edit,label:'编辑',act:()=>openEditor(e)},
   {icon:e.fav?ICN.unfav:ICN.fav,label:e.fav?'取消收藏':'收藏',act:async()=>{e.fav=!e.fav;render();try{await Store.put('entries',structuredClone(e))}catch(err){toast('保存失败')}}},
-  {icon:ICN.add,label:'分区…',act:()=>entryNbs(e)},
+  {icon:ICN.tag,label:'分区…',act:()=>entryNbs(e)},
   {icon:ICN.copy,label:'复制文字',act:()=>copyText((e.title?e.title+'\n\n':'')+e.body)},
   {icon:ICN.sel,label:'多选',act:()=>{S.sel=new Set([e.id]);render();renderSel()}},
   '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delEntry(e)}])}
 function nbMenu(nb,cx,cy){const i=S.notebooks.indexOf(nb);const move=d=>{const j=i+d;if(j<0||j>=S.notebooks.length)return;[S.notebooks[i],S.notebooks[j]]=[S.notebooks[j],S.notebooks[i]];S.notebooks.forEach((n,k)=>{if(n.order!==k){n.order=k;saveNb(n)}});render()};
   ctxMenu(cx,cy,[{icon:ICN.open,label:'打开',act:()=>{S.nb=nb.id;S.view='journal';render()}},
    {icon:ICN.edit,label:'重命名 / 换图标…',act:()=>nbEdit(nb)},
-   {icon:'⇶',label:'按时间线添加日记…',act:()=>fillFromTimeline(nb)},
+   {icon:ICN.tl,label:'按时间线添加日记…',act:()=>fillFromTimeline(nb)},
    i>0&&{icon:ICN.up,label:'上移',act:()=>move(-1)},i<S.notebooks.length-1&&{icon:ICN.down,label:'下移',act:()=>move(1)},
    '-',S.notebooks.length>1&&{icon:ICN.del,label:'删除分区',danger:true,act:()=>delNotebook(nb.id)}].filter(Boolean))}
-function nbEdit(nb){let color=nb.color;modal(`<h3>编辑分区</h3><div class="field"><label for="neI">图标（一个 emoji）</label><input type="text" id="neI" value="${esc(nb.icon||'')}" maxlength="4" style="width:90px;text-align:center;font-size:20px"></div>
+function nbEdit(nb){let color=nb.color,ik=nbIconKey(nb);modal(`<h3>编辑分区</h3><div class="field"><label>图标</label><div class="icgrid" id="neI">${Object.keys(NBI).map(k=>`<button type="button" data-ik="${k}" aria-pressed="${nbIconKey(nb)===k}" aria-label="${k}">${nbSvg(k,20)}</button>`).join('')}<button type="button" data-ik="" aria-pressed="${!nbIconKey(nb)}" aria-label="不要图标" class="none">—</button></div></div>
   <div class="field"><label for="neN">名字</label><input type="text" id="neN" value="${esc(nb.name)}"></div><div class="swatches" id="neC">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div>
   <div class="row">${S.notebooks.length>1?'<button class="btn danger sp" data-a="del">删除分区</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
-  $('#modalBox').onclick=e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#neC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
-    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;const nm=$('#neN').value.trim().slice(0,30),ic=[...$('#neI').value.trim()].slice(0,2).join('');$('#modalBox').onclick=null;closeModal();if(a==='del')return delNotebook(nb.id);if(a!=='ok')return;
+  $('#modalBox').onclick=e=>{const ib=e.target.closest('[data-ik]');if(ib){ik=ib.dataset.ik;$('#neI').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===ib));return}const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#neC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;const nm=$('#neN').value.trim().slice(0,30),ic=ik;$('#modalBox').onclick=null;closeModal();if(a==='del')return delNotebook(nb.id);if(a!=='ok')return;
     nb.name=nm||nb.name;nb.icon=ic;nb.color=color;Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存失败'));render()}}
 function jCtx(t,cx,cy){const c=t.closest('.card[data-open]');if(c){const e=S.entries.find(x=>x.id===c.dataset.open);if(e){entryMenu(e,cx,cy);return true}}
   const nbb=t.closest('[data-nb]');if(nbb&&nbb.dataset.nb!=='all'){const nb=nbById(nbb.dataset.nb);if(nb){nbMenu(nb,cx,cy);return true}}
@@ -1242,7 +1283,7 @@ onLongPress(document,'.card[data-open],.nbtab[data-nb],.rail .nb[data-nb]',(el,x
 function asideOn(){try{return localStorage.getItem('lyra-aside')!=='0'}catch(e){return true}}
 function toggleAside(on){try{localStorage.setItem('lyra-aside',on?'1':'0')}catch(e){}render()}
 function edNbOpen(){try{return localStorage.getItem('lyra-ednbs')==='1'}catch(e){return false}}
-function edNbSum(){const L=nbsOf(S.ed).map(nbById).filter(Boolean);return `<span>分区</span><b>${L.map(n=>(n.icon?esc(n.icon)+' ':'')+esc(n.name)).join('、')||'未选'}</b><i>${edNbOpen()?'收起 ▴':'更改 ▾'}</i>`}
+function edNbSum(){const L=nbsOf(S.ed).map(nbById).filter(Boolean);return `<span>分区</span><b>${L.map(n=>nbLabel(n)).join('、')||'未选'}</b><i>${edNbOpen()?'收起 ▴':'更改 ▾'}</i>`}
 function entryNbs(e){const pick=new Set(nbsOf(e));
   modal(`<h3>放在哪些分区？</h3><p class="muted" style="margin:0 0 6px">${esc(e.title||snippet(e.body,[]).slice(0,30)||'')}</p><div class="ednbs">${S.notebooks.map(n=>`<button type="button" data-sn="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${pick.has(n.id)}">${nbLabel(n)}</button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async ev=>{const b=ev.target.closest('[data-sn]');if(b){const id=b.dataset.sn;pick.has(id)?pick.delete(id):pick.add(id);b.setAttribute('aria-pressed',pick.has(id));return}
