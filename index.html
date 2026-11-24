@@ -158,6 +158,12 @@ section.s{padding:30px 0 6px}
 .editing .site .ed{display:grid}
 .lower{display:grid;grid-template-columns:minmax(0,1fr);column-gap:26px}
 .modoff{display:none!important}
+.skyc{display:inline-flex;gap:2px;margin:-4px -6px -4px 0}
+.skyc button{width:24px;height:24px;border-radius:7px;color:var(--mut);font-size:13px;line-height:1;opacity:.55;letter-spacing:0}
+.sky:hover .skyc button,.skyc button:focus-visible{opacity:1}.skyc button:hover{background:var(--card2);color:var(--acc)}
+@media(hover:none){.skyc button{opacity:.8}}
+.skyshow{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent);color:var(--ink);font-size:13px}
+.skyshow[hidden]{display:none}.skyshow .wi{width:18px;height:18px;color:var(--sun)}
 .cbg{position:relative;cursor:pointer}.cbg input{width:18px;height:18px;border:0;padding:0;background:none;border-radius:50%;cursor:pointer}
 body.nostars .snow{background-image:none}
 body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--bgG) 100%) fixed}
@@ -347,7 +353,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
     <div class="hello">
       <svg class="lyra-bg" viewBox="160 30 760 980" aria-hidden="true"><defs><radialGradient id="vg"><stop offset="0" stop-color="var(--acc)" stop-opacity=".55"/><stop offset="1" stop-color="var(--acc)" stop-opacity="0"/></radialGradient></defs><circle cx="781" cy="204" r="90" fill="url(#vg)"/><g class="ln"><line x1="781" y1="204" x2="600" y2="96"/><line x1="781" y1="204" x2="590" y2="345"/><line x1="600" y1="96" x2="590" y2="345"/><line x1="590" y1="345" x2="351" y2="431"/><line x1="351" y1="431" x2="243" y2="940"/><line x1="243" y1="940" x2="460" y2="859"/><line x1="460" y1="859" x2="590" y2="345"/></g><g class="st"><circle cx="781" cy="204" r="15" class="vega"/><circle cx="600" cy="96" r="7"/><circle cx="590" cy="345" r="8"/><circle cx="351" cy="431" r="7"/><circle cx="243" cy="940" r="10"/><circle cx="460" cy="859" r="10"/></g><text x="815" y="172">VEGA</text><text x="300" y="1000" class="nm">LYRA</text></svg>
       <div class="hl">
-        <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><span class="hl-r"><button class="sync" id="sync" data-act="sync"></button><button class="gear" data-act="settings" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="acct" data-act="acct" id="acctBtn">账号</button></span></div>
+        <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><span class="hl-r"><button class="sync" id="sync" data-act="sync"></button><button class="skyshow" id="skyshow" data-act="skyshow" title="显示天气" hidden></button><button class="gear" data-act="settings" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="acct" data-act="acct" id="acctBtn">账号</button></span></div>
         <div class="clock" aria-live="off"><b id="clockH">--</b><b class="colon">:</b><b id="clockM">--</b><span class="sec" id="clockS"></span></div>
         <div class="dateline" id="clockD"></div>
         <button class="skymini" id="skymini" data-act="skytoggle" aria-label="天气，点开看详情"></button>
@@ -719,6 +725,8 @@ function applySettings(){
   document.body.classList.toggle('nostars',SET.bgStars===false);document.body.classList.toggle('bggrad',!!SET.bgGrad);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content',SET.bg==='custom'?(SET.bgColor||'#0f1b2d'):B['--bg']);
   applyFonts(SET);
+  const sz=(SET.skyZoom||100)/100;['#sky','#skymini'].forEach(q=>{const e=$(q);if(e)e.style.zoom=sz});
+  const shw=$('#skyshow');if(shw){shw.hidden=!(SET.hidden||[]).includes('sky');shw.innerHTML=WX?`${wxSvg(wxDesc(WX.c,WX.day)[0])}${deg(WX.t)}`:'☁ 天气'}
   document.body.style.zoom=zoomOf(SET)/100;
   const hid=new Set(SET.hidden||[]);
   const el={sky:$('#sky'),terminal:$('#mod-terminal'),today:$('#mod-today'),trip:$('#trip'),sites:$('#sites-s'),plans:$('#plans-s'),work:$('#work-s'),grades:$('#grades-s')};
@@ -742,7 +750,9 @@ function settingsModal(){
     <div class="chips wrapc" style="margin-top:4px"><button class="chip" data-bgstars="1" aria-pressed="${SET.bgStars!==false}">✦ 星点</button><button class="chip" data-bggrad="1" aria-pressed="${!!SET.bgGrad}">◐ 渐变</button></div>
     <p class="sethint">自定义颜色会自动配好卡片和线条的深浅；太亮的颜色会被压暗一点，字才看得清。</p></div>
   <div class="setg"><h4>字体</h4><p class="sethint">主页和日记一起改。</p><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
-  <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放"><p class="sethint">整个页面放大缩小，主页和日记一起变。</p></div>
+  <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放"><p class="sethint">整个页面放大缩小，主页和日记一起变。</p>
+    <h4 style="margin-top:12px">天气模块 <span class="sethint" id="skyzV" style="font-weight:400">${SET.skyZoom||100}%</span></h4><input type="range" id="skyzR" min="70" max="140" step="5" value="${SET.skyZoom||100}" style="width:100%;accent-color:var(--acc)" aria-label="天气模块缩放">
+    <p class="sethint">只调天气那一块。天气卡右上角的 − ＋ ✕ 也能直接缩放和隐藏。</p></div>
   <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
     <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
     <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
@@ -772,6 +782,7 @@ function settingsModal(){
   };
   $('#accC').oninput=e=>{SET.accent=e.target.value;saveSettings()};
   $('#bgC').oninput=e=>{SET.bg='custom';SET.bgColor=e.target.value;saveSettings();document.querySelectorAll('[data-bg]').forEach(b=>b.setAttribute('aria-pressed','false'));$('.cbg')?.setAttribute('aria-pressed','true')};
+  $('#skyzR').oninput=e=>{SET.skyZoom=+e.target.value;$('#skyzV').textContent=SET.skyZoom+'%';saveSettings()};
   $('#zoomR').oninput=e=>{SET.zoom=+e.target.value;$('#zoomV').textContent=SET.zoom+'%';saveSettings()};
   $('#setName').oninput=e=>{SET.name=e.target.value.trim().slice(0,20);saveSettings();tick()};
   $('#locF').onsubmit=async e=>{e.preventDefault();const q=$('#locQ').value.trim();if(!q)return;$('#locR').innerHTML='<div class="empty"><span class="spin"></span> 搜索中…</div>';
@@ -894,7 +905,7 @@ async function loadWeather(force){
     try{localStorage.setItem(key,JSON.stringify({at:Date.now(),d:WX}))}catch(e){}renderSky()}catch(e){}
 }
 function renderSky(){
-  const L=loc(),n=new Date(),st=sunTimes(n,L.lat,L.lng),mo=moonInfo(n);let h=`<div class="skyh"><span>${esc(L.name)}</span><span>${tm(n)}</span></div>`;
+  const L=loc(),n=new Date(),st=sunTimes(n,L.lat,L.lng),mo=moonInfo(n);let h=`<div class="skyh"><span>${esc(L.name)} · ${tm(n)}</span><span class="skyc"><button data-skyz="-1" title="缩小天气" aria-label="缩小天气">−</button><button data-skyz="1" title="放大天气" aria-label="放大天气">＋</button><button data-skyhide="1" title="隐藏天气" aria-label="隐藏天气">✕</button></span></div>`;
   if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div style="min-width:0"><div class="wt"><b>${deg(WX.t)}</b><span>${de}</span></div><small>Feels ${deg(WX.f)} · H ${deg(WX.hi)} L ${deg(WX.lo)}<br>Rain ${WX.rain??0}% · Wind ${WX.wind} km/h</small></div></div>`}
   if(st.rise){const day=st.set-st.rise,f=Math.min(1,Math.max(0,(n-st.rise)/day)),up=n>=st.rise&&n<=st.set;const x=(f*100).toFixed(1),y=(26-Math.sin(f*Math.PI)*22).toFixed(1);
     h+=`<div class="sunbox"><div class="sun"><span>Sunrise <b>${tm(st.rise)}</b></span><svg class="arc" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="M2 26 Q50 -18 98 26" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3" fill="var(--sun)"/>`:''}</svg><span style="text-align:right">Sunset <b>${tm(st.set)}</b></span></div>
@@ -902,6 +913,7 @@ function renderSky(){
   else h+=`<div class="sunbox"><div class="skys">${st.polar==='night'?'Polar night — the sun stays below the horizon today':'Midnight sun — the sun does not set today'}</div></div>`;
   h+=`<div class="moonrow">${moonSvg(mo.p,20)}<span><b>${mo.name}</b> · ${Math.round(mo.illum*100)}% lit · ${mo.name==='Full Moon'?`new moon in ${mo.toNew} days`:`full moon in ${mo.toFull} days`}</span></div>`;
   $('#sky').innerHTML=h;
+  const shw=$('#skyshow');if(shw&&WX)shw.innerHTML=`${wxSvg(wxDesc(WX.c,WX.day)[0])}${deg(WX.t)}`;
   const sm=$('#skymini');if(sm){if(WX){const [ic,de]=wxDesc(WX.c,WX.day);sm.innerHTML=`${wxSvg(ic)}<span class="smt"><b>${deg(WX.t)}</b><small>${de}</small></span><span class="sms">H ${deg(WX.hi)} L ${deg(WX.lo)}${st.rise?`<br>↑${tm(st.rise)} ↓${tm(st.set)}`:''}</span>`}else sm.innerHTML=`<span class="sms">${mo.name}${st.rise?`<br>↑${tm(st.rise)} ↓${tm(st.set)}`:''}</span>`}}
 const fmtEn=ms=>{const h=Math.floor(ms/36e5),m=Math.round(ms%36e5/6e4);return h?`${h}h ${m}m`:`${m}m`};
 setInterval(tick,1000);
@@ -1181,7 +1193,9 @@ document.addEventListener('click',e=>{
   if(d.wf){S.wf=d.wf;renderWork();return}
   if(d.wc){S.wc=d.wc;renderWork();return}
   if(d.gadd!=null||d.gt||d.gpadd!=null||d.gpdel||d.gdel!=null){gradesClick(d);return}
-  const a=d.act;if(a==='skytoggle'){$('#sky').classList.toggle('open');b.setAttribute('aria-expanded',$('#sky').classList.contains('open'));return}if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
+  if(d.skyz){SET.skyZoom=Math.min(140,Math.max(70,(SET.skyZoom||100)+10*+d.skyz));saveSettings();toast(`天气 ${SET.skyZoom}%`);return}
+  if(d.skyhide){SET.hidden=[...new Set([...(SET.hidden||[]),'sky'])];saveSettings();return}
+  const a=d.act;if(a==='skyshow'){SET.hidden=(SET.hidden||[]).filter(x=>x!=='sky');saveSettings();return}if(a==='skytoggle'){$('#sky').classList.toggle('open');b.setAttribute('aria-expanded',$('#sky').classList.contains('open'));return}if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
 });
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 

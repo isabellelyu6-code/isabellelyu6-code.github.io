@@ -36,6 +36,7 @@ button{cursor:pointer;border:0;background:none}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
 .jside{display:none}
+.reportbox{margin-top:34px;padding-top:6px;border-top:1px dashed var(--line);opacity:.85}
 body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--bgG) 100%) fixed}body.bggrad .hero{background:transparent}.as-open{display:none}
 .ctx{position:fixed;z-index:90;min-width:190px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
 .ctx button{display:flex;align-items:center;gap:9px;width:100%;height:34px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;color:var(--ink)}
@@ -128,6 +129,9 @@ body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--b
 .meta span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .nbi{margin-right:5px}
 .ednbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ednbs[hidden]{display:none}
+.nbtoggle{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);font-size:13.5px;color:var(--ink);text-align:left;min-width:0}
+.nbtoggle span{color:var(--mut);flex:none}.nbtoggle b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}.nbtoggle i{font-style:normal;color:var(--acc);font-size:12.5px;flex:none}
 .ednbs button{height:30px;padding:0 11px;border-radius:15px;border:1px solid var(--line);font-size:13px;color:var(--mut);background:var(--card)}
 .ednbs button[aria-pressed=true]{border-color:var(--c);color:var(--ink);background:color-mix(in srgb,var(--c) 22%,var(--card))}
 .card.picked{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--card))}
@@ -209,6 +213,7 @@ textarea{resize:vertical}
 .sh-top .st{flex:1;font-size:13px;color:var(--mut);text-align:center}
 .sh-body{flex:1;overflow-y:auto;padding:16px max(5vw,18px) 120px;max-width:760px;width:100%;margin:0 auto}
 .ed-meta{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+@media (min-width:600px){.ed-meta{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}}
 .ed-title{border:0!important;padding:14px 0 4px!important;font-size:26px!important;font-weight:700;font-family:var(--hf);background:none!important;outline:none}
 .ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.9;font-family:var(--hf);min-height:40vh;background:none!important;outline:none;resize:none}
 .tools{position:sticky;bottom:0;display:flex;gap:4px;overflow-x:auto;padding:8px max(4vw,10px);border-top:1px solid var(--line);background:var(--bg2);padding-bottom:max(8px,env(safe-area-inset-bottom))}
@@ -923,14 +928,14 @@ function renderInsights(){
   const months=Array(12).fill(0);ys.forEach(e=>months[+e.date.slice(5,7)-1]++);const mx=Math.max(1,...months);
   const tags={};ys.forEach(e=>e.tags.forEach(t=>tags[t]=(tags[t]||0)+1));const top=Object.entries(tags).sort((a,b)=>b[1]-a[1]).slice(0,20);
   const nbc=S.notebooks.map(n=>[n,ys.filter(e=>inNb(e,n.id)).length]);const nmax=Math.max(1,...nbc.map(x=>x[1]));
-  return banner()+`<section class="section"><h2 class="disp">回顾</h2>${renderReportPanel()}<h3>${S.year} 年数据</h3>
+  return banner()+`<section class="section"><h2 class="disp">回顾</h2><h3>${S.year} 年数据</h3>
   <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
   <div class="stats" style="margin-top:10px"><div class="stat"><b>${ys.length}</b><span>篇日记</span></div><div class="stat"><b>${days}</b><span>天有记录</span></div><div class="stat"><b>${w.toLocaleString()}</b><span>字</span></div><div class="stat"><b>${st.cur}<small style="font-size:15px"> / 最长 ${st.best}</small></b><span>连续天数</span></div></div>
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
   <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有记录心情。写日记时点一下心情圆点就行。</p>'}
   <h3>分区</h3>${nbc.map(([n,c])=>`<div class="hbar"><span>${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
   <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
-  <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p></section>`;
+  <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
 }
 
 /* ---------- settings ---------- */
@@ -969,7 +974,7 @@ function newEntry(prompt){
 }
 function openEditor(e,isNew=false){
   S.ed=fixEntry(structuredClone(e));S.edNew=isNew;S.dirty=false;
-  $('#edBody').innerHTML=`<div class="ed-meta"><input type="datetime-local" id="edDate" value="${esc(S.ed.date)}" aria-label="日期时间"><span></span></div><div class="ednbs" id="edNbs" role="group" aria-label="分区（可多选）">${S.notebooks.map(n=>`<button type="button" data-ednb="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${inNb(S.ed,n.id)}">${nbLabel(n)}</button>`).join('')}</div>
+  $('#edBody').innerHTML=`<div class="ed-meta"><input type="datetime-local" id="edDate" value="${esc(S.ed.date)}" aria-label="日期时间"><button type="button" class="nbtoggle" id="edNbT" aria-expanded="${edNbOpen()}">${edNbSum()}</button></div><div class="ednbs" id="edNbs" role="group" aria-label="分区（可多选）" ${edNbOpen()?'':'hidden'}>${S.notebooks.map(n=>`<button type="button" data-ednb="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${inNb(S.ed,n.id)}">${nbLabel(n)}</button>`).join('')}</div>
    <input type="text" class="ed-title" id="edTitle" placeholder="标题" value="${esc(S.ed.title)}">
    <div class="photos" id="edPhotos"></div>
    <textarea class="ed-text" id="edText" placeholder="开始写…">${esc(S.ed.body)}</textarea>
@@ -1006,7 +1011,8 @@ $('#edBody').addEventListener('input',ev=>{const id=ev.target.id,e=S.ed;if(!e)re
   if(id==='edTitle')e.title=ev.target.value;else if(id==='edText'){e.body=ev.target.value;autosize()}else if(id==='edPlace')e.place=ev.target.value;else if(id==='edDate'){if(ev.target.value)e.date=ev.target.value.slice(0,16)}else if(id==='edNb')e.nb=ev.target.value;else return;touch()});
 $('#edBody').addEventListener('click',ev=>{const b=ev.target.closest('[data-ednb]');if(!b||!S.ed)return;const id=b.dataset.ednb;let L=nbsOf(S.ed);
   if(L.includes(id)){if(L.length===1)return toast('至少要在一个分区里');L=L.filter(x=>x!==id)}else L.push(id);
-  S.ed.nb=L[0];S.ed.also=L.slice(1);$('#edNbs').querySelectorAll('[data-ednb]').forEach(x=>x.setAttribute('aria-pressed',L.includes(x.dataset.ednb)));touch()});
+  S.ed.nb=L[0];S.ed.also=L.slice(1);$('#edNbs').querySelectorAll('[data-ednb]').forEach(x=>x.setAttribute('aria-pressed',L.includes(x.dataset.ednb)));$('#edNbT').innerHTML=edNbSum();touch()});
+$('#edBody').addEventListener('click',ev=>{if(!ev.target.closest('#edNbT'))return;const o=!edNbOpen();try{localStorage.setItem('lyra-ednbs',o?'1':'0')}catch(e){}$('#edNbs').hidden=!o;$('#edNbT').setAttribute('aria-expanded',o);$('#edNbT').innerHTML=edNbSum()});
 $('#edBody').addEventListener('change',ev=>{if(ev.target.id==='edNb'&&S.ed){S.ed.nb=ev.target.value;touch()}});
 $('#edBody').addEventListener('keydown',ev=>{if(ev.target.id!=='edTagIn')return;if(ev.key==='Enter'||ev.key===','||ev.key==='，'){ev.preventDefault();addTags(ev.target.value)}else if(ev.key==='Backspace'&&!ev.target.value&&S.ed.tags.length){S.ed.tags.pop();renderEdTags();$('#edTagIn').focus();touch()}});
 $('#edBody').addEventListener('focusout',ev=>{if(ev.target.id!=='edTagIn')return;const v=ev.target.value;if(!v.trim())return;ev.target.value='';setTimeout(()=>{if(S.ed)addTags(v,false)},0)});
@@ -1098,10 +1104,9 @@ let LP=0;document.addEventListener('click',e=>{if(Date.now()-LP<600){e.preventDe
 const ICN={open:'↗',fav:'★',unfav:'☆',add:'＋',copy:'⎘',sel:'☑',del:'🗑',edit:'✎',icon:'☺',up:'↑',down:'↓',hide:'⇥'};
 async function delEntry(e){if(!(await ask('删除这篇日记？','删除后无法恢复。','删除',true)))return;S.entries=S.entries.filter(x=>x!==e);render();try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}toast('已删除')}
 function entryMenu(e,cx,cy){ctxMenu(cx,cy,[
-  {icon:ICN.open,label:'打开',act:()=>openEditor(e)},
+  {icon:ICN.edit,label:'编辑',act:()=>openEditor(e)},
   {icon:e.fav?ICN.unfav:ICN.fav,label:e.fav?'取消收藏':'收藏',act:async()=>{e.fav=!e.fav;render();try{await Store.put('entries',structuredClone(e))}catch(err){toast('保存失败')}}},
-  {icon:ICN.add,label:'加入分区…',act:()=>{S.sel=new Set([e.id]);selModal('add')}},
-  {icon:'⇄',label:'移到分区…',act:()=>{S.sel=new Set([e.id]);selModal('move')}},
+  {icon:ICN.add,label:'分区…',act:()=>entryNbs(e)},
   {icon:ICN.copy,label:'复制文字',act:()=>copyText((e.title?e.title+'\n\n':'')+e.body)},
   {icon:ICN.sel,label:'多选',act:()=>{S.sel=new Set([e.id]);render();renderSel()}},
   '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delEntry(e)}])}
@@ -1124,6 +1129,15 @@ document.addEventListener('contextmenu',e=>{if(e.shiftKey||!S.account)return;if(
 onLongPress(document,'.card[data-open],.nbtab[data-nb],.rail .nb[data-nb]',(el,x,y)=>{if(!S.sel)jCtx(el,x,y)});
 function asideOn(){try{return localStorage.getItem('lyra-aside')!=='0'}catch(e){return true}}
 function toggleAside(on){try{localStorage.setItem('lyra-aside',on?'1':'0')}catch(e){}render()}
+function edNbOpen(){try{return localStorage.getItem('lyra-ednbs')==='1'}catch(e){return false}}
+function edNbSum(){const L=nbsOf(S.ed).map(nbById).filter(Boolean);return `<span>分区</span><b>${L.map(n=>(n.icon?esc(n.icon)+' ':'')+esc(n.name)).join('、')||'未选'}</b><i>${edNbOpen()?'收起 ▴':'更改 ▾'}</i>`}
+function entryNbs(e){const pick=new Set(nbsOf(e));
+  modal(`<h3>放在哪些分区？</h3><p class="muted" style="margin:0 0 6px">可以多选。${esc(e.title||snippet(e.body,[]).slice(0,30)||'')}</p><div class="ednbs">${S.notebooks.map(n=>`<button type="button" data-sn="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${pick.has(n.id)}">${nbLabel(n)}</button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
+  $('#modalBox').onclick=async ev=>{const b=ev.target.closest('[data-sn]');if(b){const id=b.dataset.sn;pick.has(id)?pick.delete(id):pick.add(id);b.setAttribute('aria-pressed',pick.has(id));return}
+    const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
+    if(!pick.size)return toast('至少选一个分区');$('#modalBox').onclick=null;closeModal();
+    const L=[...pick].sort((x,y)=>(x===e.nb?-1:y===e.nb?1:0));e.nb=L[0];e.also=L.slice(1);render();
+    try{await Store.put('entries',structuredClone(e));toast('分区已更新')}catch(err){toast('保存失败')}}}
 /* ---------- multi-select: add many entries to partitions at once ---------- */
 function renderSel(){let bar=$('#selbar');if(!S.sel||S.view!=='journal'){bar&&bar.remove();return}
   if(!bar){bar=document.createElement('div');bar.id='selbar';bar.className='selbar';document.body.appendChild(bar);
