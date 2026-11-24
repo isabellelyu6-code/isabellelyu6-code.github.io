@@ -194,7 +194,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       <div id="work"></div>
     </section>
   </div>
-  <footer>数据加密后保存在你的账号里（配置了 Supabase 就是云端账号，和日记共用；否则保存在这个浏览器）。这是开源版本，不含个人数据；可以在「账号 › 导入备份」导入从 Claude 版导出的内容。</footer>
+  <footer>数据加密后保存在你的账号里（配置了 Supabase 就是云端账号，和日记共用；否则保存在这个浏览器）。代码里不含任何个人数据；课表、作业、行程都加密存在你的账号里，可以在「账号 › 导入备份」导入。</footer>
 </main>
 </div>
 
@@ -236,11 +236,11 @@ const cKey=c=>(String(c).match(/[A-Z]{4}\d{4}/)||[String(c)||'其他'])[0];
 /* ---------- timetable (from the 课表 tab) ---------- */
 const W=(wd,s,e,course,type,room,from,to,except=[])=>({wd,s,e,course,type,room,from,to,except});
 const ONE=(date,s,e,course,type,room)=>({date,s,e,course,type,room});
-const TT=[];
-function classesOn(d){const k=dk(d);return TT.filter(c=>c.date?c.date===k:(c.wd===d.getDay()&&k>=c.from&&k<=c.to&&!c.except.includes(k))).sort((a,b)=>a.s.localeCompare(b.s))}
+const SEED_TT=[];
+function classesOn(d){const k=dk(d);return (S.tt||[]).filter(c=>c.date?c.date===k:(c.wd===d.getDay()&&k>=c.from&&k<=c.to&&!c.except.includes(k))).sort((a,b)=>a.s.localeCompare(b.s))}
 
 /* ---------- Nordic trip ---------- */
-const TRIP=null;
+const SEED_TRIP=null;
 
 /* ---------- starter data ---------- */
 const SEED_SITES=[
@@ -383,7 +383,7 @@ const DB={
   put(k,o){return Store.put(HK[k],JSON.parse(JSON.stringify(o))).catch(()=>toast('保存失败，请检查网络'))},
   del(k,id){return Store.del(HK[k],id).catch(()=>toast('删除失败'))}
 };
-const S={mode:'memory',account:null,key:null,sites:[],plans:[],work:[],meta:[],editing:false,wf:'todo',wc:'all',showDone:false,ready:false};
+const S={mode:'memory',account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],editing:false,wf:'todo',wc:'all',showDone:false,ready:false};
 async function boot(){
   let db=null,user=null;
   if(window.claude&&typeof window.claude.use==='function'){const u=n=>window.claude.use(n).catch(()=>null);[db,user]=await Promise.all([u('db'),u('user')])}
@@ -399,7 +399,7 @@ async function boot(){
 }
 async function enterAccount(acc,key,isNew){
   S.account=acc;S.key=key;Store=makeEncrypted(await Sys.mkData(acc),key);
-  Object.assign(S,{sites:[],plans:[],work:[],meta:[],ready:false});
+  Object.assign(S,{tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});
   $('#auth').hidden=true;$('#app').hidden=false;$('#acctBtn').textContent=acc.name+' · 账号';
   $('#sites').innerHTML='<div class="empty"><span class="spin"></span> 正在打开…</div>';
   try{for(const k of ['sites','plans','work','meta'])S[k]=await DB.all(k)}
@@ -410,9 +410,13 @@ async function enterAccount(acc,key,isNew){
     for(const r of SEED_WORK){const it={id:uid(),date:r[0],time:r[1],course:r[2],task:r[3],weight:r[4],status:r[5],note:r[6]};S.work.push(it);await DB.put('work',it)}
     const m={id:'seed',v:1,at:Date.now()};S.meta.push(m);await DB.put('meta',m);
   }
+  if(!S.meta.find(x=>x.id==='timetable')&&SEED_TT.length){const m={id:'timetable',items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
+  if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
+  const tt=S.meta.find(x=>x.id==='timetable'),tr=S.meta.find(x=>x.id==='trip');
+  S.tt=Array.isArray(tt&&tt.items)?tt.items:[];S.trip=tr&&tr.start&&tr.end?{name:tr.name||'',start:tr.start,end:tr.end,plan:Array.isArray(tr.plan)?tr.plan:[],url:tr.url||''}:null;
   S.ready=true;renderAll();
 }
-function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});Store=makeMem();Object.assign(S,{account:null,key:null,sites:[],plans:[],work:[],meta:[],ready:false});closeModal();showAuth()}
+function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});Store=makeMem();Object.assign(S,{account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});closeModal();showAuth()}
 async function saveFileOut(name,txt){
   try{const d=window.claude&&typeof window.claude.use==='function'?await window.claude.use('downloads').catch(()=>null):null;if(d){await d.save({filename:name,data:new Blob([txt],{type:'application/json'})});return toast('已导出')}}catch(err){if(err&&err.code)return}
   try{const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));l.download=name;document.body.appendChild(l);l.click();l.remove();toast('已导出')}catch(err){toast('导出失败')}}
@@ -422,9 +426,11 @@ function acctModal(){
   <input type="file" id="impF" accept=".json,application/json" hidden><div class="row"><button class="btn line" data-a="no">关闭</button></div>`);
   $('#box').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;
     if(a==='no')return closeModal();if(a==='out')return logout();
-    if(a==='export')return saveFileOut('lyra-hub-backup.json',JSON.stringify({app:'lyra-hub',v:1,at:new Date().toISOString(),sites:S.sites,plans:S.plans,work:S.work}));
+    if(a==='export')return saveFileOut('lyra-hub-backup.json',JSON.stringify({app:'lyra-hub',v:1,at:new Date().toISOString(),sites:S.sites,plans:S.plans,work:S.work,timetable:S.tt,trip:S.meta.find(x=>x.id==='trip')||null}));
     if(a==='import'){const f=$('#impF');f.onchange=async()=>{const file=f.files[0];if(!file)return;try{const o=JSON.parse(await file.text());let n=0;
         for(const k of ['sites','plans','work'])for(const it of (Array.isArray(o[k])?o[k]:[]))if(it&&typeof it.id==='string'){const i=S[k].findIndex(x=>x.id===it.id);if(i<0)S[k].push(it);else S[k][i]=it;await DB.put(k,it);n++}
+        if(Array.isArray(o.timetable)&&o.timetable.length){const m={id:'timetable',items:o.timetable.filter(x=>x&&typeof x.s==='string'&&typeof x.course==='string')};S.meta=S.meta.filter(x=>x.id!=='timetable').concat(m);await DB.put('meta',m);S.tt=m.items;n+=m.items.length}
+        if(o.trip&&typeof o.trip.start==='string'&&typeof o.trip.end==='string'){const m={id:'trip',name:String(o.trip.name||''),url:safeUrl(o.trip.url),start:o.trip.start,end:o.trip.end,plan:Array.isArray(o.trip.plan)?o.trip.plan.map(x=>[String(x[0]),String(x[1])]):[]};S.meta=S.meta.filter(x=>x.id!=='trip').concat(m);await DB.put('meta',m);S.trip=m;n++}
         closeModal();renderAll();toast(`导入了 ${n} 项`)}catch(err){toast('这个文件读不出来')}};f.click();return}
     if(a==='pw'){modal(`<h3>修改密码</h3><div class="field"><label for="cp0">当前密码</label><input type="password" id="cp0" autocomplete="current-password"></div><div class="field"><label for="cp1">新密码（至少 6 位）</label><input type="password" id="cp1" autocomplete="new-password"></div><div class="field"><label for="cp2">再输入一次</label><input type="password" id="cp2" autocomplete="new-password"></div><p id="cpMsg" style="color:var(--mut);font-size:14px"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
       $('#box').onclick=async e2=>{const b=e2.target.closest('[data-a]')?.dataset.a;if(!b)return;if(b==='no')return closeModal();
@@ -447,10 +453,10 @@ function renderToday(){
   $('#todayTitle').textContent=title;$('#todayNote').textContent=note;
   const isToday=title==='今天的课';
   $('#today').innerHTML=list.length?list.map(c=>{const st=isToday?(c.e<=now?'past':c.s<=now?'now':''):'';return `<div class="cls ${st}"><span class="t mono">${c.s}–${c.e}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}${st==='now'?' · 进行中':''}</b><small>${esc(c.room)}</small></div>`}).join(''):'<div class="empty">接下来两周没有课。</div>';
-  $('#today').closest('.tile').hidden=!TT.length;$('#trip').hidden=!TRIP;if(!TRIP)return;
-  const s=pd(TRIP.start),e=pd(TRIP.end),t0=pd(dk(n));const d=Math.round((s-t0)/864e5),after=Math.round((t0-e)/864e5);
-  $('#trip').innerHTML=`<h2 style="color:#c6d3ea">圣诞北欧 · 12/23 – 1/3</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 · 玩得开心</small></div>`:`<div class="big">✓<small>旅行结束啦</small></div>`}
-  <p>${TRIP.plan.map(p=>`${p[0]==='—'?'':p[0]+' '}${esc(p[1])}`).join(' · ')}</p><p><a href="https://claude.ai/artifact/8rPjdZ2NVWNDmTUn7G2T2r">打开行程 →</a></p>`;
+  $('#today').closest('.tile').hidden=!S.tt.length;$('#trip').hidden=!S.trip;if(!S.trip)return;
+  const s=pd(S.trip.start),e=pd(S.trip.end),t0=pd(dk(n));const d=Math.round((s-t0)/864e5),after=Math.round((t0-e)/864e5);
+  $('#trip').innerHTML=`<h2 style="color:#c6d3ea">${esc(S.trip.name||'旅行')} · ${+S.trip.start.slice(5,7)}/${+S.trip.start.slice(8)} – ${+S.trip.end.slice(5,7)}/${+S.trip.end.slice(8)}</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 · 玩得开心</small></div>`:`<div class="big">✓<small>旅行结束啦</small></div>`}
+  <p>${S.trip.plan.map(p=>`${p[0]==='—'?'':p[0]+' '}${esc(p[1])}`).join(' · ')}</p>${safeUrl(S.trip.url)?`<p><a href="${esc(S.trip.url)}">打开行程 →</a></p>`:""}`;
 }
 
 /* ---------- sites ---------- */
@@ -563,8 +569,8 @@ function run(raw){
   if(c==='today'||c==='今天'||c==='课'){const l=classesOn(new Date());if(!l.length)print('今天没有课。');l.forEach(x=>print(`  ${x.s}–${x.e}  ${x.course} ${x.type} @ ${x.room}`));return}
   if(c==='ddl'||c==='work'||c==='作业'){const now=new Date(),lim=new Date(now);lim.setDate(lim.getDate()+7);const l=workSorted().filter(w=>w.status!==S2&&w.status!==S1&&w.date&&pd(w.date)<=lim);
     if(!l.length)print('未来 7 天没有截止的作业。','ok');l.forEach(w=>print(`  ${w.date.slice(5).replace('-','/')} ${w.time||''}  ${w.course}  ${w.task}  [${workDue(w).t}]`,workDue(w).c==='late'?'err':''));$('#work-s').scrollIntoView({behavior:'smooth'});return}
-  if((c==='北欧'||c==='nordic'||c==='trip')&&!TRIP)return print('还没有设置旅行。','err');
-  if(c==='北欧'||c==='nordic'||c==='trip'){const d=Math.round((pd(TRIP.start)-pd(dk(new Date())))/864e5);print(d>0?`还有 ${d} 天出发去北欧 ✈`:'北欧之旅进行中或已结束','ok');TRIP.plan.forEach(p=>print(`  ${p[0].padEnd(8,' ')} ${p[1]}`));print(linkLine({name:'圣诞北欧！',url:'https://claude.ai/artifact/8rPjdZ2NVWNDmTUn7G2T2r',desc:'完整行程'}),'',true);return}
+  if((c==='北欧'||c==='nordic'||c==='trip')&&!S.trip)return print('还没有设置旅行。','err');
+  if(c==='北欧'||c==='nordic'||c==='trip'){const d=Math.round((pd(S.trip.start)-pd(dk(new Date())))/864e5);print(d>0?`还有 ${d} 天出发去北欧 ✈`:'北欧之旅进行中或已结束','ok');S.trip.plan.forEach(p=>print(`  ${p[0].padEnd(8,' ')} ${p[1]}`));if(safeUrl(S.trip.url))print(linkLine({name:'完整行程',url:S.trip.url,desc:''}),'',true);return}
   if(c==='sites'||c==='ls'||c==='网站'){S.sites.forEach(x=>print(linkLine(x),'',true));return}
   const q=(c==='open'||c==='o'?arg:line).toLowerCase();const alias={ddl表:'ddl 表',moodle表:'ddl 表',日记:'日记',奶蛋:'奶蛋',酶:'酶'};
   const key=alias[q]||q;const hit=S.sites.filter(x=>(x.name+' '+(x.desc||'')).toLowerCase().includes(key));
