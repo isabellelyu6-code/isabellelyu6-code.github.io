@@ -305,7 +305,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const OWNER='Lyra';        // only this username may log in or be created
 const OWNER_EMAIL='';      // unused: cloud accounts use a username
 const ACCOUNT_DOMAIN='isabellelyu6-code.github.io'; // a username like Lyra becomes lyra@<this> for Supabase
-const REGISTRATION_CLOSED=false; // set true once the owner's cloud account exists
+const REGISTRATION_CLOSED=true; // set true once the owner's cloud account exists
 const toEmail=n=>n.includes('@')?n:n.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@'+ACCOUNT_DOMAIN; // the project's "anon public" key (safe to publish; rows are protected by RLS)
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('无法加载 '+src));document.head.appendChild(s)})}
 /* ---------- storage adapters ---------- */
