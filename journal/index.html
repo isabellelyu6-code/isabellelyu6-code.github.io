@@ -44,6 +44,9 @@ body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--b
 .ctx button.danger{color:#f0a0a8}.ctx .ci{width:18px;text-align:center;color:var(--mut);font-size:13px}
 .ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 @keyframes ctxin{from{opacity:0;transform:scale(.97)}}
+@keyframes vin{from{opacity:0;transform:translateY(4px)}}
+#main>*,#lower>section,.modal .box{animation:vin .18s ease-out}
+@media(prefers-reduced-motion:reduce){#main>*,#lower>section,.modal .box,.ctx{animation:none}}
 .card,.nbtab,.rail .nb{-webkit-touch-callout:none}
 .as-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut);letter-spacing:.08em;margin-bottom:-4px}
 .as-head button{font-size:12px;color:var(--mut);padding:4px 8px;border-radius:8px;letter-spacing:0}.as-head button:hover{background:var(--card);color:var(--acc)}
@@ -242,6 +245,7 @@ textarea{resize:vertical}
 .viewer[hidden]{display:none}
 .viewer img{max-width:100%;max-height:100%;object-fit:contain}
 .viewer button{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;color:#fff;background:rgba(255,255,255,.18)}
+.tact{margin-left:12px;color:var(--acc2,#5fb8a4);font-weight:700;background:none;border:0;font-size:14px;cursor:pointer;filter:brightness(.7)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:80;font-size:14px;max-width:90vw;font-weight:500}
 .toast[hidden]{display:none}
 .banner{margin:10px max(5vw,16px) 0;padding:10px 14px;border-radius:12px;background:rgba(240,180,124,.15);border:1px solid rgba(240,180,124,.4);font-size:14px}
@@ -315,8 +319,10 @@ main{max-width:760px}
   .nbchips{display:none}
 }
 </style>
+<script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);if(t.v['--bg'])r.setProperty('--hero',t.v['--bg']);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
 </head>
 <body>
+<script>try{var t=window.__LT;if(t){if(t.c)document.body.className+=' '+t.c;if(t.z)document.body.style.zoom=t.z}}catch(e){}</script>
 <div class="app">
   <nav class="rail" id="rail" aria-label="导航"></nav>
   <main id="main" aria-live="polite"><div class="empty"><span class="spin"></span><p>正在打开日记本…</p></div></main>
@@ -398,6 +404,7 @@ const IC={
  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>',
  right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 5 7 7-7 7"/></svg>'
 };
+function toastAct(msg,label,fn){toast(msg,6000);const t=$('#toast');const b=document.createElement('button');b.className='tact';b.textContent=label;b.onclick=()=>{t.hidden=true;fn()};t.appendChild(b)}
 function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
 function modal(html){$('#modalBox').innerHTML=html;$('#modal').hidden=false}
 function closeModal(){$('#modal').hidden=true;$('#modalBox').innerHTML=''}
@@ -634,7 +641,7 @@ function isDateTitle(t){let x=String(t||'').trim().toLowerCase();if(!x)return nu
 async function autoSplit(){
   const groups={d:[],e:[],n:[]};for(const e of S.entries){const r=isDateTitle(e.title);(r===null?groups.n:r?groups.d:groups.e).push(e)}
   const sample=L=>L.slice(0,6).map(e=>`<li>${esc(e.title)}</li>`).join('')+(L.length>6?`<li class="muted">…还有 ${L.length-6} 篇</li>`:'');
-  modal(`<h3>按标题分区</h3><p class="muted">标题是日期的放进「日记」，其他的放进「随笔」。只改分区，内容不变。</p>
+  modal(`<h3>按标题分区</h3>
    <div class="field"><b>日记 · ${groups.d.length} 篇</b><ul class="muted" style="margin:4px 0 0;padding-left:20px">${sample(groups.d)}</ul></div>
    <div class="field"><b>随笔 · ${groups.e.length} 篇</b><ul class="muted" style="margin:4px 0 0;padding-left:20px">${sample(groups.e)}</ul></div>
    ${groups.n.length?`<div class="field"><b>没有标题 · ${groups.n.length} 篇</b><select id="asN" style="margin-top:6px"><option value="d">放进日记</option><option value="e">放进随笔</option><option value="">不动</option></select></div>`:''}
@@ -655,11 +662,12 @@ function bgPalette(hex){if(!/^#[0-9a-f]{6}$/i.test(hex||''))hex='#0f1b2d';const 
   return{'--bg':hsl(h,s,L),'--bg2':hsl(h,s,Math.max(3,L-3)),'--card':hsl(h,s,L+5),'--card2':hsl(h,s,L+8.5),'--line':hsl(h,s*.9,L+16),'--bgG':hsl((h+38)%360,s,Math.max(4,L-2))}}
 function bgPaletteOf(st){if(st.bg==='custom')return bgPalette(st.bgColor);return null}
 let HUBST=null;
+function cacheTheme(){try{const st=document.documentElement.style,v={};for(let i=0;i<st.length;i++){const k=st[i];if(k.startsWith('--'))v[k]=st.getPropertyValue(k)}localStorage.setItem('lyra-theme',JSON.stringify({v,c:['bggrad'].filter(c=>document.body.classList.contains(c)).join(' '),z:document.body.style.zoom||'',f:[...document.querySelectorAll('link[data-font]')].map(l=>l.href)}))}catch(e){}}
 async function applyHubTheme(given){let st=given||null;if(!st){try{st=await Store.get('hubMeta','settings')}catch(e){}}if(!st&&S.settings&&(S.settings.bodyFont||S.settings.headFont))st={id:'settings',bodyFont:S.settings.bodyFont,headFont:S.settings.headFont,size:S.settings.size};if(!st)return;HUBST=st;applyFonts(st);document.body.style.zoom=Math.min(130,Math.max(75,+st.zoom||({s:92,m:100,l:110}[st.size]||100)))/100;const r=document.documentElement.style;
   if(/^#[0-9a-f]{6}$/i.test(st.accent||'')){const n=parseInt(st.accent.slice(1),16);r.setProperty('--acc',st.accent);r.setProperty('--acc2',st.accent);r.setProperty('--mark',`rgba(${n>>16&255},${n>>8&255},${n&255},.3)`);r.setProperty('--accInk',(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))>150?'#0b1a24':'#ffffff')}
   const P=st.bg==='custom'?bgPalette(st.bgColor):null;const B=P?[P['--bg'],P['--bg2'],P['--card'],P['--card2'],P['--line']]:JBGS[st.bg];
   if(B){['--bg','--bg2','--card','--card2','--line'].forEach((k,i)=>r.setProperty(k,B[i]));r.setProperty('--hero',B[0]);r.setProperty('--bgG',P?P['--bgG']:B[1]);document.querySelector('meta[name=theme-color]')?.setAttribute('content',st.bg==='custom'?st.bgColor:B[0])}
-  document.body.classList.toggle('bggrad',!!st.bgGrad)}
+  document.body.classList.toggle('bggrad',!!st.bgGrad);cacheTheme()}
 /* live updates from other devices */
 let RT=null;
 async function startRealtime(){if(S.mode!=='supa'||!sb||RT)return;let id=null;try{id=(await sb.auth.getUser()).data.user.id}catch(e){}if(!id)return;
@@ -677,7 +685,7 @@ async function autoBackup(){if(S.mode==='local'||S.mode==='memory')return;let id
   try{await Store.put('journalBackup',{id,at:Date.now(),notebooks:S.notebooks,entries:S.entries.map(e=>({...e,photos:[]}))})}catch(e){return}
   const list=[{id,at:Date.now(),n:S.entries.length},...idx.list.filter(x=>x.id!==id)];for(const o of list.slice(4))Store.del('journalBackup',o.id).catch(()=>{});idx.list=list.slice(0,4);Store.put('meta',idx).catch(()=>{})}
 async function restoreJournal(){let idx=null;try{idx=await Store.get('meta','backups')}catch(e){}const list=idx?idx.list:[];
-  modal(`<h3>自动备份</h3><p class="muted">每周在云端自动存一份加密的文字备份（不含照片），保留最近 4 份。恢复只会把备份里有、现在缺的日记加回来，不会删除任何东西。</p>${list.length?list.map(b=>`<div class="row" style="justify-content:space-between"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})} · ${b.n} 篇</span><button class="btn line" data-rb="${esc(b.id)}">恢复</button></div>`).join(''):'<p class="muted">还没有备份。</p>'}<div class="row"><button class="btn pri" data-a="no">关闭</button></div>`);
+  modal(`<h3>自动备份</h3><p class="muted">每周一份，保留 4 份，只补回缺的日记。</p>${list.length?list.map(b=>`<div class="row" style="justify-content:space-between"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})} · ${b.n} 篇</span><button class="btn line" data-rb="${esc(b.id)}">恢复</button></div>`).join(''):'<p class="muted">还没有备份。</p>'}<div class="row"><button class="btn pri" data-a="no">关闭</button></div>`);
   $('#modalBox').onclick=async e=>{if(e.target.closest('[data-a=no]')){$('#modalBox').onclick=null;return closeModal()}const b=e.target.closest('[data-rb]');if(!b)return;
     const snap=await Store.get('journalBackup',b.dataset.rb);if(!snap)return toast('这份备份读不出来');let n=0;
     for(const nb of snap.notebooks)if(!S.notebooks.some(x=>x.id===nb.id)){S.notebooks.push(nb);await Store.put('notebooks',nb)}
@@ -757,7 +765,7 @@ function renderReportPanel(){
   let inner;
   if(saved)inner=mdHtml(saved.text)+`<div class="src">根据 ${saved.n} 篇日记生成 · ${esc(new Date(saved.created).toLocaleString('zh-CN',{hour12:false}))}${saved.n!==list.length?' · 之后日记有变动，可以重新生成':''}</div>`;
   else if(list.length)inner=`<p class="muted">这段时间有 <b style="color:var(--acc)">${list.length}</b> 篇日记。${caps.sample?'让 AI 读一遍，总结你在忙什么、情绪怎么变化、有哪些值得记住的事。':'AI 报告需要在 Claude 里打开这个 App 才能用。'}</p>`;
-  else inner=`<p class="muted">这段时间没有日记。用左右箭头换一段时间看看。</p>`;
+  else inner=`<p class="muted">这段时间没有日记</p>`;
   return `<h3>AI 报告</h3><div class="rep-head"><div class="seg2" role="tablist">${[['day','日'],['week','周'],['month','月']].map(([k,n])=>`<button data-rtype="${k}" aria-pressed="${S.rep.type===k}">${n}</button>`).join('')}</div>
   <div class="rep-nav"><button class="icon" data-act="repprev" aria-label="上一段">${IC.left}</button><b>${esc(r.label)}</b><button class="icon" data-act="repnext" aria-label="下一段">${IC.right}</button></div></div>
   <div class="report" id="repBox">${inner}</div>
@@ -876,9 +884,9 @@ function renderJournal(){
     <button class="chip" data-mood="good" aria-pressed="${S.f.mood==='good'}"><span class="dot" style="background:${MOODS[5].c}"></span>愉快</button>
     <button class="chip" data-mood="calm" aria-pressed="${S.f.mood==='calm'}"><span class="dot" style="background:${MOODS[3].c}"></span>平静</button>
     <button class="chip" data-mood="bad" aria-pressed="${S.f.mood==='bad'}"><span class="dot" style="background:${MOODS[1].c}"></span>不愉快</button></div>`;
-  const bar=`<div class="bar"><label class="search">${IC.search}<input type="search" id="q" placeholder="搜索文字、#标签、地点…" value="${esc(S.q)}" aria-label="搜索日记"></label>${nbchips}${filt}</div>`;
+  const bar=`<div class="bar"><label class="search">${IC.search}<input type="search" id="q" placeholder="搜索" value="${esc(S.q)}" aria-label="搜索日记"></label>${nbchips}${filt}</div>`;
   let body='';
-  if(!S.entries.length){body=`<div class="empty"><h2 class="disp">日记本还是空的</h2><p>把过去一年的日记搬进来：苹果「日记」导出的 ZIP、手机「文件」里的 .txt / .md、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
+  if(!S.entries.length){body=`<div class="empty"><h2 class="disp">日记本还是空的</h2><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
   else if(!list.length){body=`<div class="empty"><h2 class="disp">没有找到</h2><p>换个关键词，或清除筛选。</p><div class="row"><button class="btn line" data-act="clearall">清除筛选</button></div></div>`}
   else{
     let cur='';const parts=[];
@@ -914,7 +922,7 @@ function renderCalendar(){
   return banner()+`<section class="section"><div class="cal-head"><button class="icon" data-act="calprev" aria-label="上个月">${IC.left}</button><b>${y}年${mo+1}月</b><button class="icon" data-act="calnext" aria-label="下个月">${IC.right}</button></div>
   <div class="chips">${['all',...S.notebooks.map(n=>n.id)].map(id=>{const n=nbById(id);return `<button class="chip" data-calnb="${esc(id)}" aria-pressed="${S.nb===id}">${n?`<span class="dot" style="background:${esc(n.color)}"></span>${esc(n.name)}`:'全部分区'}</button>`}).join('')}</div>
   <div class="grid7">${WD.slice(1).concat(WD[0]).map(w=>`<div class="wd">${w}</div>`).join('')}${cells.join('')}</div>
-  <p class="muted">这个月写了 ${inMonth} 篇。点日期查看那天的日记；圆点颜色是心情（没有心情时是分区颜色）。</p>
+  <p class="muted">这个月 ${inMonth} 篇</p>
   <div class="row" style="display:flex;gap:10px"><button class="btn line" data-act="caltoday">回到本月</button></div></section>`;
 }
 
@@ -932,7 +940,7 @@ function renderInsights(){
   <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
   <div class="stats" style="margin-top:10px"><div class="stat"><b>${ys.length}</b><span>篇日记</span></div><div class="stat"><b>${days}</b><span>天有记录</span></div><div class="stat"><b>${w.toLocaleString()}</b><span>字</span></div><div class="stat"><b>${st.cur}<small style="font-size:15px"> / 最长 ${st.best}</small></b><span>连续天数</span></div></div>
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
-  <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有记录心情。写日记时点一下心情圆点就行。</p>'}
+  <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有心情记录</p>'}
   <h3>分区</h3>${nbc.map(([n,c])=>`<div class="hbar"><span>${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
   <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
   <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
@@ -943,7 +951,7 @@ function renderSettings(){
   const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
   const todo=S.entries.filter(e=>!e.ai).length;
   return banner()+`<section class="section"><p style="margin:0 0 10px"><a href="${esc(HOME_URL)}" style="color:var(--acc)">← 回到 Lyra 的终端</a></p><h2 class="disp">设置</h2>
-  <h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 会读你的日记，自动建好分区（比如学习、梦境、朋友），把每篇放进去，并补上心情、地点和标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
+  <h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 自动分区、补心情地点标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
   ${caps.sample?`<button class="btn pri" data-act="aiorg" ${todo?'':'disabled'}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>整理 ${todo} 篇</button>`:''}
   <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
   <h3>导入过去的日记</h3>
@@ -953,16 +961,16 @@ function renderSettings(){
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
   <h3>导出与备份</h3><p class="muted">JSON 是完整备份（含照片），可以在任何地方用本应用再导入到某个账号；导出的文件<b>不加密</b>，请妥善保存。Markdown 方便阅读或放进其他笔记软件。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
-  <h3>字体</h3><p class="muted">和 Lyra 主页共用，改一次两边都变。</p>
+  <h3>字体</h3>
   <p style="margin:8px 0 4px">正文</p>${fontChips((HUBST&&HUBST.bodyFont)||'sans',BODY_FONTS,'data-bf','今天')}
   <p style="margin:8px 0 4px">标题</p>${fontChips((HUBST&&HUBST.headFont)||'serif',HEAD_FONTS,'data-hfont','日记')}
   <p style="margin:8px 0 4px">大小</p><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-fsz="${k}" aria-pressed="${((HUBST&&HUBST.size)||'m')===k}">${n}</button>`).join('')}</div>
-  <h3>分区</h3><p class="muted">一篇日记可以同时放在好几个分区里：写日记时点分区就能多选；列表里点「多选」可以一次给很多篇加分区。</p>${S.notebooks.map(n=>`<div class="nbrow"><div><div style="display:flex;gap:6px"><input type="text" value="${esc(n.icon||'')}" data-nbicon="${esc(n.id)}" aria-label="图标" placeholder="☆" maxlength="4" style="width:56px;text-align:center"><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><button class="btn line" data-nbup="${esc(n.id)}" aria-label="上移" style="padding:0 12px">↑</button></div><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
+  <h3>分区</h3>${S.notebooks.map(n=>`<div class="nbrow"><div><div style="display:flex;gap:6px"><input type="text" value="${esc(n.icon||'')}" data-nbicon="${esc(n.id)}" aria-label="图标" placeholder="☆" maxlength="4" style="width:56px;text-align:center"><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><button class="btn line" data-nbup="${esc(n.id)}" aria-label="上移" style="padding:0 12px">↑</button></div><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
   <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
-  <h3>连续记录</h3><p class="muted">如果有些天写在别处没导进来，可以设一个开始日期：从那天到今天都算写过，之后照常计算。</p>
+  <h3>连续记录</h3><p class="muted">从这天起算作连续。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="date" id="sfFrom" value="${esc((S.settings.streakFill||{}).from||'')}" style="max-width:200px"><button class="btn line" data-act="sfsave">保存</button>${S.settings.streakFill?'<button class="btn line" data-act="sfclear">清除</button>':''}</div>
   <h3>关于</h3><p class="muted">Lyra 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
 }
@@ -979,7 +987,7 @@ function openEditor(e,isNew=false){
    <div class="photos" id="edPhotos"></div>
    <textarea class="ed-text" id="edText" placeholder="开始写…">${esc(S.ed.body)}</textarea>
    <div class="moods" id="edMoods"></div>
-   <div class="field"><label for="edPlace">地点</label><input type="text" id="edPlace" value="${esc(S.ed.place)}" placeholder="例如：UCL 图书馆"></div>
+   <div class="field"><label for="edPlace">地点</label><input type="text" id="edPlace" value="${esc(S.ed.place)}" placeholder="地点"></div>
    <div class="field"><label for="edTagIn">标签</label><div class="tagin" id="edTags"></div></div>`;
   $('#edTools').innerHTML=`<button data-t="photo">${IC.photo}照片</button><button data-t="ocr">${IC.scan}识别文字</button><button data-t="mic" id="micBtn">${IC.mic}语音</button>${caps.sample?`<button data-t="ai">${IC.spark}智能标签</button>`:''}`;
   renderEdPhotos();renderEdMoods();renderEdTags();renderEdFav();
@@ -990,7 +998,7 @@ function openEditor(e,isNew=false){
 function autosize(){const t=$('#edText');if(!t)return;t.style.height='auto';t.style.height=Math.max(t.scrollHeight,window.innerHeight*.4)+'px'}
 function renderEdFav(){$('#edFav').innerHTML=S.ed.fav?IC.starF:IC.star;$('#edFav').setAttribute('aria-pressed',S.ed.fav)}
 function renderEdMoods(){$('#edMoods').innerHTML=`<span class="muted" style="margin-right:4px">心情</span>`+MOODS.map((m,i)=>`<button data-mood-set="${i+1}" style="background:${m.c}" aria-pressed="${S.ed.mood===i+1}" aria-label="${m.n}" title="${m.n}"></button>`).join('')+`<span class="muted" id="moodName">${S.ed.mood?MOODS[S.ed.mood-1].n:''}</span>`}
-function renderEdTags(){$('#edTags').innerHTML=S.ed.tags.map((t,i)=>`<button class="chip" data-tagdel="${i}">#${esc(t)} ✕</button>`).join('')+`<input type="text" id="edTagIn" placeholder="输入后按回车，空格分隔多个">`}
+function renderEdTags(){$('#edTags').innerHTML=S.ed.tags.map((t,i)=>`<button class="chip" data-tagdel="${i}">#${esc(t)} ✕</button>`).join('')+`<input type="text" id="edTagIn" placeholder="标签">`}
 function renderEdPhotos(){const e=S.ed;$('#edPhotos').innerHTML=e.photos.map(p=>`<figure><img src="${esc(S.photos.get(p)||e.thumbs[p]||'')}" data-view="${esc(p)}" alt="照片"><button class="x" data-pdel="${esc(p)}" aria-label="移除照片">✕</button></figure>`).join('');$('#edPhotos').style.display=e.photos.length?'':'none'}
 let saveT=null;
 function touch(){S.dirty=true;$('#edStatus').textContent='编辑中…';clearTimeout(saveT);saveT=setTimeout(persist,1200)}
@@ -1006,7 +1014,7 @@ async function persist(){
 async function closeEditor(){await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
 $('#edClose').onclick=closeEditor;
 $('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
-$('#edDel').onclick=async()=>{const e=S.ed;if(!(await ask('删除这篇日记？','删除后无法恢复。','删除',true)))return;clearTimeout(saveT);S.entries=S.entries.filter(x=>x.id!==e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';render();try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}};
+$('#edDel').onclick=async()=>{const e=S.ed;clearTimeout(saveT);try{await persist()}catch(err){}const real=S.entries.find(x=>x.id===e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';stopMic();if(real)delEntry(real);else render()};
 $('#edBody').addEventListener('input',ev=>{const id=ev.target.id,e=S.ed;if(!e)return;
   if(id==='edTitle')e.title=ev.target.value;else if(id==='edText'){e.body=ev.target.value;autosize()}else if(id==='edPlace')e.place=ev.target.value;else if(id==='edDate'){if(ev.target.value)e.date=ev.target.value.slice(0,16)}else if(id==='edNb')e.nb=ev.target.value;else return;touch()});
 $('#edBody').addEventListener('click',ev=>{const b=ev.target.closest('[data-ednb]');if(!b||!S.ed)return;const id=b.dataset.ednb;let L=nbsOf(S.ed);
@@ -1102,7 +1110,9 @@ function onLongPress(root,sel,fn){let T=null,sx=0,sy=0;root.addEventListener('to
 let LP=0;document.addEventListener('click',e=>{if(Date.now()-LP<600){e.preventDefault();e.stopPropagation()}},true);
 
 const ICN={open:'↗',fav:'★',unfav:'☆',add:'＋',copy:'⎘',sel:'☑',del:'🗑',edit:'✎',icon:'☺',up:'↑',down:'↓',hide:'⇥'};
-async function delEntry(e){if(!(await ask('删除这篇日记？','删除后无法恢复。','删除',true)))return;S.entries=S.entries.filter(x=>x!==e);render();try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}toast('已删除')}
+function delEntry(e){S.entries=S.entries.filter(x=>x!==e);render();let undone=false;
+  const T=setTimeout(async()=>{if(undone)return;try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}},6500);
+  toastAct(`已删除${e.title?'：'+e.title:''}`,'撤销',()=>{undone=true;clearTimeout(T);if(!S.entries.includes(e))S.entries.push(e);render()})}
 function entryMenu(e,cx,cy){ctxMenu(cx,cy,[
   {icon:ICN.edit,label:'编辑',act:()=>openEditor(e)},
   {icon:e.fav?ICN.unfav:ICN.fav,label:e.fav?'取消收藏':'收藏',act:async()=>{e.fav=!e.fav;render();try{await Store.put('entries',structuredClone(e))}catch(err){toast('保存失败')}}},
@@ -1132,7 +1142,7 @@ function toggleAside(on){try{localStorage.setItem('lyra-aside',on?'1':'0')}catch
 function edNbOpen(){try{return localStorage.getItem('lyra-ednbs')==='1'}catch(e){return false}}
 function edNbSum(){const L=nbsOf(S.ed).map(nbById).filter(Boolean);return `<span>分区</span><b>${L.map(n=>(n.icon?esc(n.icon)+' ':'')+esc(n.name)).join('、')||'未选'}</b><i>${edNbOpen()?'收起 ▴':'更改 ▾'}</i>`}
 function entryNbs(e){const pick=new Set(nbsOf(e));
-  modal(`<h3>放在哪些分区？</h3><p class="muted" style="margin:0 0 6px">可以多选。${esc(e.title||snippet(e.body,[]).slice(0,30)||'')}</p><div class="ednbs">${S.notebooks.map(n=>`<button type="button" data-sn="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${pick.has(n.id)}">${nbLabel(n)}</button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
+  modal(`<h3>放在哪些分区？</h3><p class="muted" style="margin:0 0 6px">${esc(e.title||snippet(e.body,[]).slice(0,30)||'')}</p><div class="ednbs">${S.notebooks.map(n=>`<button type="button" data-sn="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${pick.has(n.id)}">${nbLabel(n)}</button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async ev=>{const b=ev.target.closest('[data-sn]');if(b){const id=b.dataset.sn;pick.has(id)?pick.delete(id):pick.add(id);b.setAttribute('aria-pressed',pick.has(id));return}
     const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
     if(!pick.size)return toast('至少选一个分区');$('#modalBox').onclick=null;closeModal();
@@ -1176,7 +1186,7 @@ async function importMap(o){let made=0,set=0,miss=[];const byName=n=>S.notebooks
   render();window.__lastMap={made,set,miss:miss.length,missed:miss.slice(0,40)};toast(`分区表：新建 ${made} 个分区，对上 ${set} 篇${miss.length?`，${miss.length} 条没对上`:''}`,6000)}
 /* ---------- notebooks ---------- */
 async function newNotebook(){
-  modal(`<h3>新建分区</h3><div class="field"><label for="nbN">名字</label><input type="text" id="nbN" placeholder="例如：学习、旅行、梦"></div><div class="swatches" id="nbSw">${COLORS.map((c,i)=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${i===1}" aria-label="颜色"></button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">创建</button></div>`);
+  modal(`<h3>新建分区</h3><div class="field"><label for="nbN">名字</label><input type="text" id="nbN" placeholder="名字"></div><div class="swatches" id="nbSw">${COLORS.map((c,i)=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${i===1}" aria-label="颜色"></button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">创建</button></div>`);
   let color=COLORS[1];setTimeout(()=>$('#nbN')?.focus(),50);
   $('#modalBox').onclick=async e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#nbSw').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
     const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='ok'){const name=$('#nbN').value.trim();if(!name)return $('#nbN').focus();const nb={id:uid(),name:name.slice(0,30),color,created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);S.nb=nb.id;Store.put('notebooks',nb).catch(()=>toast('保存分区失败'))}
@@ -1227,7 +1237,7 @@ async function importFiles(files){
 }
 function pasteImport(){
   const y=new Date().getFullYear();
-  modal(`<h3>粘贴日记</h3><p class="muted">每篇以日期开头的一行分隔，例如“2025-11-24 雨天”或“11月24日 周一”。没有年份的按下面的年份。</p>
+  modal(`<h3>粘贴日记</h3><p class="muted">每篇以日期开头。</p>
   <textarea id="pTxt" rows="8" placeholder="2025年11月24日 星期一&#10;今天……&#10;&#10;2025年11月25日&#10;……"></textarea>
   <div class="ed-meta" style="margin-top:8px"><div class="field"><label for="pYear">默认年份</label><input type="number" id="pYear" value="${y}"></div><div class="field"><label for="pNb">分区</label><select id="pNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div></div>
   <p class="muted" id="pPrev"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">导入</button></div>`);

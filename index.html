@@ -175,6 +175,9 @@ body.bggrad .band{background-color:transparent}
 .ctx kbd{margin-left:auto;font:11px "JetBrains Mono",monospace;color:var(--mut)}
 .ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 @keyframes ctxin{from{opacity:0;transform:scale(.97)}}
+@keyframes vin{from{opacity:0;transform:translateY(4px)}}
+#main>*,#lower>section,.modal .box{animation:vin .18s ease-out}
+@media(prefers-reduced-motion:reduce){#main>*,#lower>section,.modal .box,.ctx{animation:none}}
 .wk,.todo{-webkit-touch-callout:none}
 .hl{position:relative}
 .skymini{display:none}
@@ -345,8 +348,10 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){.site{transition:none}.site:hover{transform:none}}
 </style>
+<script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
 </head>
 <body>
+<script>try{var t=window.__LT;if(t){if(t.c)document.body.className+=' '+t.c;if(t.z)document.body.style.zoom=t.z}}catch(e){}</script>
 <div id="app" hidden>
 <header class="band snow">
   <div class="wrap">
@@ -362,7 +367,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
     </div>
     <div class="term" role="region" aria-label="指令" id="mod-terminal">
       <div class="out mono" id="out" aria-live="polite"></div>
-      <form class="prompt mono" id="cmdForm"><label for="cmd">❯</label><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="快速指令：todo 买雪地靴 明天"></form>
+      <form class="prompt mono" id="cmdForm"><label for="cmd">❯</label><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="指令"></form>
       <div class="hint"><button data-run="today">today</button><button data-run="ddl">ddl</button><button data-run="help">help</button></div>
     </div>
     <div class="top">
@@ -376,12 +381,12 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 
 <main class="wrap lower" id="lower">
   <section class="s" id="sites-s">
-    <div class="sh"><h2 class="disp">我的<small class="dhint">拖动可以换位置</small></h2><div style="display:flex;gap:8px"><button class="btn line" data-act="editsites" id="editBtn">编辑</button><button class="btn pri" data-act="addsite">+ 添加</button></div></div>
+    <div class="sh"><h2 class="disp">我的</h2><div style="display:flex;gap:8px"><button class="btn line" data-act="editsites" id="editBtn">编辑</button><button class="btn pri" data-act="addsite">+ 添加</button></div></div>
     <div class="sites" id="sites"></div>
   </section>
     <section class="s" id="plans-s">
       <div class="sh"><h2 class="disp">计划<small id="planCount"></small></h2></div>
-      <form class="addrow" id="planForm"><input type="text" id="planIn" placeholder="添加计划，比如：收拾北欧行李 周六" aria-label="新计划"><button class="btn pri" type="submit">添加</button></form>
+      <form class="addrow" id="planForm"><input type="text" id="planIn" placeholder="添加计划" aria-label="新计划"><button class="btn pri" type="submit">添加</button></form>
       <div id="plans"></div>
     </section>
     <section class="s" id="work-s">
@@ -719,6 +724,8 @@ const zoomOf=st=>Math.min(130,Math.max(75,+st.zoom||({s:92,m:100,l:110}[st.size]
 const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',bodyFont:'sans',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
 let SET=structuredClone(DEF_SET);
 function inkFor(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#08261b';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1a24':'#ffffff'}
+function cacheTheme(){try{const st=document.documentElement.style,v={};for(let i=0;i<st.length;i++){const k=st[i];if(k.startsWith('--'))v[k]=st.getPropertyValue(k)}
+  localStorage.setItem('lyra-theme',JSON.stringify({v,c:['nostars','bggrad'].filter(c=>document.body.classList.contains(c)).join(' '),z:document.body.style.zoom||'',f:[...document.querySelectorAll('link[data-font]')].map(l=>l.href)}))}catch(e){}}
 function applySettings(){
   const st=document.documentElement.style;const a=/^#[0-9a-f]{6}$/i.test(SET.accent)?SET.accent:DEF_SET.accent;st.setProperty('--acc',a);st.setProperty('--accInk',inkFor(a));
   const B=bgPaletteOf(SET)||{...(BGS[SET.bg]||BGS.night)[1]};B['--bgG']=B['--bgG']||B['--bg2'];for(const k in B)st.setProperty(k,B[k]);
@@ -736,6 +743,7 @@ function applySettings(){
   const order=(SET.order||LOWER).filter(k=>LOWER.includes(k));for(const k of LOWER)if(!order.includes(k))order.push(k);
   order.forEach((k,i)=>{if(el[k])el[k].style.order=i});
   $('#lower')?.classList.toggle('nowork',hid.has('work'));
+  if(S.account)cacheTheme();
   $('#lower')?.setAttribute('data-plans-work',order.indexOf('work')===order.indexOf('plans')+1&&!hid.has('plans')&&!hid.has('work')?'pair':'');
 }
 let setT=null;
@@ -744,19 +752,18 @@ function settingsModal(){
   const hid=new Set(SET.hidden||[]),order=(SET.order||LOWER);
   const lowerRows=order.map((k,i)=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${MODS.find(m=>m[0]===k)[1]}</label><span><button class="ib2" data-up="${k}" ${i?'':'disabled'} aria-label="上移">↑</button><button class="ib2" data-down="${k}" ${i<order.length-1?'':'disabled'} aria-label="下移">↓</button></span></div>`).join('');
   const topRows=MODS.filter(m=>!LOWER.includes(m[0])).map(([k,n])=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${n}</label></div>`).join('');
-  modal(`<h3>设置</h3><p class="sethint">所有设置都存在你的账号里，换设备也一样。</p>
+  modal(`<h3>设置</h3>
   <div class="setg"><h4>主题色</h4><div class="sw2">${ACCENTS.map(([n,c])=>`<button data-acc="${c}" style="--c:${c}" aria-pressed="${SET.accent===c}" title="${n}"><i></i><span>${n}</span></button>`).join('')}<label class="cust"><input type="color" id="accC" value="${esc(SET.accent)}"><span>自定义</span></label></div></div>
   <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}<label class="chip cbg" aria-pressed="${SET.bg==='custom'}"><input type="color" id="bgC" value="${esc(SET.bgColor||'#1a2440')}">自定义颜色</label></div>
     <div class="chips wrapc" style="margin-top:4px"><button class="chip" data-bgstars="1" aria-pressed="${SET.bgStars!==false}">✦ 星点</button><button class="chip" data-bggrad="1" aria-pressed="${!!SET.bgGrad}">◐ 渐变</button></div>
-    <p class="sethint">自定义颜色会自动配好卡片和线条的深浅；太亮的颜色会被压暗一点，字才看得清。</p></div>
-  <div class="setg"><h4>字体</h4><p class="sethint">主页和日记一起改。</p><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
-  <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放"><p class="sethint">整个页面放大缩小，主页和日记一起变。</p>
-    <h4 style="margin-top:12px">天气模块 <span class="sethint" id="skyzV" style="font-weight:400">${SET.skyZoom||100}%</span></h4><input type="range" id="skyzR" min="70" max="140" step="5" value="${SET.skyZoom||100}" style="width:100%;accent-color:var(--acc)" aria-label="天气模块缩放">
-    <p class="sethint">只调天气那一块。天气卡右上角的 − ＋ ✕ 也能直接缩放和隐藏。</p></div>
-  <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
-    <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
+    </div>
+  <div class="setg"><h4>字体</h4><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
+  <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放">
+    <h4 style="margin-top:12px">天气模块 <span class="sethint" id="skyzV" style="font-weight:400">${SET.skyZoom||100}%</span></h4><input type="range" id="skyzR" min="70" max="140" step="5" value="${SET.skyZoom||100}" style="width:100%;accent-color:var(--acc)" aria-label="天气模块缩放"></div>
+  <div class="setg"><h4>地点</h4><p class="sethint">现在：<b>${esc(loc().name)}</b></p>
+    <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜索城市"><button class="btn line" type="submit">搜索</button></form>
     <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
-  <div class="setg"><h4>模块</h4><p class="sethint">勾选显示；下面四块可以调顺序（手机上按这个顺序；电脑上 DDL 固定在左边，其他在右边）。</p>${topRows}<div class="msep"></div>${lowerRows}</div>
+  <div class="setg"><h4>模块</h4>${topRows}<div class="msep"></div>${lowerRows}</div>
   <div class="setg two2"><div><h4>时间</h4><div class="chips wrapc"><button class="chip" data-c24="1" aria-pressed="${SET.clock24}">24 小时</button><button class="chip" data-c24="0" aria-pressed="${!SET.clock24}">12 小时</button></div></div>
     <div><h4>温度</h4><div class="chips wrapc"><button class="chip" data-unit="C" aria-pressed="${SET.unit!=='F'}">°C</button><button class="chip" data-unit="F" aria-pressed="${SET.unit==='F'}">°F</button></div></div></div>
   <div class="setg"><h4>问候里的名字</h4><input type="text" id="setName" value="${esc(SET.name||'')}" maxlength="20"></div>
@@ -787,8 +794,8 @@ function settingsModal(){
   $('#setName').oninput=e=>{SET.name=e.target.value.trim().slice(0,20);saveSettings();tick()};
   $('#locF').onsubmit=async e=>{e.preventDefault();const q=$('#locQ').value.trim();if(!q)return;$('#locR').innerHTML='<div class="empty"><span class="spin"></span> 搜索中…</div>';
     try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`);const j=await r.json();const L=(j.results||[]).filter(x=>x.timezone);
-      $('#locR').innerHTML=L.length?L.map(x=>`<button class="locr" data-pick="${esc(JSON.stringify({name:x.name,lat:+x.latitude.toFixed(4),lng:+x.longitude.toFixed(4),tz:x.timezone}))}"><b>${esc(x.name)}</b> <span>${esc([x.admin1,x.country].filter(Boolean).join(', '))}</span></button>`).join(''):'<div class="empty">没找到，换个写法试试（英文城市名最稳）。</div>'}
-    catch(err){$('#locR').innerHTML='<div class="empty">现在搜不了（可能没网，或者在 Claude 里打开时不能联网）。</div>'}};
+      $('#locR').innerHTML=L.length?L.map(x=>`<button class="locr" data-pick="${esc(JSON.stringify({name:x.name,lat:+x.latitude.toFixed(4),lng:+x.longitude.toFixed(4),tz:x.timezone}))}"><b>${esc(x.name)}</b> <span>${esc([x.admin1,x.country].filter(Boolean).join(', '))}</span></button>`).join(''):'<div class="empty">没找到</div>'}
+    catch(err){$('#locR').innerHTML='<div class="empty">暂时搜不了</div>'}};
 }
 
 /* ---------- sync status + realtime ---------- */
@@ -818,7 +825,7 @@ function gradesDoc(){return S.meta.find(m=>m.id==='grades')||null}
 let grT=null;function saveGrades(g){clearTimeout(grT);grT=setTimeout(()=>DB.put('meta',g),600)}
 function calc(parts){let wk=0,got=0,wu=0;for(const p of parts){const w=+p.w||0;if(p.s!==''&&p.s!=null&&!isNaN(+p.s)){wk+=w;got+=w*(+p.s)/100}else wu+=w}return{wk,got,wu,avg:wk?got/wk*100:null}}
 function renderGrades(){const sec=$('#grades');if(!sec)return;const g=gradesDoc();
-  if(!g||!g.mods.length){sec.innerHTML=`<div class="empty">还没有课程。点「+ 课程」加一门，填上各部分占比和已出的分数，就能算出期末要考多少。</div>`;$('#gradeTargets').innerHTML='';return}
+  if(!g||!g.mods.length){sec.innerHTML=`<div class="empty">还没有课程</div>`;$('#gradeTargets').innerHTML='';return}
   const T=g.target||70;
   $('#gradeTargets').innerHTML=TARGETS.map(([n,v])=>`<button class="chip" data-gt="${v}" aria-pressed="${T===v}">${n} ${v}%</button>`).join('');
   sec.innerHTML=g.mods.map((m,mi)=>{const c=calc(m.parts),tot=m.parts.reduce((a,p)=>a+(+p.w||0),0);
@@ -853,8 +860,8 @@ async function autoBackup(){if(S.mode==='local'||S.mode==='memory')return;
   const list=[{id:snap.id,at:snap.at},...idx.list.filter(x=>x.id!==snap.id)];for(const old of list.slice(6))Store.del('hubBackup',old.id).catch(()=>{});
   idx.list=list.slice(0,6);if(!S.meta.includes(idx))S.meta.push(idx);DB.put('meta',idx)}
 async function backupsModal(){const idx=S.meta.find(m=>m.id==='backups');const list=idx?idx.list:[];
-  modal(`<h3>自动备份</h3><p class="sethint">每周自动在云端存一份加密备份，保留最近 6 份。恢复会用那一份替换现在的网站、计划、DDL、成绩和设置。</p>
-   ${list.length?list.map(b=>`<div class="mrow"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})}</span><button class="btn line" data-restore="${esc(b.id)}">恢复这一份</button></div>`).join(''):'<div class="empty">还没有备份（第一次会在今天自动生成）。</div>'}
+  modal(`<h3>自动备份</h3><p class="sethint">每周一份，保留 6 份。</p>
+   ${list.length?list.map(b=>`<div class="mrow"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})}</span><button class="btn line" data-restore="${esc(b.id)}">恢复这一份</button></div>`).join(''):'<div class="empty">还没有备份</div>'}
    <div class="row"><button class="btn pri" data-a="no">关闭</button></div>`);
   $('#box').onclick=async e=>{if(e.target.closest('[data-a=no]'))return closeModal();const r=e.target.closest('[data-restore]');if(!r)return;
     if(!(await askConfirm('用这份备份替换现在的内容？')))return;const snap=await Store.get('hubBackup',r.dataset.restore);if(!snap)return toast('这份备份读不出来');
@@ -984,7 +991,7 @@ $('#sites').addEventListener('dragstart',e=>e.preventDefault());
 function renderSites(){
   const list=[...S.sites].sort((a,b)=>(a.order??0)-(b.order??0));const safeUrl=siteUrl;
   $('#sites').className='sites'+(S.editing?' editing':'');$('#editBtn').textContent=S.editing?'完成':'编辑';
-  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" draggable="false" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${svgIcon(iconKey(x))}</span><b>${esc(x.name)}</b>${appUrl(x.url)?'<i class="apptag">App</i>':''}<button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站，点「+ 添加」。</div>';
+  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" draggable="false" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${svgIcon(iconKey(x))}</span><b>${esc(x.name)}</b>${appUrl(x.url)?'<i class="apptag">App</i>':''}<button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站</div>';
 }
 function siteModal(x){
   const it=x||{name:'',url:'https://',desc:'',color:COLORS[0],icon:'link'};let color=it.color,icon=iconKey(it);
@@ -999,7 +1006,7 @@ function siteModal(x){
     const ic=e.target.closest('[data-ic]');if(ic){icon=ic.dataset.ic;$('#sI').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===ic));return}
     const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;
     if(a==='no')return closeModal();
-    if(a==='del'){S.sites=S.sites.filter(s=>s!==x);DB.del('sites',x.id);closeModal();renderSites();return}
+    if(a==='del'){closeModal();delUndo('sites',x,x.name);return}
     const name=$('#sN').value.trim(),url=$('#sU').value.trim();if(!name)return $('#sN').focus();if(!siteUrl(url))return toast('网址要以 https:// 开头，或者从上面选一个应用');
     const o=x||{id:uid(),order:S.sites.length};Object.assign(o,{name:name.slice(0,40),url,icon,color});
     if(!x)S.sites.push(o);DB.put('sites',o);closeModal();renderSites()};
@@ -1024,14 +1031,14 @@ function renderPlans(){
   const row=p=>{const d=dueLabel(p.due);return `<div class="todo ${p.done?'done':''}"><button class="chk" data-chk="${esc(p.id)}" aria-pressed="${p.done}" aria-label="完成"><i>${p.done?'✓':''}</i></button><button class="tx" data-editplan="${esc(p.id)}">${esc(p.text)}</button><span class="due ${d.c}">${d.t}</span></div>`};
   const grp=(n,l)=>l.length?`<div class="grp">${n} · ${l.length}</div>${l.map(row).join('')}`:'';
   $('#planCount').textContent=open.length?`${open.length} 件待办`:'';
-  $('#plans').innerHTML=(open.length?grp('今天 / 已到期',g1)+grp('接下来',g2)+grp('没有日期',g3):'<div class="empty">没有待办。在上面输入，或者在终端里打 <span class="mono">todo 内容 明天</span>。</div>')+
+  $('#plans').innerHTML=(open.length?grp('今天 / 已到期',g1)+grp('接下来',g2)+grp('没有日期',g3):'<div class="empty">没有待办</div>')+
    (done.length?`<div class="grp"><button data-act="togdone" style="color:var(--mut)">${S.showDone?'收起':'显示'}已完成 · ${done.length}</button></div>${S.showDone?done.slice(0,50).map(row).join(''):''}`:'');
 }
 function planModal(p){
   modal(`<h3>编辑计划</h3><div class="field"><label for="pT">内容</label><input type="text" id="pT" value="${esc(p.text)}"></div><div class="field"><label for="pD">日期</label><input type="date" id="pD" value="${esc(p.due||'')}"></div>
   <div class="row"><button class="btn danger sp" data-a="del">删除</button><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#box').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no')return closeModal();
-    if(a==='del'){S.plans=S.plans.filter(x=>x!==p);DB.del('plans',p.id)}else{const t=$('#pT').value.trim();if(!t)return;p.text=t.slice(0,200);p.due=$('#pD').value||null;DB.put('plans',p)}
+    if(a==='del'){closeModal();delUndo('plans',p,p.text);return}else{const t=$('#pT').value.trim();if(!t)return;p.text=t.slice(0,200);p.due=$('#pD').value||null;DB.put('plans',p)}
     closeModal();renderPlans()};
 }
 
@@ -1045,7 +1052,7 @@ async function loadInbox(){if(S.mode==='supa'&&sb){try{const r=await sb.from('in
     S.inbox.sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')));if(dup.length)sb.from('inbox').update({status:'dup'}).in('id',dup.map(x=>x._id)).then(()=>{},()=>{})}catch(e){S.inbox=[]}return renderInbox()}
   if(!INBOX)return;try{const q=await INBOX.limit(100).get();S.inbox=q.docs.filter(d=>d.exists).map(d=>({...structuredClone(d.data()),_id:d.id})).filter(x=>x&&typeof x.task==='string').sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')))}catch(e){S.inbox=[]}renderInbox()}
 function renderInbox(){const el=$('#inbox');if(!el)return;if(!S.inbox.length){el.innerHTML='';return}
-  el.innerHTML=`<div class="inbox"><div class="ih"><b>新消息 · ${S.inbox.length}</b><span>每天自动从 Moodle 找到的新截止日期</span></div>${S.inbox.map(x=>{const u=safeUrl(x.link);const isD=x.kind!=='notice'&&x.date;return `<div class="ii" style="--c:${cColor(x.course||'')}"><div style="min-width:0">${x.course?`<span class="crs" style="font-size:15px">${esc(x.course)}</span> `:''}<span class="itk">${esc(x.task)}</span><div class="m">${x.date?`<span class="when"><b>${md(String(x.date))}</b>${x.time?' · '+esc(x.time):''}</span>`:''}${x.weight?`<span>${esc(x.weight)}</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}${u?`<a href="${esc(u)}" style="color:var(--acc)">查看 →</a>`:''}</div></div><div class="ib">${isD?`<button class="btn pri" data-inadd="${esc(x._id)}">加入 DDL</button>`:''}<button class="btn line" data-inno="${esc(x._id)}">${isD?'忽略':'知道了'}</button></div></div>`}).join('')}</div>`}
+  el.innerHTML=`<div class="inbox"><div class="ih"><b>新消息 · ${S.inbox.length}</b></div>${S.inbox.map(x=>{const u=safeUrl(x.link);const isD=x.kind!=='notice'&&x.date;return `<div class="ii" style="--c:${cColor(x.course||'')}"><div style="min-width:0">${x.course?`<span class="crs" style="font-size:15px">${esc(x.course)}</span> `:''}<span class="itk">${esc(x.task)}</span><div class="m">${x.date?`<span class="when"><b>${md(String(x.date))}</b>${x.time?' · '+esc(x.time):''}</span>`:''}${x.weight?`<span>${esc(x.weight)}</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}${u?`<a href="${esc(u)}" style="color:var(--acc)">查看 →</a>`:''}</div></div><div class="ib">${isD?`<button class="btn pri" data-inadd="${esc(x._id)}">加入 DDL</button>`:''}<button class="btn line" data-inno="${esc(x._id)}">${isD?'忽略':'知道了'}</button></div></div>`}).join('')}</div>`}
 async function inboxResolve(id,add){const x=S.inbox.find(y=>y._id===id);if(!x)return;
   if(add){const it={id:uid(),status:S0,course:String(x.course||'').slice(0,40),task:String(x.task).slice(0,140),date:/^\d{4}-\d\d-\d\d$/.test(x.date)?x.date:null,time:/^\d\d:\d\d$/.test(x.time||'')?x.time:'',weight:String(x.weight||'').slice(0,40),note:String(x.note||'').slice(0,300)};S.work.push(it);await DB.put('work',it);renderWork();toast('已加入 DDL')}
   S.inbox=S.inbox.filter(y=>y!==x);renderInbox();try{if(S.mode==='supa')await sb.from('inbox').update({status:add?'added':'ignored'}).eq('id',id);else await INBOX.doc(id).delete()}catch(e){}}
@@ -1119,7 +1126,7 @@ function workModal(w){
   <label style="display:flex;gap:10px;align-items:center;min-height:44px"><input type="checkbox" id="wS" ${isFin(it)?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)"> 已完成</label>
   <div class="row">${w?'<button class="btn danger sp" data-a="del">删除</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#box').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no')return closeModal();
-    if(a==='del'){S.work=S.work.filter(x=>x!==w);DB.del('work',w.id);closeModal();renderWork();toast('已删除',{label:'撤销',fn:()=>{S.work.push(w);DB.put('work',w);renderWork()}});return}
+    if(a==='del'){closeModal();delUndo('work',w,w.task);return}
     const task=$('#wT').value.trim();if(!task)return $('#wT').focus();
     const o=w||{id:uid()};Object.assign(o,{task:task.slice(0,140),course:$('#wC').value.trim().slice(0,40),weight:$('#wW').value.trim().slice(0,40),date:$('#wD').value||null,dateEnd:$('#wD2').value||'',time:$('#wH').value||'',endTime:$('#wH2').value||'',approx:$('#wA').value.trim().slice(0,40),note:$('#wN').value.trim().slice(0,300),status:$('#wS').checked?S2:S0});
     if(!w)S.work.push(o);DB.put('work',o);closeModal();renderWork()};
@@ -1224,18 +1231,18 @@ function siteMenu(x,cx,cy){const u=siteUrl(x.url);ctxMenu(cx,cy,[
   {icon:ICN.edit,label:'编辑',act:()=>siteModal(x)},
   u&&{icon:ICN.copy,label:'复制链接',act:()=>copyText(u,'链接已复制')},
   {icon:ICN.up,label:'移到最前',act:()=>{const L=[...S.sites].sort((a,b)=>(a.order??0)-(b.order??0)).filter(y=>y!==x);[x,...L].forEach((y,i)=>{if(y.order!==i){y.order=i;DB.put('sites',y)}});renderSites()}},
-  '-',{icon:ICN.del,label:'删除',danger:true,act:async()=>{if(!(await askConfirm(`删除「${x.name}」？`)))return;S.sites=S.sites.filter(y=>y!==x);DB.del('sites',x.id);renderSites();toast('已删除')}}].filter(Boolean))}
+  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delUndo('sites',x,x.name)}].filter(Boolean))}
 function workMenu(w,cx,cy){const f=isFin(w);ctxMenu(cx,cy,[
   {icon:f?ICN.undo:ICN.done,label:f?'标记为未完成':'标记为完成',act:()=>setDone(w,!f)},
   {icon:ICN.edit,label:'编辑',act:()=>workModal(w)},
   {icon:ICN.copy,label:'复制',act:()=>copyText(`${w.course} ${w.task}${w.date?' · '+w.date+(w.time?' '+w.time:''):''}`)},
   {icon:ICN.add,label:'复制成新的 DDL',act:()=>{const it={...structuredClone(w),id:uid(),status:S0};S.work.push(it);DB.put('work',it);renderWork();workModal(it)}},
-  '-',{icon:ICN.del,label:'删除',danger:true,act:async()=>{if(!(await askConfirm(`删除「${w.task}」？`)))return;S.work=S.work.filter(y=>y!==w);DB.del('work',w.id);renderWork();toast('已删除')}}])}
+  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delUndo('work',w,w.task)}])}
 function planMenu(p,cx,cy){ctxMenu(cx,cy,[
   {icon:p.done?ICN.undo:ICN.done,label:p.done?'标记为未完成':'完成',act:()=>{p.done=!p.done;p.doneAt=Date.now();DB.put('plans',p);renderPlans()}},
   {icon:ICN.edit,label:'编辑',act:()=>planModal(p)},
   {icon:ICN.copy,label:'复制文字',act:()=>copyText(p.text)},
-  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>{S.plans=S.plans.filter(y=>y!==p);DB.del('plans',p.id);renderPlans();toast('已删除')}}])}
+  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delUndo('plans',p,p.text)}])}
 function moduleMenu(key,cx,cy){ctxMenu(cx,cy,[{icon:ICN.hide,label:'隐藏这个模块',act:()=>{SET.hidden=[...new Set([...(SET.hidden||[]),key])];saveSettings();toast('已隐藏，可以在 ⚙ 设置 › 模块 里打开')}},{icon:ICN.set,label:'设置…',act:settingsModal}])}
 const MODKEY=[['#sky,#skymini','sky'],['#mod-terminal','terminal'],['#mod-today','today'],['#trip','trip'],['#plans-s','plans'],['#work-s','work'],['#grades-s','grades'],['#sites-s','sites']];
 function ctxFor(t,cx,cy){
@@ -1247,10 +1254,13 @@ function ctxFor(t,cx,cy){
   return false}
 document.addEventListener('contextmenu',e=>{if(!S.ready||e.shiftKey)return;if(e.pointerType==='touch'&&e.target.closest('a.site')){e.preventDefault();return}if(ctxFor(e.target,e.clientX,e.clientY))e.preventDefault()});
 onLongPress(document,'.wk,.todo',(el,x,y)=>ctxFor(el,x,y));
+/* delete right away, offer undo instead of asking first */
+const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()};
+function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 function renderAll(){renderToday();renderSites();renderPlans();renderWork();renderGrades();renderInbox()}
 $('#grades').addEventListener('input',gradesEvent);
 $('#grades').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;e.preventDefault();const L=[...document.querySelectorAll('#grades input')];const n=L[L.indexOf(e.target)+1];if(n){n.focus();n.select&&n.select()}else e.target.blur()});
-applySettings();tick();renderSky();loadWeather();
+if(!window.__LT)applySettings();tick();renderSky();loadWeather();
 if('serviceWorker' in navigator&&location.protocol==='https:'&&/github\.io$/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});
 boot();
 }
