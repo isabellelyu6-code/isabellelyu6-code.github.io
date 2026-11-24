@@ -23,7 +23,7 @@
    PICTURE: today's prompt as a pull-quote, then the timeline of entries
    COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent and dates; Noto Serif SC headings and writing, Noto Sans SC UI
    LAYOUT: one centred column up to 760px; tab bar at bottom on phones, left rail on wide screens */
-:root{color-scheme:dark;--bf:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#5fb8a4;--rose:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--mark:rgba(134,217,195,.3);--hero:#0f1b2d}
+:root{color-scheme:dark;--ink2:#c4d0e3;--bf:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#5fb8a4;--rose:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--mark:rgba(134,217,195,.3);--hero:#0f1b2d}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--bf);overflow-x:clip;-webkit-font-smoothing:antialiased}
@@ -36,6 +36,19 @@ button{cursor:pointer;border:0;background:none}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
 .jside{display:none}
+.fab[hidden]{display:none!important}
+.nblist{display:grid;gap:4px;margin:8px 0}
+.nbline{display:flex;gap:6px;align-items:center}
+.nbm{flex:1;display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c);text-align:left;min-width:0}
+.nbm .ico{width:20px;text-align:center}.nbm .ico i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c)}
+.nbm .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nbm em{font-style:normal;color:var(--mut);font-size:13px}
+.nbline .ib{width:38px;height:42px;border-radius:12px;border:1px solid var(--line);color:var(--mut)}.nbline .ib:disabled{opacity:.3}
+body.light{color-scheme:light}body.light *{text-shadow:none!important}
+body.light .snow{background-image:radial-gradient(circle,#3a4a6630 1px,transparent 1.5px),radial-gradient(circle,#3a4a661c 1.3px,transparent 1.8px)}
+body.light input[type=date]::-webkit-calendar-picker-indicator,body.light input[type=time]::-webkit-calendar-picker-indicator,body.light input[type=datetime-local]::-webkit-calendar-picker-indicator{filter:none}
+body.light .ctx,body.light .box,body.light .card,body.light .tile,body.light .sky,body.light .gcard{box-shadow:0 1px 3px rgba(40,50,80,.08)}
+.misscard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:6px 0 10px}.missl{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.missl .chip{height:30px;font-size:13px}
+.tlist{display:grid;gap:6px;max-height:55vh;overflow:auto}.tl{display:grid;text-align:left;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line)}.tl:hover{border-color:var(--acc)}.tl span{font-size:12.5px;color:var(--mut)}
 .reportbox{margin-top:34px;padding-top:6px;border-top:1px dashed var(--line);opacity:.85}
 body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--bgG) 100%) fixed}body.bggrad .hero{background:transparent}.as-open{display:none}
 .ctx{position:fixed;z-index:90;min-width:190px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
@@ -127,7 +140,7 @@ body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--b
 .card .d b{display:block;font-size:26px;line-height:1;font-family:var(--hf);font-weight:900;color:var(--acc)}
 .card .d span{font-size:12px;color:var(--mut)}
 .card h3{margin:0 0 4px;font-size:17px;font-weight:700;font-family:var(--hf);line-height:1.4}
-.card p{margin:0;color:#b9c5dc;font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.card p{margin:0;color:var(--ink2);font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--mut);margin-top:9px;align-items:center}
 .meta span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .nbi{margin-right:5px}
@@ -211,6 +224,14 @@ textarea{resize:vertical}
 .progress i{display:block;height:100%;background:var(--acc);transition:width .3s}
 /* editor sheet */
 .sheet{position:fixed;inset:0;background:var(--bg);z-index:40;display:flex;flex-direction:column}
+.sheet{overflow-x:hidden;overscroll-behavior:contain;width:100vw;max-width:100%}
+.sheet .sh-body{overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y pinch-zoom}
+.sheet .sh-body *{max-width:100%;min-width:0}
+.sheet textarea,.sheet input{width:100%;box-sizing:border-box;overflow-wrap:anywhere;word-break:break-word}
+.sheet input[type=datetime-local]{-webkit-appearance:none;appearance:none;min-width:0;display:block}
+.sheet .tools{overflow-x:hidden;flex-wrap:wrap}
+body.editing{overflow:hidden;overscroll-behavior:none}
+@media (max-width:600px){.sheet .ed-title{font-size:22px!important}}
 .sheet[hidden]{display:none}
 .sh-top{display:flex;align-items:center;gap:8px;padding:8px max(4vw,10px);border-bottom:1px solid var(--line);padding-top:max(8px,env(safe-area-inset-top))}
 .sh-top .st{flex:1;font-size:13px;color:var(--mut);text-align:center}
@@ -284,7 +305,7 @@ main{max-width:760px}
 .card .d span{font-size:13px}
 .card>div:last-child{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;transition:border-color .15s}
 .card:hover>div:last-child{border-color:var(--c)}
-.card p{color:#c4d0e3}
+.card p{color:var(--ink2)}
 @media (min-width:900px){.hero{padding-top:36px}}
 
 @media (min-width:900px){
@@ -658,15 +679,21 @@ const JBGS={night:['#0f1b2d','#0b1524','#152439','#1a2c45','#263b58'],deep:['#0a
 /* custom background: any colour becomes a full dark palette (kept dark so text stays readable) */
 function hexHsl(h){const n=parseInt(h.slice(1),16);let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let H=0,S=0;if(mx!==mn){const d=mx-mn;S=l>.5?d/(2-mx-mn):d/(mx+mn);H=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;H*=60}return[H,S*100,l*100]}
 const hsl=(h,s,l)=>`hsl(${h.toFixed(0)} ${Math.min(s,60).toFixed(0)}% ${l.toFixed(1)}%)`;
-function bgPalette(hex){if(!/^#[0-9a-f]{6}$/i.test(hex||''))hex='#0f1b2d';const [h,s0,l0]=hexHsl(hex),s=Math.min(s0,55),L=Math.min(Math.max(l0,5),20);
+function bgPalette(hex){if(!/^#[0-9a-f]{6}$/i.test(hex||''))hex='#0f1b2d';const [h,s0,l0]=hexHsl(hex),s=Math.min(s0,55);
+  if(l0>55){const L=Math.min(Math.max(l0,84),97),sl=Math.min(s0,45);
+    return{light:true,'--bg':hsl(h,sl,L),'--bg2':hsl(h,sl,L-4),'--card':hsl(h,sl,Math.min(99,L+(100-L)*.65)),'--card2':hsl(h,sl,L-2.5),'--line':hsl(h,sl*.8,L-13),'--bgG':hsl((h+38)%360,sl,L-5),'--ink':hsl(h,25,13),'--ink2':hsl(h,18,28),'--mut':hsl(h,12,42)}}
+  const L=Math.min(Math.max(l0,5),24);
   return{'--bg':hsl(h,s,L),'--bg2':hsl(h,s,Math.max(3,L-3)),'--card':hsl(h,s,L+5),'--card2':hsl(h,s,L+8.5),'--line':hsl(h,s*.9,L+16),'--bgG':hsl((h+38)%360,s,Math.max(4,L-2))}}
+function darkAcc(hex){const [h,s,l]=hexHsl(hex);return hsl(h,Math.max(s,45),Math.min(l,36))}
 function bgPaletteOf(st){if(st.bg==='custom')return bgPalette(st.bgColor);return null}
 let HUBST=null;
-function cacheTheme(){try{const st=document.documentElement.style,v={};for(let i=0;i<st.length;i++){const k=st[i];if(k.startsWith('--'))v[k]=st.getPropertyValue(k)}localStorage.setItem('lyra-theme',JSON.stringify({v,c:['bggrad'].filter(c=>document.body.classList.contains(c)).join(' '),z:document.body.style.zoom||'',f:[...document.querySelectorAll('link[data-font]')].map(l=>l.href)}))}catch(e){}}
+function cacheTheme(){try{const st=document.documentElement.style,v={};for(let i=0;i<st.length;i++){const k=st[i];if(k.startsWith('--'))v[k]=st.getPropertyValue(k)}localStorage.setItem('lyra-theme',JSON.stringify({v,c:['light','bggrad'].filter(c=>document.body.classList.contains(c)).join(' '),z:document.body.style.zoom||'',f:[...document.querySelectorAll('link[data-font]')].map(l=>l.href)}))}catch(e){}}
 async function applyHubTheme(given){let st=given||null;if(!st){try{st=await Store.get('hubMeta','settings')}catch(e){}}if(!st&&S.settings&&(S.settings.bodyFont||S.settings.headFont))st={id:'settings',bodyFont:S.settings.bodyFont,headFont:S.settings.headFont,size:S.settings.size};if(!st)return;HUBST=st;applyFonts(st);document.body.style.zoom=Math.min(130,Math.max(75,+st.zoom||({s:92,m:100,l:110}[st.size]||100)))/100;const r=document.documentElement.style;
   if(/^#[0-9a-f]{6}$/i.test(st.accent||'')){const n=parseInt(st.accent.slice(1),16);r.setProperty('--acc',st.accent);r.setProperty('--acc2',st.accent);r.setProperty('--mark',`rgba(${n>>16&255},${n>>8&255},${n&255},.3)`);r.setProperty('--accInk',(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))>150?'#0b1a24':'#ffffff')}
   const P=st.bg==='custom'?bgPalette(st.bgColor):null;const B=P?[P['--bg'],P['--bg2'],P['--card'],P['--card2'],P['--line']]:JBGS[st.bg];
   if(B){['--bg','--bg2','--card','--card2','--line'].forEach((k,i)=>r.setProperty(k,B[i]));r.setProperty('--hero',B[0]);r.setProperty('--bgG',P?P['--bgG']:B[1]);document.querySelector('meta[name=theme-color]')?.setAttribute('content',st.bg==='custom'?st.bgColor:B[0])}
+  if(P&&P.light){['--ink','--ink2','--mut'].forEach(k=>r.setProperty(k,P[k]));if(/^#[0-9a-f]{6}$/i.test(st.accent||''))r.setProperty('--acc',darkAcc(st.accent));r.setProperty('--accInk','#ffffff');r.setProperty('--mark','rgba(120,140,170,.25)')}else['--ink','--ink2','--mut'].forEach(k=>r.removeProperty(k));
+  document.body.classList.toggle('light',!!(P&&P.light));
   document.body.classList.toggle('bggrad',!!st.bgGrad);cacheTheme()}
 /* live updates from other devices */
 let RT=null;
@@ -739,6 +766,25 @@ function snippet(body,toks){const b=body.replace(/\s+/g,' ').trim();if(!toks.len
 
 /* ---------- streak / stats ---------- */
 function daySet(list=S.entries){return new Set(list.map(e=>e.date.slice(0,10)))}
+function missingDays(from,to){const ds=daySet(),out=[];const d=parseDate(from),e=parseDate(to);for(let i=0;d<=e&&i<4000;i++){const k=dayKey(d);if(!ds.has(k))out.push(k);d.setDate(d.getDate()+1)}return out}
+function missingHtml(){const sf=S.settings.streakFill;if(!sf||!sf.from)return'';const to=dayKey(new Date()),miss=missingDays(sf.from,to);const total=Math.round((parseDate(to)-parseDate(sf.from))/864e5)+1;
+  return `<div class="misscard"><b>${sf.from.replace(/-/g,'/')} – 今天：${total-miss.length} / ${total} 天有日记</b>${miss.length?`<div class="missl">${miss.map(k=>`<button class="chip" data-day="${k}">${+k.slice(5,7)}/${+k.slice(8)}</button>`).join('')}</div>`:'<p style="margin:4px 0 0;color:var(--acc)">一天都没缺 ✓</p>'}</div>`}
+/* timeline entries: lines like "6/10 到达大阪", "6/10-6/25 日本", "8/4 高铁去洛阳" */
+function timelineRange(e){const y0=+e.date.slice(0,4),end=parseDate(e.date.slice(0,10));end.setDate(end.getDate()+1);const ds=[];
+  for(const line of (e.title+'\n'+e.body).split(/\n|(?=\s\d{1,2}[\/.]\d{1,2}\s)/)){const m=line.trim().match(/^(\d{1,2})[\/.](\d{1,2})(?:\s*[-–~至]\s*(?:(\d{1,2})[\/.])?(\d{1,2}))?/);if(!m)continue;
+    const mk=(mo,da)=>{if(mo<1||mo>12||da<1||da>31)return null;let d=new Date(y0,mo-1,da);if(d>end)d=new Date(y0-1,mo-1,da);return d};
+    const a=mk(+m[1],+m[2]);if(a)ds.push(a);if(m[4]){const b=mk(m[3]?+m[3]:+m[1],+m[4]);if(b)ds.push(b)}}
+  if(ds.length<3)return null;ds.sort((a,b)=>a-b);
+  // ignore stray far-away dates: keep the longest run with gaps under 10 days
+  let best=[ds[0]],cur=[ds[0]];for(let i=1;i<ds.length;i++){if((ds[i]-ds[i-1])/864e5<=10)cur.push(ds[i]);else cur=[ds[i]];if(cur.length>best.length)best=cur.slice()}
+  if(best.length<3)return null;return{from:dayKey(best[0]),to:dayKey(best[best.length-1]),n:best.length}}
+function fillFromTimeline(nb){const cands=S.entries.map(e=>[e,timelineRange(e)]).filter(([,r])=>r).sort((a,b)=>b[0].date.localeCompare(a[0].date));
+  if(!cands.length)return toast('没找到写了时间线的日记');
+  modal(`<h3>${nbLabel(nb)} · 选时间线</h3><div class="tlist">${cands.map(([e,r],i)=>`<button class="tl" data-ti="${i}"><b>${esc(e.title||snippet(e.body,[]).slice(0,24)||'无标题')}</b><span>${r.from.replace(/-/g,'/')} – ${r.to.slice(5).replace('-','/')} · ${S.entries.filter(x=>{const k=x.date.slice(0,10);return k>=r.from&&k<=r.to}).length} 篇</span></button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button></div>`);
+  $('#modalBox').onclick=async ev=>{if(ev.target.closest('[data-a=no]')){$('#modalBox').onclick=null;return closeModal()}const b=ev.target.closest('[data-ti]');if(!b)return;
+    const [te,r]=cands[+b.dataset.ti];const list=S.entries.filter(x=>{const k=x.date.slice(0,10);return (k>=r.from&&k<=r.to)||x===te});
+    $('#modalBox').onclick=null;closeModal();let n=0;for(const x of list){if(inNb(x,nb.id))continue;x.also=[...(x.also||[]),nb.id];try{await Store.put('entries',structuredClone(x));n++}catch(err){}}
+    render();toast(`${nb.name}：加了 ${n} 篇（${r.from.slice(5).replace('-','/')} – ${r.to.slice(5).replace('-','/')}）`,4000)}}
 function streaks(){const ds=new Set(daySet());const sf=S.settings&&S.settings.streakFill;if(sf&&/^\d{4}-\d\d-\d\d$/.test(sf.from||'')&&/^\d{4}-\d\d-\d\d$/.test(sf.to||'')){const d=parseDate(sf.from),e=parseDate(sf.to);for(let i=0;d<=e&&i<4000;i++){ds.add(dayKey(d));d.setDate(d.getDate()+1)}}let cur=0;const d=new Date();if(!ds.has(dayKey(d)))d.setDate(d.getDate()-1);while(ds.has(dayKey(d))){cur++;d.setDate(d.getDate()-1)}const sorted=[...ds].sort();let best=0,run=0,prev=null;for(const k of sorted){const t=parseDate(k);if(prev&&(t-prev)/864e5<1.5)run++;else run=1;best=Math.max(best,run);prev=t}return{cur,best}}
 function onThisDay(){const t=new Date();const md=`-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;return S.entries.filter(e=>e.date.slice(4,10)===md&&e.date.slice(0,4)!==String(t.getFullYear())).sort((a,b)=>b.date.localeCompare(a.date))}
 
@@ -950,28 +996,27 @@ function renderInsights(){
 function renderSettings(){
   const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
   const todo=S.entries.filter(e=>!e.ai).length;
-  return banner()+`<section class="section"><p style="margin:0 0 10px"><a href="${esc(HOME_URL)}" style="color:var(--acc)">← 回到 Lyra 的终端</a></p><h2 class="disp">设置</h2>
-  <h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 自动分区、补心情地点标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
-  ${caps.sample?`<button class="btn pri" data-act="aiorg" ${todo?'':'disabled'}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>整理 ${todo} 篇</button>`:''}
-  <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
-  <h3>导入过去的日记</h3>
-  <p class="muted"><b>苹果「日记」：</b>在 iPhone 打开 设置 › App › 日记 › 导出，存到「文件」，然后在这里选那个 ZIP（或解压后 Entries 里的 .html），照片、地点、心情词都会一起导入。<br>也支持一次选很多文件：.txt / .md（文件里有“2025-11-24”或“2025年11月24日”这类日期行会自动拆成多篇）、本应用导出的 .json 备份、照片（每张一篇，可识别照片里的文字）。</p>
-  <div class="field"><label for="impNb">放进哪个分区</label><select id="impNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div>
-  <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
-  <h3>导出与备份</h3><p class="muted">JSON 是完整备份（含照片），可以在任何地方用本应用再导入到某个账号；导出的文件<b>不加密</b>，请妥善保存。Markdown 方便阅读或放进其他笔记软件。</p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
+  return banner()+`<section class="section"><p style="margin:0 0 10px"><a href="${esc(HOME_URL)}" style="color:var(--acc)">← Lyra</a></p><h2 class="disp">设置</h2>
   <h3>字体</h3>
   <p style="margin:8px 0 4px">正文</p>${fontChips((HUBST&&HUBST.bodyFont)||'sans',BODY_FONTS,'data-bf','今天')}
   <p style="margin:8px 0 4px">标题</p>${fontChips((HUBST&&HUBST.headFont)||'serif',HEAD_FONTS,'data-hfont','日记')}
   <p style="margin:8px 0 4px">大小</p><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-fsz="${k}" aria-pressed="${((HUBST&&HUBST.size)||'m')===k}">${n}</button>`).join('')}</div>
-  <h3>分区</h3>${S.notebooks.map(n=>`<div class="nbrow"><div><div style="display:flex;gap:6px"><input type="text" value="${esc(n.icon||'')}" data-nbicon="${esc(n.id)}" aria-label="图标" placeholder="☆" maxlength="4" style="width:56px;text-align:center"><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><button class="btn line" data-nbup="${esc(n.id)}" aria-label="上移" style="padding:0 12px">↑</button></div><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
+  <h3>分区</h3><div class="nblist">${(()=>{const c=nbCounts();return S.notebooks.map((n,i)=>`<div class="nbline" style="--c:${esc(n.color)}"><button class="nbm" data-nbedit="${esc(n.id)}"><span class="ico">${n.icon?esc(n.icon):'<i></i>'}</span><span class="nm">${esc(n.name)}</span><em>${c[n.id]||0}</em></button><button class="ib" data-nbup="${esc(n.id)}" ${i?'':'disabled'} aria-label="上移">↑</button></div>`).join('')})()}</div>
   <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
+  <h3>连续记录</h3>${missingHtml()}<p class="muted">从这天起算作连续。</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="date" id="sfFrom" value="${esc((S.settings.streakFill||{}).from||'')}" style="max-width:200px"><button class="btn line" data-act="sfsave">保存</button>${S.settings.streakFill?'<button class="btn line" data-act="sfclear">清除</button>':''}</div>
+  <h3>导入过去的日记</h3>
+  <p class="muted">苹果「日记」导出的 ZIP、.txt / .md、JSON 备份、照片。</p>
+  <div class="field"><label for="impNb">放进哪个分区</label><select id="impNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div>
+  <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
+  <h3>导出与备份</h3>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
-  <h3>连续记录</h3><p class="muted">从这天起算作连续。</p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="date" id="sfFrom" value="${esc((S.settings.streakFill||{}).from||'')}" style="max-width:200px"><button class="btn line" data-act="sfsave">保存</button>${S.settings.streakFill?'<button class="btn line" data-act="sfclear">清除</button>':''}</div>
+  ${caps.sample?`<h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 自动分区、补心情地点标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
+  ${caps.sample?`<button class="btn pri" data-act="aiorg" ${todo?'':'disabled'}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>整理 ${todo} 篇</button>`:''}`:''}
   <h3>关于</h3><p class="muted">Lyra 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
 }
 
@@ -1013,6 +1058,7 @@ async function persist(){
 }
 async function closeEditor(){await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
 $('#edClose').onclick=closeEditor;
+new MutationObserver(()=>document.body.classList.toggle('editing',!$('#editor').hidden)).observe($('#editor'),{attributes:true,attributeFilter:['hidden']});
 $('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
 $('#edDel').onclick=async()=>{const e=S.ed;clearTimeout(saveT);try{await persist()}catch(err){}const real=S.entries.find(x=>x.id===e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';stopMic();if(real)delEntry(real);else render()};
 $('#edBody').addEventListener('input',ev=>{const id=ev.target.id,e=S.ed;if(!e)return;
@@ -1123,13 +1169,14 @@ function entryMenu(e,cx,cy){ctxMenu(cx,cy,[
 function nbMenu(nb,cx,cy){const i=S.notebooks.indexOf(nb);const move=d=>{const j=i+d;if(j<0||j>=S.notebooks.length)return;[S.notebooks[i],S.notebooks[j]]=[S.notebooks[j],S.notebooks[i]];S.notebooks.forEach((n,k)=>{if(n.order!==k){n.order=k;saveNb(n)}});render()};
   ctxMenu(cx,cy,[{icon:ICN.open,label:'打开',act:()=>{S.nb=nb.id;S.view='journal';render()}},
    {icon:ICN.edit,label:'重命名 / 换图标…',act:()=>nbEdit(nb)},
+   {icon:'⇶',label:'按时间线添加日记…',act:()=>fillFromTimeline(nb)},
    i>0&&{icon:ICN.up,label:'上移',act:()=>move(-1)},i<S.notebooks.length-1&&{icon:ICN.down,label:'下移',act:()=>move(1)},
    '-',S.notebooks.length>1&&{icon:ICN.del,label:'删除分区',danger:true,act:()=>delNotebook(nb.id)}].filter(Boolean))}
 function nbEdit(nb){let color=nb.color;modal(`<h3>编辑分区</h3><div class="field"><label for="neI">图标（一个 emoji）</label><input type="text" id="neI" value="${esc(nb.icon||'')}" maxlength="4" style="width:90px;text-align:center;font-size:20px"></div>
   <div class="field"><label for="neN">名字</label><input type="text" id="neN" value="${esc(nb.name)}"></div><div class="swatches" id="neC">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div>
-  <div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
+  <div class="row">${S.notebooks.length>1?'<button class="btn danger sp" data-a="del">删除分区</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#neC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
-    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();if(a!=='ok')return;
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();if(a==='del')return delNotebook(nb.id);if(a!=='ok')return;
     nb.name=$('#neN').value.trim().slice(0,30)||nb.name;nb.icon=[...$('#neI').value.trim()].slice(0,2).join('');nb.color=color;Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存失败'));render()}}
 function jCtx(t,cx,cy){const c=t.closest('.card[data-open]');if(c){const e=S.entries.find(x=>x.id===c.dataset.open);if(e){entryMenu(e,cx,cy);return true}}
   const nbb=t.closest('[data-nb]');if(nbb&&nbb.dataset.nb!=='all'){const nb=nbById(nbb.dataset.nb);if(nb){nbMenu(nb,cx,cy);return true}}
@@ -1331,6 +1378,7 @@ document.addEventListener('click',async ev=>{
   else if(d.tag){S.q='#'+d.tag;S.view='journal';S.day=null;render()}
   else if(d.nbcolor){const nb=nbById(d.nbcolor);nb.color=d.c;saveNb(nb);render()}
   else if(d.nbdel){delNotebook(d.nbdel)}
+  else if(d.nbedit){const nb=nbById(d.nbedit);if(nb)nbEdit(nb)}
   else if(d.nbup){const i=S.notebooks.findIndex(n=>n.id===d.nbup);if(i>0){[S.notebooks[i-1],S.notebooks[i]]=[S.notebooks[i],S.notebooks[i-1]];S.notebooks.forEach((n,j)=>{if(n.order!==j){n.order=j;saveNb(n)}});render()}}
   else if(d.bf||d.hfont||d.fsz){let st=null;try{st=await Store.get('hubMeta','settings')}catch(e){}st=st||{...(HUBST||{}),id:'settings'};if(d.bf)st.bodyFont=d.bf;if(d.hfont)st.headFont=d.hfont;if(d.fsz){st.size=d.fsz;st.zoom={s:92,m:100,l:110}[d.fsz]}let ok=true;try{await Store.put('hubMeta',st)}catch(e){ok=false}if(!ok){Object.assign(S.settings,{bodyFont:st.bodyFont,headFont:st.headFont,size:st.size});Store.put('meta',S.settings).catch(()=>{})}HUBST=st;applyHubTheme(st);render()}
   else if(d.rtype){S.rep.type=d.rtype;render()}
