@@ -318,7 +318,13 @@ function makeMem(){return{m:{},b(k){return this.m[k]||(this.m[k]=new Map())},asy
 function makeRemote(base){return{
   base,chain:new Map(),async open(){return this},
   col(k){return this.base.collection(k)},
-  async all(k){const out=[];let last=null;for(let i=0;i<60;i++){let q=this.col(k);if(last)q=q.where('id','>',last);const s=await q.orderBy('id').limit(500).get();s.docs.forEach(d=>{if(d.exists)out.push(structuredClone(d.data()))});if(s.size<500)break;last=out[out.length-1].id}return out},
+  async all(k,prog){const out=[];let last=null;const P=50;
+    for(let i=0;i<2000;i++){let q=this.col(k);if(last)q=q.where('id','>',last);let snap=null,err=null;
+      for(let t=0;t<4&&!snap;t++){try{snap=await q.orderBy('id').limit(P).get()}catch(e){err=e;if(e&&(e.code==='revoked'||e.code==='invalid_argument'))break;await new Promise(r=>setTimeout(r,700*(t+1)))}}
+      if(!snap)throw err||new Error('load failed');
+      snap.docs.forEach(d=>{if(d.exists)out.push(structuredClone(d.data()))});if(prog)prog(out.length);
+      if(snap.size<P)break;last=snap.docs[snap.docs.length-1].id}
+    return out},
   async get(k,id){const d=await this.col(k).doc(id).get();return d.exists?structuredClone(d.data()):null},
   q(key,fn){const p=(this.chain.get(key)||Promise.resolve()).catch(()=>{}).then(fn);this.chain.set(key,p);return p},
   put(k,o){const body=JSON.parse(JSON.stringify(o));return this.q(k+'/'+o.id,()=>this.col(k).doc(o.id).set(body))},
@@ -345,7 +351,7 @@ const importDataKey=raw=>crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},fals
 function makeEncrypted(raw,key){return{
   raw,
   async dec(r){try{return JSON.parse(TD.decode(await open_(key,r)))}catch(e){return null}},
-  async all(k){const rows=await raw.all(k);return (await Promise.all(rows.map(r=>this.dec(r)))).filter(Boolean)},
+  async all(k,prog){const rows=await raw.all(k,prog);const out=(await Promise.all(rows.map(r=>this.dec(r)))).filter(Boolean);if(rows.length&&!out.length)throw new Error('decrypt');return out},
   async get(k,id){const r=await raw.get(k,id);return r?this.dec(r):null},
   async put(k,o){const e=await seal(key,TE.encode(JSON.stringify(o)));return raw.put(k,{id:o.id,v:1,...e})},
   del(k,id){return raw.del(k,id)}
@@ -456,16 +462,28 @@ $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go
   finally{go.disabled=false}
 });
 async function enterAccount(acc,key,isNew){
-  S.account=acc;Store=makeEncrypted(await Sys.mkData(acc),key);
-  S.notebooks=[];S.entries=[];S.photos=new Map();S.settings={id:'settings'};S.reports=new Map();S.rep={type:'week',at:null};S.nb='all';S.q='';S.day=null;S.view='journal';
+  S.account=acc;S.key=key;Store=makeEncrypted(await Sys.mkData(acc),key);
+  S.notebooks=[];S.entries=[];S.photos=new Map();S.settings={id:'settings'};S.reports=new Map();S.rep={type:'week',at:null};S.nb='all';S.q='';S.day=null;S.view='journal';S.banner='';
+  $('#main').innerHTML=`<div class="empty"><span class="spin"></span><p id="loadMsg">正在打开日记本…</p></div>`;
+  const lm=t=>{const m=$('#loadMsg');if(m)m.textContent=t};
+  let nbs,ens,meta;
   try{
-    const timer=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000));
-    const [nbs,ens,meta]=await Promise.race([Promise.all([Store.all('notebooks'),Store.all('entries'),Store.all('meta')]),timer]);
-    nbs.forEach(n=>{if(OLDCOL[n.color])n.color=OLDCOL[n.color]});S.notebooks=nbs.sort((a,b)=>(a.order??0)-(b.order??0)||a.created-b.created);
-    S.entries=ens.map(fixEntry);
-    S.settings=meta.find(m=>m.id==='settings')||{id:'settings'};
-    meta.forEach(m=>{if(typeof m.id==='string'&&m.id.startsWith('rep:')&&typeof m.text==='string')S.reports.set(m.id,m)});
-  }catch(e){S.banner='暂时连不上日记存储，显示的内容可能不完整。请检查网络后重新登录。'}
+    nbs=await Store.all('notebooks');
+    ens=await Store.all('entries',n=>lm(`正在加载日记… ${n} 篇`));
+    lm('快好了…');meta=await Store.all('meta');
+  }catch(e){
+    $('#main').innerHTML=`<div class="empty"><h2 class="disp">日记暂时没加载出来</h2><p>你的日记还在，没有丢，只是这次没连上（网络慢或者断了）。</p><div class="row"><button class="btn pri" data-act="retryload">再试一次</button></div><p class="muted" style="margin-top:14px">${esc((e&&(e.code||e.message))||'')}</p></div>`;
+    $('#tabs').innerHTML='';$('#fab').hidden=true;return;
+  }
+  nbs.forEach(n=>{if(OLDCOL[n.color])n.color=OLDCOL[n.color]});
+  S.notebooks=nbs.sort((a,b)=>(a.order??0)-(b.order??0)||a.created-b.created);
+  S.entries=ens.map(fixEntry);
+  S.settings=meta.find(m=>m.id==='settings')||{id:'settings'};
+  meta.forEach(m=>{if(typeof m.id==='string'&&m.id.startsWith('rep:')&&typeof m.text==='string')S.reports.set(m.id,m)});
+  /* remove empty duplicate notebooks (same name) */
+  const used=new Set(S.entries.map(e=>e.nb)),seen=new Set();
+  for(const n of [...S.notebooks]){if(seen.has(n.name)&&!used.has(n.id)){S.notebooks=S.notebooks.filter(x=>x!==n);Store.del('notebooks',n.id).catch(()=>{})}else seen.add(n.name)}
+  /* entries whose notebook vanished go to the first notebook */
   let moved=0;if(isNew)moved=await migrateLegacy();
   if(!S.notebooks.length){const nb={id:uid(),name:'我的日记',color:COLORS[0],created:Date.now(),order:0};S.notebooks.push(nb);Store.put('notebooks',nb).catch(()=>{})}
   render();if(moved)toast(`之前保存的 ${moved} 篇日记已加密放进这个账号`,5000);
@@ -989,6 +1007,7 @@ document.addEventListener('click',async ev=>{
   else if(d.nbdel){delNotebook(d.nbdel)}
   else if(d.rtype){S.rep.type=d.rtype;render()}
   else if(d.act){const a=d.act;
+    if(a==='retryload'&&S.account&&S.key)return enterAccount(S.account,S.key,false);
     if(a==='repprev')return repShift(-1);if(a==='repnext')return repShift(1);if(a==='repgen')return genReport();
     if(a==='aiorg')return aiOrganize(S.entries.filter(e=>!e.ai).map(e=>e.id));
     if(a==='new')newEntry(false);else if(a==='new-prompt')newEntry(true);
