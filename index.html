@@ -29,11 +29,35 @@ a{color:inherit}
 .snow{background-image:radial-gradient(circle,#cfe3ff40 1px,transparent 1.5px),radial-gradient(circle,#cfe3ff26 1.3px,transparent 1.8px);background-size:120px 90px,170px 130px;background-position:10px 20px,70px 60px}
 
 .top{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
-.hello{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.hello h1{font-size:clamp(32px,7vw,50px);line-height:1.05;margin:0}
+.hello{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:18px;align-items:end}
+.hl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hl-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hello h1{font-size:clamp(22px,4.6vw,30px);line-height:1.15;margin:0;font-weight:700;color:var(--mut)}
 .hello h1 i{font-style:normal;color:var(--acc)}
-.clock{font-size:15px;color:var(--mut);text-align:right}
-.clock b{display:block;font-size:clamp(24px,5vw,32px);color:var(--ink);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.clock{display:flex;align-items:baseline;gap:4px;line-height:1;margin-top:6px}
+.clock b{font-family:"Noto Serif SC",serif;font-weight:900;font-size:clamp(64px,15vw,104px);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.clock .colon{color:var(--acc);animation:blink 2s steps(1) infinite}
+@keyframes blink{50%{opacity:.35}}
+.clock .sec{font-size:clamp(18px,3.6vw,24px);color:var(--mut);font-variant-numeric:tabular-nums;font-weight:600;margin-left:4px}
+.dateline{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:15px;color:var(--mut);margin-top:8px}
+.dateline b{color:var(--ink);font-weight:600}
+.sky{background:rgba(21,36,57,.82);border:1px solid var(--line);border-radius:20px;padding:14px 16px;display:grid;gap:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.wx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+.wx .wi{width:52px;height:52px;color:var(--sun)}
+.wx .wt{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.wx .wt b{font-family:"Noto Serif SC",serif;font-size:34px;font-weight:900;line-height:1}
+.wx .wt span{font-size:15px;color:var(--ink)}
+.wx small{display:block;font-size:12.5px;color:var(--mut);margin-top:3px}
+.sun{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;color:var(--mut)}
+.sun b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;display:block;font-size:14px}
+.sun .arc{position:relative;height:34px}
+.sun .arc svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sun .len{grid-column:1/-1;text-align:center;font-size:12px;margin-top:-4px}
+.moonrow{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:10px}
+.moonrow b{color:var(--ink);font-weight:600}
+@media(min-width:900px){.hello{grid-template-columns:minmax(0,1fr) minmax(340px,420px)}}
+@media(max-width:600px){.sky{padding:12px 14px;gap:10px}.wx .wi{width:44px;height:44px}.wx .wt b{font-size:28px}}
+@media(prefers-reduced-motion:reduce){.clock .colon{animation:none}}
 .term{background:rgba(11,21,36,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .term .bar{display:flex;gap:7px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
 .term .bar i{width:11px;height:11px;border-radius:50%;display:block}
@@ -150,7 +174,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .warn{font-size:13px;background:rgba(240,180,124,.12);border:1px solid rgba(240,180,124,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0}
 .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.acct{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:rgba(21,36,57,.8);font-size:13.5px;color:var(--mut);margin-top:8px}
+.acct{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:rgba(21,36,57,.8);font-size:13.5px;color:var(--mut);flex:none}
 .acct:hover{color:var(--acc);border-color:var(--acc)}
 [hidden]{display:none!important}
 .site{min-height:64px;padding:12px 14px}
@@ -193,7 +217,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .ib{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.ib .btn{height:34px;font-size:13px}
 @media(max-width:600px){.ii{grid-template-columns:1fr}.ib{justify-content:flex-start}}
 footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
-@media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.clock{text-align:left}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
+@media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
 @media(min-width:900px){
   .top{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start}
   .cols{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
@@ -205,7 +229,14 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 <div id="app" hidden>
 <header class="band snow">
   <div class="wrap">
-    <div class="hello"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><div class="clock"><b id="clockT">--:--</b><span id="clockD"></span><br><button class="acct" data-act="acct" id="acctBtn">账号</button></div></div>
+    <div class="hello">
+      <div class="hl">
+        <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><button class="acct" data-act="acct" id="acctBtn">账号</button></div>
+        <div class="clock" aria-live="off"><b id="clockH">--</b><b class="colon">:</b><b id="clockM">--</b><span class="sec" id="clockS"></span></div>
+        <div class="dateline" id="clockD"></div>
+      </div>
+      <div class="sky" id="sky" aria-label="今天的天气、日出日落和月相"></div>
+    </div>
     <div class="top">
       <div class="term" role="region" aria-label="终端">
         <div class="bar"><i style="background:#e9b0c2"></i><i style="background:#e8c98e"></i><i style="background:#86d9c3"></i><span class="mono">lyra@ego: ~</span></div>
@@ -239,7 +270,6 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       <div id="work"></div>
     </section>
   </div>
-  <footer>数据加密后保存在你的账号里（配置了 Supabase 就是云端账号，和日记共用；否则保存在这个浏览器）。代码里不含任何个人数据；课表、作业、行程都加密存在你的账号里，可以在「账号 › 导入备份」导入。</footer>
 </main>
 </div>
 
@@ -504,9 +534,57 @@ function acctModal(){
   };
 }
 /* ---------- time / greeting ---------- */
-function tick(){const n=new Date();$('#clockT').textContent=`${pad(n.getHours())}:${pad(n.getMinutes())}`;$('#clockD').textContent=`${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日 星期${WD[n.getDay()]}`;
-  const h=n.getHours();$('#greet').innerHTML=`${h<5?'夜深了':h<11?'早上好':h<14?'中午好':h<18?'下午好':'晚上好'}，<i>Lyra</i>`}
-setInterval(()=>{tick();if(S.ready)renderToday()},30000);
+/* ---------- clock, weather, sun, moon ---------- */
+const LAT=51.5246,LNG=-0.134; // UCL, London
+function tick(){const n=new Date();$('#clockH').textContent=pad(n.getHours());$('#clockM').textContent=pad(n.getMinutes());$('#clockS').textContent=pad(n.getSeconds());
+  const h=n.getHours();$('#greet').innerHTML=`${h<5?'夜深了':h<11?'早上好':h<14?'中午好':h<18?'下午好':'晚上好'}，<i>Lyra</i>`;
+  const dl=`<span><b>${n.getMonth()+1}月${n.getDate()}日</b> 星期${WD[n.getDay()]}</span><span>${n.getFullYear()}</span><span>伦敦</span>`;if($('#clockD').innerHTML!==dl)$('#clockD').innerHTML=dl}
+function sunTimes(day){const rad=Math.PI/180;const d=Date.UTC(day.getFullYear(),day.getMonth(),day.getDate(),12);const J=d/864e5+2440587.5;const nn=Math.round(J-2451545+0.0008);const Js=nn-LNG/360;
+  const M=(357.5291+0.98560028*Js)%360,C=1.9148*Math.sin(M*rad)+0.02*Math.sin(2*M*rad)+0.0003*Math.sin(3*M*rad),L=(M+C+180+102.9372)%360;
+  const Jt=2451545+Js+0.0053*Math.sin(M*rad)-0.0069*Math.sin(2*L*rad),dec=Math.asin(Math.sin(L*rad)*Math.sin(23.4397*rad));
+  const cw=(Math.sin(-0.833*rad)-Math.sin(LAT*rad)*Math.sin(dec))/(Math.cos(LAT*rad)*Math.cos(dec));if(Math.abs(cw)>1)return null;
+  const w=Math.acos(cw)/rad,T=j=>new Date((j-2440587.5)*864e5);return{rise:T(Jt-w/360),set:T(Jt+w/360)}}
+function moonInfo(now){const syn=29.530588853,age=(((now-Date.UTC(2000,0,6,18,14))/864e5)%syn+syn)%syn,p=age/syn,illum=(1-Math.cos(2*Math.PI*p))/2;
+  const name=p<.03||p>.97?'新月':p<.22?'蛾眉月':p<.28?'上弦月':p<.47?'盈凸月':p<.53?'满月':p<.72?'亏凸月':p<.78?'下弦月':'残月';
+  const next=p<.5?Math.round((.5-p)*syn):Math.round((1-p)*syn);return{p,illum,name,nextFull:p<.5?next:null,nextNew:p>=.5?next:null}}
+function moonSvg(p,size){const r=size/2-1,c=size/2,x=Math.cos(2*Math.PI*p)*r,wax=p<.5,rx=Math.abs(x).toFixed(2);
+  const s1=wax?1:0,s2=wax?(x>0?0:1):(x>0?1:0);
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="#22324d" stroke="#3a4f73"/><path d="M${c} ${c-r}A${r} ${r} 0 0 ${s1} ${c} ${c+r}A${rx} ${r} 0 0 ${s2} ${c} ${c-r}Z" fill="#f2ead0"/></svg>`}
+const WX_ICON={
+ sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+ moon:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+ partly:'<path d="M8.5 4.5v1.4M3.5 9.5h1.4M5 6l1 1M13 6l-1 1"/><path d="M6.2 11.2a3.5 3.5 0 0 1 6.3-2.6"/><path d="M8 19h9.5a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A3 3 0 0 0 8 19z"/>',
+ cloud:'<path d="M7 18.5h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18.5z"/>',
+ fog:'<path d="M7 13.5h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 13.5zM4 17h16M6 20.5h12"/>',
+ rain:'<path d="M7 15h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 15z"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5"/>',
+ snow:'<path d="M7 14h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="M8.5 17.5v.01M12 19.5v.01M15.5 17.5v.01M10 21v.01M14 21v.01"/>',
+ storm:'<path d="M7 14h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="m12.5 15.5-2 3.5h3l-2 3.5"/>'
+};
+function wxDesc(c,day){if(c===0)return[day?'sun':'moon','晴'];if(c<=2)return[day?'partly':'cloud',c===1?'大致晴朗':'多云'];if(c===3)return['cloud','阴'];if(c<=48)return['fog','雾'];
+  if(c<=57)return['rain','毛毛雨'];if(c<=67)return['rain',c>=65?'大雨':c>=63?'中雨':'小雨'];if(c<=77)return['snow','下雪'];if(c<=82)return['rain','阵雨'];if(c<=86)return['snow','阵雪'];return['storm','雷雨']}
+const wxSvg=k=>`<svg class="wi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${WX_ICON[k]||WX_ICON.cloud}</svg>`;
+let WX=null;
+async function loadWeather(){
+  try{const c=JSON.parse(localStorage.getItem('lyra-wx')||'null');if(c&&Date.now()-c.at<30*6e4){WX=c.d;renderSky();return}}catch(e){}
+  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LNG}&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FLondon&forecast_days=1`,{signal:ctl.signal});
+    if(!r.ok)return;const j=await r.json();if(!j||!j.current)return;
+    WX={t:Math.round(j.current.temperature_2m),f:Math.round(j.current.apparent_temperature),c:+j.current.weather_code,day:!!j.current.is_day,wind:Math.round(j.current.wind_speed_10m),hi:Math.round(j.daily.temperature_2m_max[0]),lo:Math.round(j.daily.temperature_2m_min[0]),rain:j.daily.precipitation_probability_max[0]};
+    try{localStorage.setItem('lyra-wx',JSON.stringify({at:Date.now(),d:WX}))}catch(e){}renderSky()}catch(e){}
+}
+const hm=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function renderSky(){
+  const n=new Date(),st=sunTimes(n),mo=moonInfo(n);let h='';
+  if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div><div class="wt"><b>${WX.t}°</b><span>${de} · 体感 ${WX.f}°</span></div><small>最高 ${WX.hi}° · 最低 ${WX.lo}°${WX.rain!=null?` · 降雨概率 ${WX.rain}%`:''} · 风 ${WX.wind} km/h</small></div></div>`}
+  if(st){const day=st.set-st.rise,f=Math.min(1,Math.max(0,(n-st.rise)/day)),up=n>=st.rise&&n<=st.set;
+    const x=(f*100).toFixed(1),y=(34-Math.sin(f*Math.PI)*28).toFixed(1);
+    h+=`<div class="sun"><div><span>日出</span><b>${hm(st.rise)}</b></div><div class="arc"><svg viewBox="0 0 100 36" preserveAspectRatio="none"><path d="M2 34 Q50 -22 98 34" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3.2" fill="var(--sun)"/>`:''}</svg></div><div style="text-align:right"><span>日落</span><b>${hm(st.set)}</b></div>
+      <div class="len">白天 ${Math.floor(day/36e5)} 小时 ${Math.round(day%36e5/6e4)} 分${up?` · 还有 ${fmtLeft(st.set-n)} 日落`:n<st.rise?` · ${fmtLeft(st.rise-n)} 后日出`:''}</div></div>`}
+  h+=`<div class="moonrow">${moonSvg(mo.p,30)}<span><b>${mo.name}</b> · 亮面 ${Math.round(mo.illum*100)}%${mo.nextFull!=null?` · ${mo.nextFull?mo.nextFull+' 天后满月':'今晚满月'}`:` · ${mo.nextNew?mo.nextNew+' 天后新月':'今天新月'}`}</span></div>`;
+  $('#sky').innerHTML=h}
+setInterval(tick,1000);
+setInterval(()=>{if(S.ready)renderToday();renderSky()},60000);
+setInterval(loadWeather,30*6e4);
 
 /* ---------- today + trip ---------- */
 function renderToday(){
@@ -754,7 +832,7 @@ document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S
 
 
 function renderAll(){renderToday();renderSites();renderPlans();renderWork()}
-tick();
+tick();renderSky();loadWeather();
 print('欢迎回来。输入 help 查看命令，按 / 可以随时跳到这里。','ok');
 boot();
 }
