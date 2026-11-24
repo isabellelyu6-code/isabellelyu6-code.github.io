@@ -60,30 +60,44 @@ a{color:inherit}
 .sun{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px;color:var(--mut)}
 .sun b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;display:block;font-size:13.5px}
 .sun .arc{width:100%;height:26px;overflow:visible}
-.skys{font-size:12px;color:var(--mut);text-align:center;margin-top:-4px}
+.sunbox{display:grid;gap:6px}
+.skys{font-size:12px;color:var(--mut);text-align:center}
 .moonrow{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:8px}
 .moonrow b{color:var(--ink);font-weight:600}
 .moonrow svg{flex:none}
-@media(min-width:900px){.hello{grid-template-columns:minmax(0,1fr) minmax(320px,380px)}.hello.nosky{grid-template-columns:1fr}}
+@media(min-width:900px){
+  .hello{grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);align-items:stretch}.hello.nosky{grid-template-columns:1fr}
+  .hl{justify-content:flex-end}
+  .sky{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:22px;row-gap:10px;padding:14px 18px}
+  .skyh{grid-column:1/-1}
+  .sky .wx{grid-column:1;grid-row:2;align-self:center}
+  .sky .sunbox{grid-column:2;grid-row:2/4;border-left:1px solid var(--line);padding-left:20px;display:grid;align-content:center;gap:8px}
+  .sky .moonrow{grid-column:1;grid-row:3}
+  .wx .wi{width:46px;height:46px}.wx .wt b{font-size:32px}
+}
 @media(max-width:600px){.sky{padding:12px 14px;gap:10px}.wx .wi{width:44px;height:44px}.wx .wt b{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.clock .colon{animation:none}}
-.term{background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
-.term .bar{display:flex;gap:7px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.term{background:color-mix(in srgb,var(--bg2) 92%,transparent);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;margin-bottom:16px}
+.term .out{grid-column:1/-1;border-bottom:1px solid var(--line)}
+.term .out:empty{display:none}
+.term .bar{display:none;gap:7px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
 .term .bar i{width:11px;height:11px;border-radius:50%;display:block}
 .term .bar span{margin-left:8px;font-size:12.5px;color:var(--mut)}
-.out{padding:12px 16px 4px;min-height:96px;max-height:260px;overflow-y:auto;font-size:14px;line-height:1.7}
+.out{padding:10px 16px;max-height:200px;overflow-y:auto;font-size:14px;line-height:1.7}
 .out p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .out .cmd{color:var(--mut)}
 .out .ok{color:var(--acc)}
 .out .err{color:var(--bad)}
 .out a{color:var(--acc);text-underline-offset:3px}
-.prompt{display:flex;align-items:center;gap:8px;padding:6px 16px 14px;font-size:15px}
+.prompt{display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;font-size:14px}
 .prompt label{color:var(--acc);white-space:nowrap}
-.prompt input{flex:1;background:none;border:0;outline:none;font:inherit;font-size:16px;min-height:40px;caret-color:var(--acc)}
-.hint{font-size:12.5px;color:var(--mut);padding:0 16px 12px;display:flex;gap:6px;flex-wrap:wrap}
+.prompt input{flex:1;background:none;border:0;outline:none;font:inherit;font-size:15px;min-height:44px;caret-color:var(--acc)}
+.hint{font-size:12px;color:var(--mut);padding:0 10px;display:flex;gap:6px}
+@media(max-width:600px){.hint{display:none}}
 .hint button{border:1px solid var(--line);border-radius:8px;padding:2px 8px;color:var(--mut)}
 .hint button:hover{color:var(--acc);border-color:var(--acc)}
 .side{display:grid;gap:12px}
+@media(min-width:900px){.side{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:stretch}}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
 .tile h2{font-size:14px;color:var(--mut);margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .cls{display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
@@ -269,11 +283,13 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 @media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
 @media(min-width:900px){
-  .top{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start}
   .lower{grid-template-columns:repeat(12,minmax(0,1fr))}
-  .lower>section{grid-column:1/-1}
-  .lower[data-plans-work=pair]>#plans-s{grid-column:span 5}
-  .lower[data-plans-work=pair]>#work-s{grid-column:span 7}
+  .lower{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-auto-flow:row dense;align-items:start}
+  .lower>section{grid-column:2}
+  .lower>#sites-s{grid-column:1/-1}
+  .lower>#work-s{grid-column:1;grid-row:span 6}
+  .lower.nowork>section{grid-column:1/-1}
+  #grades-s .grades{grid-template-columns:minmax(0,1fr)}
 }
 @media(prefers-reduced-motion:reduce){.site{transition:none}.site:hover{transform:none}}
 </style>
@@ -290,13 +306,12 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       </div>
       <div class="sky" id="sky" aria-label="Weather, sunrise, sunset and moon"></div>
     </div>
+    <div class="term" role="region" aria-label="指令" id="mod-terminal">
+      <div class="out mono" id="out" aria-live="polite"></div>
+      <form class="prompt mono" id="cmdForm"><label for="cmd">❯</label><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="快速指令：todo 买雪地靴 明天"></form>
+      <div class="hint"><button data-run="today">today</button><button data-run="ddl">ddl</button><button data-run="help">help</button></div>
+    </div>
     <div class="top">
-      <div class="term" role="region" aria-label="终端" id="mod-terminal">
-        <div class="bar"><i style="background:#e9b0c2"></i><i style="background:#e8c98e"></i><i style="background:#86d9c3"></i><span class="mono">lyra@ego: ~</span></div>
-        <div class="out mono" id="out" aria-live="polite"></div>
-        <form class="prompt mono" id="cmdForm"><label for="cmd">❯</label><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入命令，比如 todo 买雪地靴 明天"></form>
-        <div class="hint"><button data-run="help">help</button><button data-run="today">today</button><button data-run="ddl">ddl</button><button data-run="北欧">北欧</button><button data-run="日记">日记</button></div>
-      </div>
       <div class="side">
         <div class="tile" id="mod-today"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
         <div class="tile trip" id="trip"></div>
@@ -611,7 +626,7 @@ const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439
  ocean:['海洋',{'--bg':'#0c2230','--bg2':'#081a25','--card':'#112d3d','--card2':'#163a4d','--line':'#22506a'}],
  forest:['森林',{'--bg':'#0f1f1c','--bg2':'#0a1715','--card':'#16302a','--card2':'#1b3a33','--line':'#28524a'}],
  plum:['夜紫',{'--bg':'#1a1428','--bg2':'#130e1f','--card':'#231b36','--card2':'#2c2242','--line':'#3d3159'}]};
-const MODS=[['sky','天气 · 日出日落'],['terminal','终端'],['today','课表'],['trip','旅行倒计时'],['sites','我的'],['plans','计划'],['work','DDL'],['grades','成绩']];
+const MODS=[['sky','天气 · 日出日落'],['terminal','指令框'],['today','课表'],['trip','旅行倒计时'],['sites','我的'],['plans','计划'],['work','DDL'],['grades','成绩']];
 const LOWER=['sites','plans','work','grades'];
 const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
 let SET=structuredClone(DEF_SET);
@@ -629,10 +644,11 @@ function applySettings(){
   $('.top')?.classList.toggle('noterm',hid.has('terminal'));$('.top')?.classList.toggle('noside',hid.has('today')&&hid.has('trip'));
   const order=(SET.order||LOWER).filter(k=>LOWER.includes(k));for(const k of LOWER)if(!order.includes(k))order.push(k);
   order.forEach((k,i)=>{if(el[k])el[k].style.order=i});
+  $('#lower')?.classList.toggle('nowork',hid.has('work'));
   $('#lower')?.setAttribute('data-plans-work',order.indexOf('work')===order.indexOf('plans')+1&&!hid.has('plans')&&!hid.has('work')?'pair':'');
 }
 let setT=null;
-function saveSettings(){saveSettings.at=Date.now();applySettings();clearTimeout(setT);setT=setTimeout(()=>{const i=S.meta.findIndex(m=>m.id==='settings');if(i<0)S.meta.push(SET);else S.meta[i]=SET;DB.put('meta',SET)},500)}
+function saveSettings(){saveSettings.at=Date.now();applySettings();const i=S.meta.findIndex(m=>m.id==='settings');if(i<0)S.meta.push(SET);else S.meta[i]=SET;clearTimeout(setT);setT=setTimeout(()=>{saveSettings.at=Date.now();DB.put('meta',SET)},500)}
 function settingsModal(){
   const hid=new Set(SET.hidden||[]),order=(SET.order||LOWER);
   const lowerRows=order.map((k,i)=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${MODS.find(m=>m[0]===k)[1]}</label><span><button class="ib2" data-up="${k}" ${i?'':'disabled'} aria-label="上移">↑</button><button class="ib2" data-down="${k}" ${i<order.length-1?'':'disabled'} aria-label="下移">↓</button></span></div>`).join('');
@@ -645,7 +661,7 @@ function settingsModal(){
   <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
     <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
     <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
-  <div class="setg"><h4>模块</h4><p class="sethint">勾选显示；下面四块可以调顺序。</p>${topRows}<div class="msep"></div>${lowerRows}</div>
+  <div class="setg"><h4>模块</h4><p class="sethint">勾选显示；下面四块可以调顺序（手机上按这个顺序；电脑上 DDL 固定在左边，其他在右边）。</p>${topRows}<div class="msep"></div>${lowerRows}</div>
   <div class="setg two2"><div><h4>时间</h4><div class="chips wrapc"><button class="chip" data-c24="1" aria-pressed="${SET.clock24}">24 小时</button><button class="chip" data-c24="0" aria-pressed="${!SET.clock24}">12 小时</button></div></div>
     <div><h4>温度</h4><div class="chips wrapc"><button class="chip" data-unit="C" aria-pressed="${SET.unit!=='F'}">°C</button><button class="chip" data-unit="F" aria-pressed="${SET.unit==='F'}">°F</button></div></div></div>
   <div class="setg"><h4>问候里的名字</h4><input type="text" id="setName" value="${esc(SET.name||'')}" maxlength="20"></div>
@@ -789,11 +805,11 @@ async function loadWeather(force){
 }
 function renderSky(){
   const L=loc(),n=new Date(),st=sunTimes(n,L.lat,L.lng),mo=moonInfo(n);let h=`<div class="skyh"><span>${esc(L.name)}</span><span>${tm(n)}</span></div>`;
-  if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div style="min-width:0"><div class="wt"><b>${deg(WX.t)}</b><span>${de}</span></div><small>Feels ${deg(WX.f)} · H ${deg(WX.hi)} L ${deg(WX.lo)} · Rain ${WX.rain??0}% · Wind ${WX.wind} km/h</small></div></div>`}
+  if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div style="min-width:0"><div class="wt"><b>${deg(WX.t)}</b><span>${de}</span></div><small>Feels ${deg(WX.f)} · H ${deg(WX.hi)} L ${deg(WX.lo)}<br>Rain ${WX.rain??0}% · Wind ${WX.wind} km/h</small></div></div>`}
   if(st.rise){const day=st.set-st.rise,f=Math.min(1,Math.max(0,(n-st.rise)/day)),up=n>=st.rise&&n<=st.set;const x=(f*100).toFixed(1),y=(26-Math.sin(f*Math.PI)*22).toFixed(1);
-    h+=`<div class="sun"><span>Sunrise <b>${tm(st.rise)}</b></span><svg class="arc" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="M2 26 Q50 -18 98 26" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3" fill="var(--sun)"/>`:''}</svg><span style="text-align:right">Sunset <b>${tm(st.set)}</b></span></div>
-      <div class="skys">${Math.floor(day/36e5)}h ${Math.round(day%36e5/6e4)}m daylight${up?` · sunset in ${fmtEn(st.set-n)}`:n<st.rise?` · sunrise in ${fmtEn(st.rise-n)}`:''}</div>`}
-  else h+=`<div class="skys">${st.polar==='night'?'Polar night — the sun stays below the horizon today':'Midnight sun — the sun does not set today'}</div>`;
+    h+=`<div class="sunbox"><div class="sun"><span>Sunrise <b>${tm(st.rise)}</b></span><svg class="arc" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="M2 26 Q50 -18 98 26" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3" fill="var(--sun)"/>`:''}</svg><span style="text-align:right">Sunset <b>${tm(st.set)}</b></span></div>
+      <div class="skys">${Math.floor(day/36e5)}h ${Math.round(day%36e5/6e4)}m daylight${up?` · sunset in ${fmtEn(st.set-n)}`:n<st.rise?` · sunrise in ${fmtEn(st.rise-n)}`:''}</div></div>`}
+  else h+=`<div class="sunbox"><div class="skys">${st.polar==='night'?'Polar night — the sun stays below the horizon today':'Midnight sun — the sun does not set today'}</div></div>`;
   h+=`<div class="moonrow">${moonSvg(mo.p,20)}<span><b>${mo.name}</b> · ${Math.round(mo.illum*100)}% lit · ${mo.name==='Full Moon'?`new moon in ${mo.toNew} days`:`full moon in ${mo.toFull} days`}</span></div>`;
   $('#sky').innerHTML=h}
 const fmtEn=ms=>{const h=Math.floor(ms/36e5),m=Math.round(ms%36e5/6e4);return h?`${h}h ${m}m`:`${m}m`};
@@ -1057,7 +1073,6 @@ function renderAll(){renderToday();renderSites();renderPlans();renderWork();rend
 $('#grades').addEventListener('input',gradesEvent);
 applySettings();tick();renderSky();loadWeather();
 if('serviceWorker' in navigator&&location.protocol==='https:'&&/github\.io$/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});
-print('欢迎回来。输入 help 查看命令，按 / 可以随时跳到这里。','ok');
 boot();
 }
 </script>
