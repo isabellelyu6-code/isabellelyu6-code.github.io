@@ -1,6 +1,6 @@
 // Lyra service worker: makes the app installable and lets the pages open offline.
 // Pages are network-first (always the newest version when online); data never goes through here.
-const CACHE = 'lyra-v1';
+const CACHE = 'lyra-v2';
 const SHELL = ['./', './journal/', './manifest.webmanifest', './icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', e => {
   const cdn = /(^|\.)(jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(u.hostname);
   if (!same && !cdn) return; // Supabase, weather etc. go straight to the network
   if (same) {
-    e.respondWith(fetch(r).then(res => {
+    e.respondWith(fetch(r.url, {cache: 'no-cache', credentials: 'same-origin'}).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
       return res;
     }).catch(() => caches.match(r, {ignoreSearch: true}).then(m => m || caches.match('./'))));
