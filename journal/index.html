@@ -185,11 +185,14 @@ mark{background:var(--mark);color:#fff;border-radius:3px;padding:0 1px}
 .day .dots i{width:6px;height:6px;border-radius:50%}
 .day.has{font-weight:700;background:var(--card2)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-.stat b{display:block;font-size:clamp(28px,6vw,36px);line-height:1.1;font-family:var(--hf);font-weight:700;color:var(--acc)}
-.stat span{font-size:13px;color:var(--mut)}
-.hbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
-.hbar .t{height:12px;background:var(--card2);border-radius:6px;overflow:hidden}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:2px;min-width:0}
+.stat b{display:block;font-size:clamp(26px,5vw,32px);line-height:1.15;font-family:var(--hf);font-weight:700;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.stat b i{font-style:normal;font-size:14px;color:var(--ink);font-family:var(--bf);font-weight:500;margin-left:4px}
+.stat em{font-style:normal;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat span{font-size:12.5px;color:var(--mut);letter-spacing:.04em}
+.hbar{display:grid;grid-template-columns:minmax(5.5em,9em) minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
+.hbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .t{height:10px;background:var(--card2);border-radius:6px;overflow:hidden}
 .hbar .t i{display:block;height:100%;border-radius:6px}
 .hbar em{font-style:normal;text-align:right;color:var(--mut)}
 .months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:130px;margin-top:10px}
@@ -984,10 +987,15 @@ function renderInsights(){
   const nbc=S.notebooks.map(n=>[n,ys.filter(e=>inNb(e,n.id)).length]);const nmax=Math.max(1,...nbc.map(x=>x[1]));
   return banner()+`<section class="section"><h2 class="disp">回顾</h2><h3>${S.year} 年数据</h3>
   <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
-  <div class="stats" style="margin-top:10px"><div class="stat"><b>${ys.length}</b><span>篇日记</span></div><div class="stat"><b>${days}</b><span>天有记录</span></div><div class="stat"><b>${w.toLocaleString()}</b><span>字</span></div><div class="stat"><b>${st.cur}<small style="font-size:15px"> / 最长 ${st.best}</small></b><span>连续天数</span></div></div>
+  ${(()=>{const yd=S.year===new Date().getFullYear()?Math.round((new Date()-new Date(S.year,0,1))/864e5)+1:(S.year%4?365:366);const wf=w>=10000?[(w/10000).toFixed(w>=100000?0:1),'万字']:[w.toLocaleString(),'字'];
+  return `<div class="stats" style="margin-top:10px">
+  <div class="stat"><span>日记</span><b>${ys.length}<i>篇</i></b><em>平均每天 ${(ys.length/Math.max(1,days)).toFixed(1)} 篇</em></div>
+  <div class="stat"><span>有记录</span><b>${days}<i>天</i></b><em>占 ${S.year} 年的 ${Math.round(days/yd*100)}%</em></div>
+  <div class="stat"><span>写了</span><b>${wf[0]}<i>${wf[1]}</i></b><em>每篇约 ${ys.length?Math.round(w/ys.length).toLocaleString():0} 字</em></div>
+  <div class="stat"><span>连续</span><b>${st.cur}<i>天</i></b><em>最长 ${st.best} 天</em></div></div>`})()}
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
   <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有心情记录</p>'}
-  <h3>分区</h3>${nbc.map(([n,c])=>`<div class="hbar"><span>${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
+  <h3>分区</h3>${nbc.filter(([,c])=>c).sort((x,y)=>y[1]-x[1]).map(([n,c])=>`<div class="hbar"><span>${n.icon?esc(n.icon)+' ':''}${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
   <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
   <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
 }
