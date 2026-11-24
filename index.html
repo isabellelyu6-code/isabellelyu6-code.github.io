@@ -158,6 +158,14 @@ section.s{padding:30px 0 6px}
 .editing .site .ed{display:grid}
 .lower{display:grid;grid-template-columns:minmax(0,1fr);column-gap:26px}
 .modoff{display:none!important}
+.ctx{position:fixed;z-index:90;min-width:188px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
+.ctx button{display:flex;align-items:center;gap:9px;width:100%;height:34px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;color:var(--ink)}
+.ctx button:hover,.ctx button:focus{background:color-mix(in srgb,var(--acc) 16%,transparent);outline:none}
+.ctx button.danger{color:var(--bad)}.ctx .ci{width:18px;text-align:center;color:var(--mut);font-size:13px}.ctx button.danger .ci{color:var(--bad)}
+.ctx kbd{margin-left:auto;font:11px "JetBrains Mono",monospace;color:var(--mut)}
+.ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+@keyframes ctxin{from{opacity:0;transform:scale(.97)}}
+.wk,.todo{-webkit-touch-callout:none}
 .hl{position:relative}
 .skymini{display:none}
 @media(max-width:899px){
@@ -1162,6 +1170,53 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 
 
+/* ---------- right-click / long-press menu ---------- */
+function ctxMenu(x,y,items){ctxClose();const m=document.createElement('div');m.className='ctx';m.setAttribute('role','menu');
+  m.innerHTML=items.map((it,i)=>it==='-'?'<hr>':`<button role="menuitem" data-ci="${i}" class="${it.danger?'danger':''}">${it.icon?`<span class="ci">${it.icon}</span>`:''}${it.label}${it.hint?`<kbd>${it.hint}</kbd>`:''}</button>`).join('');
+  document.body.appendChild(m);const r=m.getBoundingClientRect();m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+'px';m.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+'px';
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!b)return;const it=items[+b.dataset.ci];ctxClose();it.act&&it.act()});
+  m.querySelector('button')?.focus({preventScroll:true});
+  m.addEventListener('keydown',e=>{const bs=[...m.querySelectorAll('button')],i=bs.indexOf(document.activeElement);if(e.key==='ArrowDown'){e.preventDefault();bs[(i+1)%bs.length].focus()}if(e.key==='ArrowUp'){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus()}})}
+function ctxClose(){document.querySelectorAll('.ctx').forEach(x=>x.remove())}
+addEventListener('pointerdown',e=>{if(!e.target.closest('.ctx'))ctxClose()},true);addEventListener('scroll',ctxClose,true);addEventListener('resize',ctxClose);
+addEventListener('keydown',e=>{if(e.key==='Escape')ctxClose()});
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||'已复制')}catch(e){toast('复制不了')}}
+/* long press (touch) opens the same menu */
+function onLongPress(root,sel,fn){let T=null,sx=0,sy=0;root.addEventListener('touchstart',e=>{const el=e.target.closest(sel);if(!el)return;const t=e.touches[0];sx=t.clientX;sy=t.clientY;T=setTimeout(()=>{T=null;LP=Date.now();try{navigator.vibrate&&navigator.vibrate(10)}catch(_){}fn(el,sx,sy)},480)},{passive:true});
+  root.addEventListener('touchmove',e=>{if(!T)return;const t=e.touches[0];if(Math.hypot(t.clientX-sx,t.clientY-sy)>8){clearTimeout(T);T=null}},{passive:true});
+  root.addEventListener('touchend',()=>{clearTimeout(T);T=null})}
+let LP=0;document.addEventListener('click',e=>{if(Date.now()-LP<600){e.preventDefault();e.stopPropagation()}},true);
+
+const ICN={edit:'✎',open:'↗',tab:'⧉',copy:'⎘',del:'🗑',done:'✓',undo:'↺',up:'↑',hide:'👁',set:'⚙',add:'＋',cal:'📅'};
+function siteMenu(x,cx,cy){const u=siteUrl(x.url);ctxMenu(cx,cy,[
+  u&&{icon:ICN.open,label:'打开',act:()=>{location.href=u}},
+  u&&safeUrl(u)&&{icon:ICN.tab,label:'在新标签页打开',act:()=>open(u,'_blank','noopener')},
+  {icon:ICN.edit,label:'编辑',act:()=>siteModal(x)},
+  u&&{icon:ICN.copy,label:'复制链接',act:()=>copyText(u,'链接已复制')},
+  {icon:ICN.up,label:'移到最前',act:()=>{const L=[...S.sites].sort((a,b)=>(a.order??0)-(b.order??0)).filter(y=>y!==x);[x,...L].forEach((y,i)=>{if(y.order!==i){y.order=i;DB.put('sites',y)}});renderSites()}},
+  '-',{icon:ICN.del,label:'删除',danger:true,act:async()=>{if(!(await askConfirm(`删除「${x.name}」？`)))return;S.sites=S.sites.filter(y=>y!==x);DB.del('sites',x.id);renderSites();toast('已删除')}}].filter(Boolean))}
+function workMenu(w,cx,cy){const f=isFin(w);ctxMenu(cx,cy,[
+  {icon:f?ICN.undo:ICN.done,label:f?'标记为未完成':'标记为完成',act:()=>setDone(w,!f)},
+  {icon:ICN.edit,label:'编辑',act:()=>workModal(w)},
+  {icon:ICN.copy,label:'复制',act:()=>copyText(`${w.course} ${w.task}${w.date?' · '+w.date+(w.time?' '+w.time:''):''}`)},
+  {icon:ICN.add,label:'复制成新的 DDL',act:()=>{const it={...structuredClone(w),id:uid(),status:S0};S.work.push(it);DB.put('work',it);renderWork();workModal(it)}},
+  '-',{icon:ICN.del,label:'删除',danger:true,act:async()=>{if(!(await askConfirm(`删除「${w.task}」？`)))return;S.work=S.work.filter(y=>y!==w);DB.del('work',w.id);renderWork();toast('已删除')}}])}
+function planMenu(p,cx,cy){ctxMenu(cx,cy,[
+  {icon:p.done?ICN.undo:ICN.done,label:p.done?'标记为未完成':'完成',act:()=>{p.done=!p.done;p.doneAt=Date.now();DB.put('plans',p);renderPlans()}},
+  {icon:ICN.edit,label:'编辑',act:()=>planModal(p)},
+  {icon:ICN.copy,label:'复制文字',act:()=>copyText(p.text)},
+  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>{S.plans=S.plans.filter(y=>y!==p);DB.del('plans',p.id);renderPlans();toast('已删除')}}])}
+function moduleMenu(key,cx,cy){ctxMenu(cx,cy,[{icon:ICN.hide,label:'隐藏这个模块',act:()=>{SET.hidden=[...new Set([...(SET.hidden||[]),key])];saveSettings();toast('已隐藏，可以在 ⚙ 设置 › 模块 里打开')}},{icon:ICN.set,label:'设置…',act:settingsModal}])}
+const MODKEY=[['#sky,#skymini','sky'],['#mod-terminal','terminal'],['#mod-today','today'],['#trip','trip'],['#plans-s','plans'],['#work-s','work'],['#grades-s','grades'],['#sites-s','sites']];
+function ctxFor(t,cx,cy){
+  const a=t.closest('a.site');if(a){const x=S.sites.find(y=>y.id===a.dataset.site);if(x){siteMenu(x,cx,cy);return true}}
+  const wk=t.closest('.wk');if(wk){const id=wk.querySelector('[data-wdone]')?.dataset.wdone,w=S.work.find(y=>y.id===id);if(w){workMenu(w,cx,cy);return true}}
+  const td=t.closest('.todo');if(td){const id=td.querySelector('[data-chk]')?.dataset.chk,p=S.plans.find(y=>y.id===id);if(p){planMenu(p,cx,cy);return true}}
+  if(t.closest('input,textarea,.ctx,#box'))return false;
+  for(const [sel,key] of MODKEY)if(t.closest(sel)){moduleMenu(key,cx,cy);return true}
+  return false}
+document.addEventListener('contextmenu',e=>{if(!S.ready||e.shiftKey)return;if(e.pointerType==='touch'&&e.target.closest('a.site')){e.preventDefault();return}if(ctxFor(e.target,e.clientX,e.clientY))e.preventDefault()});
+onLongPress(document,'.wk,.todo',(el,x,y)=>ctxFor(el,x,y));
 function renderAll(){renderToday();renderSites();renderPlans();renderWork();renderGrades();renderInbox()}
 $('#grades').addEventListener('input',gradesEvent);
 $('#grades').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;e.preventDefault();const L=[...document.querySelectorAll('#grades input')];const n=L[L.indexOf(e.target)+1];if(n){n.focus();n.select&&n.select()}else e.target.blur()});

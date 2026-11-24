@@ -35,10 +35,23 @@ button{cursor:pointer;border:0;background:none}
 .app{display:grid;grid-template-columns:minmax(0,1fr);min-height:100%;padding-bottom:76px}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
-.jside{display:none}
+.jside{display:none}.as-open{display:none}
+.ctx{position:fixed;z-index:90;min-width:190px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
+.ctx button{display:flex;align-items:center;gap:9px;width:100%;height:34px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;color:var(--ink)}
+.ctx button:hover,.ctx button:focus{background:color-mix(in srgb,var(--acc) 16%,transparent);outline:none}
+.ctx button.danger{color:#f0a0a8}.ctx .ci{width:18px;text-align:center;color:var(--mut);font-size:13px}
+.ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+@keyframes ctxin{from{opacity:0;transform:scale(.97)}}
+.card,.nbtab,.rail .nb{-webkit-touch-callout:none}
+.as-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut);letter-spacing:.08em;margin-bottom:-4px}
+.as-head button{font-size:12px;color:var(--mut);padding:4px 8px;border-radius:8px;letter-spacing:0}.as-head button:hover{background:var(--card);color:var(--acc)}
 @media (min-width:1240px){
   main:has(.jwrap){max-width:1180px}
   .jwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px}
+  .jwrap.noside{grid-template-columns:minmax(0,1fr);max-width:820px;margin:0 auto}
+  .as-open{display:block;position:fixed;right:0;top:40%;z-index:30;writing-mode:vertical-rl;padding:12px 7px;border-radius:12px 0 0 12px;background:var(--card2);border:1px solid var(--line);border-right:0;color:var(--mut);font-size:12.5px;letter-spacing:.1em}
+  .as-open:hover{color:var(--acc)}
+  .jwrap:not(.noside) .hero .otd{display:none}
   .jmain{min-width:0}
   .jside{display:flex;flex-direction:column;gap:14px;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:30px 22px 30px 18px;border-left:1px solid var(--line);scrollbar-width:none}
 }
@@ -244,7 +257,9 @@ main{max-width:760px}
 .hero{background:none;border:0;padding:26px max(5vw,18px) 6px;overflow:visible}
 .hero h1{font-size:clamp(28px,6vw,40px);margin:0 0 4px}
 .hero .sub{font-size:14px}
-.hero .prompt{margin:16px 0 14px;padding:14px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 14px 14px 0;font-family:var(--hf);font-size:17px;max-width:none}
+.hero .prompt{margin:14px 0 12px;padding:12px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 14px 14px 0;font-family:var(--hf);font-size:16.5px;max-width:none}
+.hero .row .btn{height:38px;font-size:14px}
+@media (min-width:900px){.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:end}.hero h1,.hero .sub,.hero .otd,.hero>div:not(.row){grid-column:1/-1}.hero .prompt{grid-column:1;margin-bottom:0}.hero .row{grid-column:2;flex-wrap:nowrap}}
 .hero .otd{border-top:0;padding-top:4px}
 .bar{background:rgba(15,27,45,.96)}
 .month{font-family:var(--hf);font-size:20px;font-weight:900;color:var(--ink);letter-spacing:0;margin:30px 0 12px}
@@ -807,7 +822,7 @@ function render(){
     <div class="rfoot"><span>${esc(S.account?.name||'')}</span><button data-act="logout">退出</button></div>`;
   $('#fab').hidden=S.view==='settings';
   const m=$('#main');
-  if(S.view==='journal')m.innerHTML=`<div class="jwrap"><div class="jmain">${renderJournal()}</div><aside class="jside" aria-label="概览">${renderAside()}</aside></div>`;
+  if(S.view==='journal'){const on=asideOn();m.innerHTML=`<div class="jwrap${on?'':' noside'}"><div class="jmain">${renderJournal()}</div>${on?`<aside class="jside" aria-label="概览"><div class="as-head"><span>概览</span><button data-act="asideoff" title="收起">收起 ⇥</button></div>${renderAside()}</aside>`:'<button class="as-open" data-act="asideon" title="打开概览">概览</button>'}</div>`}
   else if(S.view==='calendar')m.innerHTML=renderCalendar();
   else if(S.view==='insights')m.innerHTML=renderInsights();
   else m.innerHTML=renderSettings();
@@ -1054,6 +1069,52 @@ function toggleMic(){
 }
 function stopMic(){if(caps.dict&&listening){caps.dict.stop().catch(()=>{})}if(rec){try{rec.stop()}catch(e){}rec=null}listening=false}
 
+/* ---------- right-click / long-press menu ---------- */
+function ctxMenu(x,y,items){ctxClose();const m=document.createElement('div');m.className='ctx';m.setAttribute('role','menu');
+  m.innerHTML=items.map((it,i)=>it==='-'?'<hr>':`<button role="menuitem" data-ci="${i}" class="${it.danger?'danger':''}">${it.icon?`<span class="ci">${it.icon}</span>`:''}${it.label}${it.hint?`<kbd>${it.hint}</kbd>`:''}</button>`).join('');
+  document.body.appendChild(m);const r=m.getBoundingClientRect();m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+'px';m.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+'px';
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!b)return;const it=items[+b.dataset.ci];ctxClose();it.act&&it.act()});
+  m.querySelector('button')?.focus({preventScroll:true});
+  m.addEventListener('keydown',e=>{const bs=[...m.querySelectorAll('button')],i=bs.indexOf(document.activeElement);if(e.key==='ArrowDown'){e.preventDefault();bs[(i+1)%bs.length].focus()}if(e.key==='ArrowUp'){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus()}})}
+function ctxClose(){document.querySelectorAll('.ctx').forEach(x=>x.remove())}
+addEventListener('pointerdown',e=>{if(!e.target.closest('.ctx'))ctxClose()},true);addEventListener('scroll',ctxClose,true);addEventListener('resize',ctxClose);
+addEventListener('keydown',e=>{if(e.key==='Escape')ctxClose()});
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||'已复制')}catch(e){toast('复制不了')}}
+/* long press (touch) opens the same menu */
+function onLongPress(root,sel,fn){let T=null,sx=0,sy=0;root.addEventListener('touchstart',e=>{const el=e.target.closest(sel);if(!el)return;const t=e.touches[0];sx=t.clientX;sy=t.clientY;T=setTimeout(()=>{T=null;LP=Date.now();try{navigator.vibrate&&navigator.vibrate(10)}catch(_){}fn(el,sx,sy)},480)},{passive:true});
+  root.addEventListener('touchmove',e=>{if(!T)return;const t=e.touches[0];if(Math.hypot(t.clientX-sx,t.clientY-sy)>8){clearTimeout(T);T=null}},{passive:true});
+  root.addEventListener('touchend',()=>{clearTimeout(T);T=null})}
+let LP=0;document.addEventListener('click',e=>{if(Date.now()-LP<600){e.preventDefault();e.stopPropagation()}},true);
+
+const ICN={open:'↗',fav:'★',unfav:'☆',add:'＋',copy:'⎘',sel:'☑',del:'🗑',edit:'✎',icon:'☺',up:'↑',down:'↓',hide:'⇥'};
+async function delEntry(e){if(!(await ask('删除这篇日记？','删除后无法恢复。','删除',true)))return;S.entries=S.entries.filter(x=>x!==e);render();try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}toast('已删除')}
+function entryMenu(e,cx,cy){ctxMenu(cx,cy,[
+  {icon:ICN.open,label:'打开',act:()=>openEditor(e)},
+  {icon:e.fav?ICN.unfav:ICN.fav,label:e.fav?'取消收藏':'收藏',act:async()=>{e.fav=!e.fav;render();try{await Store.put('entries',structuredClone(e))}catch(err){toast('保存失败')}}},
+  {icon:ICN.add,label:'加入分区…',act:()=>{S.sel=new Set([e.id]);selModal('add')}},
+  {icon:'⇄',label:'移到分区…',act:()=>{S.sel=new Set([e.id]);selModal('move')}},
+  {icon:ICN.copy,label:'复制文字',act:()=>copyText((e.title?e.title+'\n\n':'')+e.body)},
+  {icon:ICN.sel,label:'多选',act:()=>{S.sel=new Set([e.id]);render();renderSel()}},
+  '-',{icon:ICN.del,label:'删除',danger:true,act:()=>delEntry(e)}])}
+function nbMenu(nb,cx,cy){const i=S.notebooks.indexOf(nb);const move=d=>{const j=i+d;if(j<0||j>=S.notebooks.length)return;[S.notebooks[i],S.notebooks[j]]=[S.notebooks[j],S.notebooks[i]];S.notebooks.forEach((n,k)=>{if(n.order!==k){n.order=k;saveNb(n)}});render()};
+  ctxMenu(cx,cy,[{icon:ICN.open,label:'打开',act:()=>{S.nb=nb.id;S.view='journal';render()}},
+   {icon:ICN.edit,label:'重命名 / 换图标…',act:()=>nbEdit(nb)},
+   i>0&&{icon:ICN.up,label:'上移',act:()=>move(-1)},i<S.notebooks.length-1&&{icon:ICN.down,label:'下移',act:()=>move(1)},
+   '-',S.notebooks.length>1&&{icon:ICN.del,label:'删除分区',danger:true,act:()=>delNotebook(nb.id)}].filter(Boolean))}
+function nbEdit(nb){let color=nb.color;modal(`<h3>编辑分区</h3><div class="field"><label for="neI">图标（一个 emoji）</label><input type="text" id="neI" value="${esc(nb.icon||'')}" maxlength="4" style="width:90px;text-align:center;font-size:20px"></div>
+  <div class="field"><label for="neN">名字</label><input type="text" id="neN" value="${esc(nb.name)}"></div><div class="swatches" id="neC">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div>
+  <div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
+  $('#modalBox').onclick=e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#neC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();if(a!=='ok')return;
+    nb.name=$('#neN').value.trim().slice(0,30)||nb.name;nb.icon=[...$('#neI').value.trim()].slice(0,2).join('');nb.color=color;Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存失败'));render()}}
+function jCtx(t,cx,cy){const c=t.closest('.card[data-open]');if(c){const e=S.entries.find(x=>x.id===c.dataset.open);if(e){entryMenu(e,cx,cy);return true}}
+  const nbb=t.closest('[data-nb]');if(nbb&&nbb.dataset.nb!=='all'){const nb=nbById(nbb.dataset.nb);if(nb){nbMenu(nb,cx,cy);return true}}
+  if(t.closest('.jside')){ctxMenu(cx,cy,[{icon:ICN.hide,label:'收起右边的概览',act:()=>toggleAside(false)}]);return true}
+  return false}
+document.addEventListener('contextmenu',e=>{if(e.shiftKey||!S.account)return;if(e.target.closest('#editor,#modal,input,textarea'))return;if(jCtx(e.target,e.clientX,e.clientY))e.preventDefault()});
+onLongPress(document,'.card[data-open],.nbtab[data-nb],.rail .nb[data-nb]',(el,x,y)=>{if(!S.sel)jCtx(el,x,y)});
+function asideOn(){try{return localStorage.getItem('lyra-aside')!=='0'}catch(e){return true}}
+function toggleAside(on){try{localStorage.setItem('lyra-aside',on?'1':'0')}catch(e){}render()}
 /* ---------- multi-select: add many entries to partitions at once ---------- */
 function renderSel(){let bar=$('#selbar');if(!S.sel||S.view!=='journal'){bar&&bar.remove();return}
   if(!bar){bar=document.createElement('div');bar.id='selbar';bar.className='selbar';document.body.appendChild(bar);
@@ -1247,6 +1308,7 @@ document.addEventListener('click',async ev=>{
     if(a==='new')newEntry(false);else if(a==='new-prompt')newEntry(true);
     else if(a==='shuffle'){S.prompt=(S.prompt+1)%PROMPTS.length;render()}
     else if(a==='newnb')newNotebook();
+    else if(a==='asideoff'){toggleAside(false)}else if(a==='asideon'){toggleAside(true)}
     else if(a==='toggleempty'){try{localStorage.setItem('lyra-empty',localStorage.getItem('lyra-empty')==='1'?'0':'1')}catch(e){}render()}
     else if(a==='selmode'){S.sel=S.sel?null:new Set();render();renderSel()}
     else if(a==='clearday'){S.day=null;render()}
@@ -1270,6 +1332,9 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('change',ev=>{if(ev.target.dataset.nbname||ev.target.dataset.nbicon)render()});
 document.addEventListener('keydown',ev=>{
+  if(!ev.metaKey&&!ev.ctrlKey&&!ev.altKey&&$('#editor').hidden&&$('#modal').hidden&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&S.account){
+    if(ev.key==='/'){ev.preventDefault();if(S.view!=='journal'){S.view='journal';render()}$('#q')?.focus();return}
+    if(ev.key==='n'||ev.key==='N'){ev.preventDefault();newEntry(false);return}}
   if(ev.key==='Enter'&&!ev.isComposing){const t=ev.target;
     if(!$('#modal').hidden&&t.tagName==='INPUT'&&!t.closest('form')){const ok=$('#modalBox [data-a=ok]');if(ok){ev.preventDefault();ok.click();return}}
     if((ev.metaKey||ev.ctrlKey)&&!$('#editor').hidden){ev.preventDefault();closeEditor();toast('已保存');return}}
