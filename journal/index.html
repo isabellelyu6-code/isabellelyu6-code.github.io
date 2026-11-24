@@ -1107,7 +1107,7 @@ function renderSettings(){
   <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
   <h3>导出与备份</h3>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="fixdates">按标题日期改时间</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
@@ -1284,6 +1284,18 @@ function asideOn(){try{return localStorage.getItem('lyra-aside')!=='0'}catch(e){
 function toggleAside(on){try{localStorage.setItem('lyra-aside',on?'1':'0')}catch(e){}render()}
 function edNbOpen(){try{return localStorage.getItem('lyra-ednbs')==='1'}catch(e){return false}}
 function edNbSum(){const L=nbsOf(S.ed).map(nbById).filter(Boolean);return `<span>分区</span><b>${L.map(n=>nbLabel(n)).join('、')||'未选'}</b><i>${edNbOpen()?'收起 ▴':'更改 ▾'}</i>`}
+/* entries whose title starts with a date: move them to that day (keeping the time) */
+function titleDate(e){const t=String(e.title||'').trim();let m=t.match(/^(\d{4})\s*[.\/\-年_]\s*(\d{1,2})\s*[.\/\-月_]\s*(\d{1,2})/),y,mo,d;
+  if(m){y=+m[1];mo=+m[2];d=+m[3]}else if((m=t.match(/^(\d{4})(\d{2})(\d{2})(?!\d)/))){y=+m[1];mo=+m[2];d=+m[3]}
+  else if((m=t.match(/^(\d{1,2})\s*[.\/月]\s*(\d{1,2})(?!\d)/))){mo=+m[1];d=+m[2];y=+e.date.slice(0,4);const c=new Date(y,mo-1,d),ed=parseDate(e.date.slice(0,10));if(c-ed>45*864e5)y--;}
+  else return null;
+  if(mo<1||mo>12||d<1||d>31||y<1990||y>2100)return null;const dt=new Date(y,mo-1,d);if(dt.getMonth()!==mo-1)return null;return dayKey(dt)}
+function fixDates(){const ch=S.entries.map(e=>[e,titleDate(e)]).filter(([e,k])=>k&&k!==e.date.slice(0,10));
+  if(!ch.length)return toast('标题里的日期都已经对上了');
+  modal(`<h3>按标题日期改时间</h3><p class="muted" style="margin:0 0 8px">${ch.length} 篇的日期和标题不一样，会改成标题里的日期（几点几分不变）。</p><div class="tlist">${ch.slice(0,200).map(([e,k])=>`<div class="tl"><b>${esc(e.title)}</b><span>${e.date.slice(0,10).replace(/-/g,'/')} → ${k.replace(/-/g,'/')}</span></div>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">全部改好</button></div>`);
+  $('#modalBox').onclick=async ev=>{const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();if(a!=='ok')return;let n=0;
+    for(const [e,k] of ch){e.date=k+e.date.slice(10);try{await Store.put('entries',structuredClone(e));n++}catch(err){}if(n%25===0)toast(`正在改… ${n}/${ch.length}`)}
+    render();toast(`改好了 ${n} 篇`,4000)}}
 function entryNbs(e){const pick=new Set(nbsOf(e));
   modal(`<h3>放在哪些分区？</h3><p class="muted" style="margin:0 0 6px">${esc(e.title||snippet(e.body,[]).slice(0,30)||'')}</p><div class="ednbs">${S.notebooks.map(n=>`<button type="button" data-sn="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${pick.has(n.id)}">${nbLabel(n)}</button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async ev=>{const b=ev.target.closest('[data-sn]');if(b){const id=b.dataset.sn;pick.has(id)?pick.delete(id):pick.add(id);b.setAttribute('aria-pressed',pick.has(id));return}
@@ -1493,7 +1505,7 @@ document.addEventListener('click',async ev=>{
     else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
     else if(a==='pickimport')$('#fileImport').click();
     else if(a==='paste')pasteImport();
-    else if(a==='sfsave'){const v=$('#sfFrom').value;if(!v)return toast('先选一个日期');S.settings.streakFill={from:v,to:dayKey(new Date())};Store.put('meta',S.settings).then(()=>{render();toast(`已连续写了 ${streaks().cur} 天`)},()=>toast('保存失败'))}else if(a==='sfclear'){delete S.settings.streakFill;Store.put('meta',S.settings).catch(()=>{});render()}else if(a==='autosplit')autoSplit();else if(a==='mapimport'){const f=$('#mapFile');f.onchange=async()=>{try{await importMap(JSON.parse(await f.files[0].text()))}catch(err){toast('分区表读不出来')}};f.click()}else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='sfsave'){const v=$('#sfFrom').value;if(!v)return toast('先选一个日期');S.settings.streakFill={from:v,to:dayKey(new Date())};Store.put('meta',S.settings).then(()=>{render();toast(`已连续写了 ${streaks().cur} 天`)},()=>toast('保存失败'))}else if(a==='sfclear'){delete S.settings.streakFill;Store.put('meta',S.settings).catch(()=>{});render()}else if(a==='autosplit')autoSplit();else if(a==='fixdates')fixDates();else if(a==='mapimport'){const f=$('#mapFile');f.onchange=async()=>{try{await importMap(JSON.parse(await f.files[0].text()))}catch(err){toast('分区表读不出来')}};f.click()}else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
     else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
     else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
     else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
