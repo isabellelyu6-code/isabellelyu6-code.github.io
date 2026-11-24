@@ -153,6 +153,37 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .acct{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:rgba(21,36,57,.8);font-size:13.5px;color:var(--mut);margin-top:8px}
 .acct:hover{color:var(--acc);border-color:var(--acc)}
 [hidden]{display:none!important}
+.site{min-height:64px;padding:12px 14px}
+.site b{font-size:15px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.next .m{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;color:var(--mut)}
+.next{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 18px;border-radius:18px;margin:4px 0 16px;border:1px solid color-mix(in srgb,var(--c) 55%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,var(--c) 16%,var(--card)),var(--card) 70%)}
+.next .lab{font-size:12px;font-weight:700;color:var(--c);letter-spacing:.06em}
+.next .nt{font-size:18px;font-weight:700;line-height:1.35;margin:2px 0 6px}
+.next .nn{font-size:13px;color:var(--mut);margin-top:6px}
+.next .nr{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.next .nr b{font-family:"Noto Serif SC",serif;font-size:clamp(26px,6vw,34px);font-weight:900;color:var(--acc);line-height:1;white-space:nowrap}
+.next .nr span{font-size:12px;color:var(--mut)}
+.next .nr .btn{margin-top:8px;height:36px}
+.mon{display:grid;grid-template-columns:auto auto minmax(40px,1fr);gap:10px;align-items:center;margin:20px 0 8px}
+.mon b{font-family:"Noto Serif SC",serif;font-size:18px;font-weight:900}
+.mon span{font-size:12.5px;color:var(--mut);white-space:nowrap}
+.mon i{height:4px;border-radius:2px;background:var(--card2);overflow:hidden;display:block}.mon i em{display:block;height:100%;background:var(--acc)}
+.wk{grid-template-columns:44px minmax(0,1fr);gap:2px;padding:6px 10px 6px 4px}
+.wchk{width:44px;height:44px;display:grid;place-items:center}
+.wchk i{width:22px;height:22px;border-radius:7px;border:2px solid color-mix(in srgb,var(--c) 70%,var(--mut));display:grid;place-items:center;font-style:normal;font-size:13px;color:var(--accInk);transition:background .15s}
+.wchk:hover i{background:color-mix(in srgb,var(--c) 25%,transparent)}
+.wchk[aria-pressed=true] i{background:var(--acc);border-color:var(--acc)}
+.wmain{text-align:left;padding:6px 0;min-width:0}
+.wl{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;color:var(--mut)}
+.wl .when b{color:var(--acc);font-weight:700;font-size:13.5px}
+.cd{font-weight:600;white-space:nowrap}.cd.soon{color:var(--warn)}.cd.late{color:var(--bad)}.cd.now{color:var(--acc)}
+.wk .tt{margin:2px 0 3px}
+.wk .nt2{color:var(--mut)}
+.wk.fin .tt{text-decoration:line-through;color:var(--mut)}
+.wk.late{border-color:rgba(240,160,168,.45)}
+.wk.now{border-color:color-mix(in srgb,var(--acc) 60%,var(--line))}
+.tact{margin-left:12px;color:var(--accInk);background:var(--acc);border-radius:8px;padding:3px 10px;font-weight:700;font-size:13px}
+@media(max-width:600px){.next{grid-template-columns:1fr}.next .nr{flex-direction:row;align-items:baseline;justify-content:space-between;text-align:left}.next .nr .btn{margin:0 0 0 auto}}
 footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 @media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.clock{text-align:left}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
 @media(min-width:900px){
@@ -194,7 +225,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       <div id="plans"></div>
     </section>
     <section class="s" id="work-s">
-      <div class="sh"><h2 class="disp">DDL<small id="workCount"></small></h2><button class="btn pri" data-act="addwork">+ 新作业</button></div>
+      <div class="sh"><h2 class="disp">DDL<small id="workCount"></small></h2><button class="btn pri" data-act="addwork">+ 新 DDL</button></div>
       <div class="chips" id="workChips"></div>
       <div id="work"></div>
     </section>
@@ -231,7 +262,7 @@ const dk=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const WD=['日','一','二','三','四','五','六'];
 const safeUrl=u=>/^https:\/\/[^\s"'<>]+$/i.test(u||'')?u:'';
-function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function toast(t,act){const e=$('#toast');e.textContent=t;if(act){const b=document.createElement('button');b.textContent=act.label;b.className='tact';b.onclick=()=>{e.hidden=true;act.fn()};e.appendChild(b)}e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,act?5000:2600)}
 const COLORS=['#86d9c3','#8fb8f0','#e8c98e','#e9b0c2','#b9a4f0','#7fd0e6','#d9d28e','#a9b8cc'];
 const MAPC={"#3ddc97": "#86d9c3", "#5aa9ff": "#8fb8f0", "#ffb454": "#e8c98e", "#ff7a8a": "#e9b0c2", "#b18cff": "#b9a4f0", "#4fd1e8": "#7fd0e6", "#e6d36b": "#d9d28e", "#9fb3c8": "#a9b8cc", "#0f4c55": "#86d9c3", "#e8553a": "#e9b0c2", "#3b6fd8": "#8fb8f0", "#d19a12": "#e8c98e", "#6f8a2e": "#d9d28e", "#b04878": "#b9a4f0", "#5d6370": "#a9b8cc", "#8a5a2b": "#7fd0e6"};
 const COURSE={BIOC0001:'#e9b0c2',CHEM0005:'#8fb8f0',CHEM0006:'#86d9c3',MATH0040:'#e8c98e',MATH0041:'#e8c98e',CHEM0008:'#b9a4f0',CHEM0009:'#7fd0e6',CHEM0013:'#d9d28e'};
@@ -255,6 +286,8 @@ const SEED_SITES=[
 ];
 const S0='未完成',S1='已提交',S2='已完成',S3='待公布';
 const SEED_WORK=[];
+const SEED_WORK_V=2;
+const SEED_DROP=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
 const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
@@ -416,9 +449,14 @@ async function enterAccount(acc,key,isNew){
   S.sites.forEach(x=>{if(MAPC[x.color])x.color=MAPC[x.color];if(!ICONS[x.icon])x.icon=iconKey(x)});
   if(!S.meta.find(x=>x.id==='seed')){
     let o=0;for(const x of SEED_SITES){const it={id:uid(),order:o++,...x};S.sites.push(it);await DB.put('sites',it)}
-    for(const r of SEED_WORK){const it={id:uid(),date:r[0],time:r[1],course:r[2],task:r[3],weight:r[4],status:r[5],note:r[6]};S.work.push(it);await DB.put('work',it)}
+    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};S.work.push(it);await DB.put('work',it)}
     const m={id:'seed',v:1,at:Date.now()};S.meta.push(m);await DB.put('meta',m);
   }
+  if(SEED_WORK.length&&!S.meta.find(x=>x.id==='ddl'+SEED_WORK_V)){
+    for(const w of S.work)await DB.del('work',w.id);S.work=[];
+    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};S.work.push(it);await DB.put('work',it)}
+    const m={id:'ddl'+SEED_WORK_V,at:Date.now()};S.meta.push(m);await DB.put('meta',m)}
+  for(const x of [...S.sites])if(SEED_DROP.some(u=>(x.url||'').includes(u))){S.sites=S.sites.filter(y=>y!==x);await DB.del('sites',x.id)}
   if(!S.sites.some(x=>/timetable\.ucl\.ac\.uk/.test(x.url||''))){const it={id:uid(),order:-1,name:'UCL 课表',url:'https://timetable.ucl.ac.uk/tt/homePage.do',desc:'官方个人课表',color:'#8fb8f0',icon:'calendar'};S.sites.push(it);await DB.put('sites',it)}
   if(!S.meta.find(x=>x.id==='timetable')&&SEED_TT.length){const m={id:'timetable',items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
   if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
@@ -496,13 +534,12 @@ const svgIcon=k=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" st
 function renderSites(){
   const list=[...S.sites].sort((a,b)=>(a.order??0)-(b.order??0));
   $('#sites').className='sites'+(S.editing?' editing':'');$('#editBtn').textContent=S.editing?'完成':'编辑';
-  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${svgIcon(iconKey(x))}</span><span style="min-width:0"><b>${esc(x.name)}</b><span>${esc(x.desc||u.replace(/^https:\/\//,''))}</span></span><button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站，点「+ 添加」。</div>';
+  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${svgIcon(iconKey(x))}</span><b>${esc(x.name)}</b><button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站，点「+ 添加」。</div>';
 }
 function siteModal(x){
   const it=x||{name:'',url:'https://',desc:'',color:COLORS[0],icon:'link'};let color=it.color,icon=iconKey(it);
   modal(`<h3>${x?'编辑网站':'添加网站'}</h3><div class="field"><label for="sN">名字</label><input type="text" id="sN" value="${esc(it.name)}"></div>
   <div class="field"><label for="sU">网址（https://…）</label><input type="url" id="sU" value="${esc(it.url)}"></div>
-  <div class="field"><label for="sD">说明</label><input type="text" id="sD" value="${esc(it.desc)}"></div>
   <div class="field"><label>图标</label><div class="icpick" id="sI">${Object.keys(ICONS).map(k=>`<button data-ic="${k}" aria-pressed="${k===icon}" aria-label="${k}">${svgIcon(k)}</button>`).join('')}</div></div>
   <div class="field"><label>颜色</label><div class="sw" id="sC">${COLORS.map(c=>`<button style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div></div>
   <div class="row">${x?'<button class="btn danger sp" data-a="del">删除</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
@@ -512,7 +549,7 @@ function siteModal(x){
     if(a==='no')return closeModal();
     if(a==='del'){S.sites=S.sites.filter(s=>s!==x);DB.del('sites',x.id);closeModal();renderSites();return}
     const name=$('#sN').value.trim(),url=$('#sU').value.trim();if(!name)return $('#sN').focus();if(!safeUrl(url))return toast('网址要以 https:// 开头');
-    const o=x||{id:uid(),order:S.sites.length};Object.assign(o,{name:name.slice(0,40),url,desc:$('#sD').value.trim().slice(0,60),icon,color});
+    const o=x||{id:uid(),order:S.sites.length};Object.assign(o,{name:name.slice(0,40),url,icon,color});
     if(!x)S.sites.push(o);DB.put('sites',o);closeModal();renderSites()};
 }
 
@@ -546,43 +583,87 @@ function planModal(p){
     closeModal();renderPlans()};
 }
 
-/* ---------- work ---------- */
+/* ---------- DDL ---------- */
 const STS=[S0,S1,S2,S3];
-function workSorted(){return [...S.work].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||(a.time||'').localeCompare(b.time||''))}
-function workDue(w){if(!w.date)return{t:'日期待公布',c:''};const n=new Date(),d=pd(w.date);const [h,m]=(w.time&&/^\d\d:\d\d$/.test(w.time)?w.time:'23:59').split(':').map(Number);d.setHours(h,m);
-  const ms=d-n,days=Math.floor((pd(w.date)-pd(dk(n)))/864e5);
-  if(ms<0)return{t:days===0?'今天已截止':`已过 ${-days} 天`,c:'late'};
-  if(days===0)return{t:`今天 ${w.time||''} 截止`,c:'soon'};if(days===1)return{t:`明天 ${w.time||''}`,c:'soon'};
-  return{t:`还有 ${days} 天`,c:days<=3?'soon':''}}
+const isFin=w=>w.status===S2||w.status===S1;
+const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
+const atTime=(date,t,fallback)=>{const d=pd(date);const [h,m]=(t&&/^\d\d:\d\d$/.test(t)?t:fallback).split(':').map(Number);d.setHours(h,m);return d};
+const startOf=w=>w.date?atTime(w.date,w.time,'23:59'):null;
+const endOf=w=>w.date?atTime(w.dateEnd||w.date,w.endTime||w.time,'23:59'):null;
+const fmtLeft=ms=>{const h=Math.floor(ms/36e5),m=Math.max(1,Math.floor(ms%36e5/6e4));return h?`${h} 小时${h<10&&m?` ${m} 分`:''}`:`${m} 分钟`};
+function workSorted(){return [...S.work].sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||(a.time||'99').localeCompare(b.time||'99')||(a.course||'').localeCompare(b.course||''))}
+function workDue(w){
+  if(!w.date)return{t:'日期待定',c:''};
+  const n=new Date(),today=pd(dk(n)),days=Math.round((pd(w.date)-today)/864e5);
+  if(w.approx)return days>0?{t:`约 ${days} 天后`,c:''}:{t:'快到了',c:'soon'};
+  const st=startOf(w),en=endOf(w);
+  if(en<n){const ago=Math.round((today-pd(dk(en)))/864e5);return{t:ago?`已过 ${ago} 天`:'今天已截止',c:'late'}}
+  if(st<=n)return{t:`进行中 · 还剩 ${fmtLeft(en-n)}`,c:'now'};
+  if(days===0)return{t:`今天 ${w.time||''} · 还剩 ${fmtLeft(st-n)}`,c:'soon'};
+  if(days===1)return{t:`明天 ${w.time||''}`,c:'soon'};
+  return{t:`还有 ${days} 天`,c:days<=3?'soon':''};
+}
+function whenText(w){
+  if(w.approx)return w.approx;
+  if(!w.date)return '待定';
+  return `${md(w.date)}${w.dateEnd?'–'+md(w.dateEnd):''}${w.time?' '+w.time+(w.endTime?'–'+w.endTime:''):''}`;
+}
+function groupLabel(w){
+  if(w.group)return w.group;if(!w.date)return '日期待定';
+  const y=+w.date.slice(0,4),m=+w.date.slice(5,7);return y===new Date().getFullYear()?`${m}月`:`${y}年${m}月`;
+}
+let lastUndo=null;
+function setDone(w,done){const prev=w.status;w.status=done?S2:S0;DB.put('work',w);renderWork();
+  lastUndo=()=>{w.status=prev;DB.put('work',w);renderWork()};
+  toast(done?`✓ 完成：${w.task}`:`已恢复：${w.task}`,{label:'撤销',fn:()=>{if(lastUndo){lastUndo();lastUndo=null}}})}
 function renderWork(){
-  const courses=[...new Set(S.work.map(w=>cKey(w.course)))].sort();
+  const courses=[...new Set(S.work.map(w=>cKey(w.course)))].filter(Boolean).sort();
   $('#workChips').innerHTML=[['todo','待办'],['all','全部'],['fin','已完成']].map(([k,n])=>`<button class="chip" data-wf="${k}" aria-pressed="${S.wf===k}">${n}</button>`).join('')+`<span style="width:1px;background:var(--line);flex:none"></span>`+
     [['all','全部课程'],...courses.map(c=>[c,c])].map(([k,n])=>`<button class="chip" data-wc="${esc(k)}" aria-pressed="${S.wc===k}">${k!=='all'?`<span class="dot" style="background:${cColor(k)}"></span>`:''}${esc(n)}</button>`).join('');
-  let list=workSorted().filter(w=>(S.wc==='all'||cKey(w.course)===S.wc));
-  const isFin=w=>w.status===S2||w.status===S1;
-  if(S.wf==='todo')list=list.filter(w=>!isFin(w));else if(S.wf==='fin')list=list.filter(isFin).reverse();
-  const open=S.work.filter(w=>!isFin(w)),soon=open.filter(w=>w.date&&workDue(w).c==='soon').length;
-  $('#workCount').textContent=`${open.length} 项待办${soon?` · ${soon} 项快到期`:''}`;
-  $('#work').innerHTML=list.length?list.map(w=>{const d=w.date?pd(w.date):null,du=workDue(w),si=STS.indexOf(w.status);return `<div class="wk ${isFin(w)?'fin':''}" style="--c:${cColor(w.course)}">
-    <div class="dd">${d?`<b>${d.getMonth()+1}/${d.getDate()}</b><span>周${WD[d.getDay()]} ${esc(w.time||'')}</span>`:'<b>?</b><span>待公布</span>'}</div>
-    <button style="text-align:left;padding:0;min-height:44px" data-editwork="${esc(w.id)}"><div class="tt">${esc(w.task)}</div><div class="m"><span class="pill" style="--c:${cColor(w.course)}">${esc(w.course)}</span>${w.weight&&w.weight!=='—'?`<span>${esc(w.weight)}</span>`:''}${!isFin(w)?`<span class="due ${du.c}" style="padding:0">${du.t}</span>`:''}${w.note?`<span>${esc(w.note)}</span>`:''}</div></button>
-    <button class="st s${si<0?0:si}" data-st="${esc(w.id)}" title="点一下切换状态">${esc(w.status)}</button></div>`}).join(''):`<div class="empty">${S.wf==='todo'?'没有待办作业，太棒了。':'这里还没有内容。'}</div>`;
+  const now=new Date();
+  const pool=workSorted().filter(w=>S.wc==='all'||cKey(w.course)===S.wc);
+  const open=S.work.filter(w=>!isFin(w)),soon=open.filter(w=>['soon','now'].includes(workDue(w).c)).length,late=open.filter(w=>workDue(w).c==='late').length;
+  $('#workCount').textContent=`${open.length} 项待办${soon?` · ${soon} 项很近`:''}${late?` · ${late} 项已过期`:''}`;
+  /* next up */
+  const next=pool.find(w=>!isFin(w)&&w.date&&!w.approx&&endOf(w)>=now);
+  let html='';
+  if(next&&S.wf!=='fin'){const du=workDue(next),st=startOf(next),ms=st-now;
+    const big=ms<=0?'进行中':ms<864e5?fmtLeft(ms):`${Math.round((pd(next.date)-pd(dk(now)))/864e5)} 天`;
+    html+=`<div class="next" style="--c:${cColor(next.course)}"><div><span class="lab">下一个</span><div class="nt">${esc(next.task)}</div><div class="m"><span class="pill" style="--c:${cColor(next.course)}">${esc(next.course)}</span><span>${esc(whenText(next))}</span>${next.weight?`<span>${esc(next.weight)}</span>`:''}</div>${next.note?`<div class="nn">${esc(next.note)}</div>`:''}</div>
+      <div class="nr"><b>${big}</b><span>${ms<=0?'':'后'}</span><button class="btn pri" data-wdone="${esc(next.id)}">完成 ✓</button></div></div>`}
+  let list=pool;
+  if(S.wf==='todo')list=pool.filter(w=>!isFin(w));else if(S.wf==='fin')list=pool.filter(isFin).reverse();
+  if(!list.length){html+=`<div class="empty">${S.wf==='todo'?'没有待办的 DDL，太棒了。':'这里还没有内容。'}</div>`}
+  else{const groups=[];for(const w of list){const g=groupLabel(w);let G=groups.find(x=>x.g===g);if(!G)groups.push(G={g,items:[]});G.items.push(w)}
+    html+=groups.map(G=>{const all=pool.filter(w=>groupLabel(w)===G.g),dn=all.filter(isFin).length;
+      return `<div class="mon"><b>${esc(G.g)}</b><span>${dn}/${all.length} 完成</span><i><em style="width:${all.length?dn/all.length*100:0}%"></em></i></div>`+G.items.map(w=>{const du=workDue(w),f=isFin(w),d=w.date&&!w.approx?pd(w.date):null;
+        return `<div class="wk ${f?'fin':''} ${!f?du.c:''}" style="--c:${cColor(w.course)}">
+        <button class="wchk" data-wdone="${esc(w.id)}" aria-pressed="${f}" aria-label="${f?'标记为未完成':'标记为完成'}"><i>${f?'✓':''}</i></button>
+        <button class="wmain" data-editwork="${esc(w.id)}">
+          <div class="wl"><span class="when">${d?`<b>${d.getMonth()+1}/${d.getDate()}</b> 周${WD[d.getDay()]}`:'<b>'+esc(whenText(w))+'</b>'}${d&&w.dateEnd?` 至 ${md(w.dateEnd)}`:''}${d&&w.time?` · ${w.time}${w.endTime?'–'+w.endTime:''}`:''}</span>${!f?`<span class="cd ${du.c}">${du.t}</span>`:''}</div>
+          <div class="tt">${esc(w.task)}</div>
+          <div class="m"><span class="pill" style="--c:${cColor(w.course)}">${esc(w.course)}</span>${w.weight?`<span>${esc(w.weight)}</span>`:''}${w.note?`<span class="nt2">${esc(w.note)}</span>`:''}</div>
+        </button></div>`}).join('')}).join('')}
+  const doneN=pool.filter(isFin).length;
+  if(S.wf==='todo'&&doneN)html+=`<button class="chip" style="margin-top:6px" data-wf="fin">看已完成的 ${doneN} 项</button>`;
+  $('#work').innerHTML=html;
 }
 function workModal(w){
-  const it=w||{date:dk(new Date()),time:'16:00',course:'',task:'',weight:'',status:S0,note:''};
-  modal(`<h3>${w?'编辑作业':'新作业'}</h3><div class="field"><label for="wT">任务</label><input type="text" id="wT" value="${esc(it.task)}"></div>
-  <div class="two"><div class="field"><label for="wC">课程</label><input type="text" id="wC" value="${esc(it.course)}" placeholder="CHEM0006"></div><div class="field"><label for="wW">占比 / 性质</label><input type="text" id="wW" value="${esc(it.weight)}"></div></div>
-  <div class="two"><div class="field"><label for="wD">日期（不填 = 待公布）</label><input type="date" id="wD" value="${esc(it.date||'')}"></div><div class="field"><label for="wH">时间</label><input type="time" id="wH" value="${esc(/^\d\d:\d\d$/.test(it.time)?it.time:'')}"></div></div>
-  <div class="field"><label for="wS">状态</label><select id="wS">${STS.map(s=>`<option ${s===it.status?'selected':''}>${s}</option>`).join('')}</select></div>
+  const it=w||{date:dk(new Date()),time:'',course:'',task:'',weight:'',status:S0,note:''};
+  modal(`<h3>${w?'编辑 DDL':'新 DDL'}</h3><div class="field"><label for="wT">任务</label><input type="text" id="wT" value="${esc(it.task)}"></div>
+  <div class="two"><div class="field"><label for="wC">课程</label><input type="text" id="wC" value="${esc(it.course)}" placeholder="CHEM0006"></div><div class="field"><label for="wW">占比</label><input type="text" id="wW" value="${esc(it.weight)}" placeholder="10%"></div></div>
+  <div class="two"><div class="field"><label for="wD">日期</label><input type="date" id="wD" value="${esc(it.date||'')}"></div><div class="field"><label for="wD2">结束日期（可不填）</label><input type="date" id="wD2" value="${esc(it.dateEnd||'')}"></div></div>
+  <div class="two"><div class="field"><label for="wH">时间</label><input type="time" id="wH" value="${esc(/^\d\d:\d\d$/.test(it.time||'')?it.time:'')}"></div><div class="field"><label for="wH2">结束时间（可不填）</label><input type="time" id="wH2" value="${esc(/^\d\d:\d\d$/.test(it.endTime||'')?it.endTime:'')}"></div></div>
+  <div class="field"><label for="wA">日期还没定？写个大概（如：1/11 那周）</label><input type="text" id="wA" value="${esc(it.approx||'')}"></div>
   <div class="field"><label for="wN">备注</label><textarea id="wN" rows="2">${esc(it.note)}</textarea></div>
+  <label style="display:flex;gap:10px;align-items:center;min-height:44px"><input type="checkbox" id="wS" ${isFin(it)?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)"> 已完成</label>
   <div class="row">${w?'<button class="btn danger sp" data-a="del">删除</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#box').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no')return closeModal();
-    if(a==='del'){S.work=S.work.filter(x=>x!==w);DB.del('work',w.id);closeModal();renderWork();return}
+    if(a==='del'){S.work=S.work.filter(x=>x!==w);DB.del('work',w.id);closeModal();renderWork();toast('已删除',{label:'撤销',fn:()=>{S.work.push(w);DB.put('work',w);renderWork()}});return}
     const task=$('#wT').value.trim();if(!task)return $('#wT').focus();
-    const o=w||{id:uid()};Object.assign(o,{task:task.slice(0,120),course:$('#wC').value.trim().slice(0,40),weight:$('#wW').value.trim().slice(0,60),date:$('#wD').value||null,time:$('#wH').value||'',status:$('#wS').value,note:$('#wN').value.trim().slice(0,300)});
+    const o=w||{id:uid()};Object.assign(o,{task:task.slice(0,140),course:$('#wC').value.trim().slice(0,40),weight:$('#wW').value.trim().slice(0,40),date:$('#wD').value||null,dateEnd:$('#wD2').value||'',time:$('#wH').value||'',endTime:$('#wH2').value||'',approx:$('#wA').value.trim().slice(0,40),note:$('#wN').value.trim().slice(0,300),status:$('#wS').checked?S2:S0});
     if(!w)S.work.push(o);DB.put('work',o);closeModal();renderWork()};
 }
-
 
 /* ---------- full timetable ---------- */
 let ttTerm=null;
@@ -592,7 +673,6 @@ function ttModal(){
   const today=dk(new Date());
   if(!ttTerm)ttTerm=weekly.some(c=>c.from<=today&&c.to>=today)?(weekly.find(c=>c.from<=today&&c.to>=today).from<'2027-01-01'?'Term 1':'Term 2'):(terms[0]||'Term 1');
   const inTerm=weekly.filter(c=>(c.from<'2027-01-01'?'Term 1':'Term 2')===ttTerm);
-  const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
   const days=[1,2,3,4,5].map(wd=>{const l=inTerm.filter(c=>c.wd===wd).sort((a,b)=>a.s.localeCompare(b.s));return l.length?`<div class="tt-day">星期${WD[wd]}</div>`+l.map(c=>`<div class="cls"><span class="t mono">${c.s}–${c.e}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}</b><small>${esc(c.room)} · ${md(c.from)}–${md(c.to)}${c.except&&c.except.length?` · ${c.except.map(md).join('、')} 不上`:''}</small></div>`).join(''):''}).join('');
   const up=once.filter(c=>c.date>=today).sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s));
   const OFFICIAL='https://timetable.ucl.ac.uk/tt/homePage.do';
@@ -623,8 +703,8 @@ function run(raw){
   if(c==='done'||c==='完成'){const p=S.plans.find(x=>!x.done&&x.text.toLowerCase().includes(arg.toLowerCase()));if(!arg||!p)return print('没找到这条计划','err');p.done=true;p.doneAt=Date.now();DB.put('plans',p);renderPlans();print(`✓ 完成：${p.text}`,'ok');return}
   if(c==='课表'||c==='tt'||c==='timetable'){ttModal();return}
   if(c==='today'||c==='今天'||c==='课'){const l=classesOn(new Date());if(!l.length)print('今天没有课。');l.forEach(x=>print(`  ${x.s}–${x.e}  ${x.course} ${x.type} @ ${x.room}`));return}
-  if(c==='ddl'||c==='work'||c==='作业'){const now=new Date(),lim=new Date(now);lim.setDate(lim.getDate()+7);const l=workSorted().filter(w=>w.status!==S2&&w.status!==S1&&w.date&&pd(w.date)<=lim);
-    if(!l.length)print('未来 7 天没有截止的作业。','ok');l.forEach(w=>print(`  ${w.date.slice(5).replace('-','/')} ${w.time||''}  ${w.course}  ${w.task}  [${workDue(w).t}]`,workDue(w).c==='late'?'err':''));$('#work-s').scrollIntoView({behavior:'smooth'});return}
+  if(c==='ddl'||c==='work'||c==='作业'){const now=new Date(),lim=new Date(now);lim.setDate(lim.getDate()+7);const l=workSorted().filter(w=>!isFin(w)&&w.date&&!w.approx&&pd(w.date)<=lim&&endOf(w)>=now);
+    if(!l.length)print('未来 7 天没有截止的作业。','ok');l.forEach(w=>print(`  ${whenText(w)}  ${w.course}  ${w.task}  [${workDue(w).t}]`,workDue(w).c==='late'?'err':''));$('#work-s').scrollIntoView({behavior:'smooth'});return}
   if((c==='北欧'||c==='nordic'||c==='trip')&&!S.trip)return print('还没有设置旅行。','err');
   if(c==='北欧'||c==='nordic'||c==='trip'){const d=Math.round((pd(S.trip.start)-pd(dk(new Date())))/864e5);print(d>0?`还有 ${d} 天出发去北欧 ✈`:'北欧之旅进行中或已结束','ok');S.trip.plan.forEach(p=>print(`  ${p[0].padEnd(8,' ')} ${p[1]}`));if(safeUrl(S.trip.url))print(linkLine({name:'完整行程',url:S.trip.url,desc:''}),'',true);return}
   if(c==='sites'||c==='ls'||c==='网站'){S.sites.forEach(x=>print(linkLine(x),'',true));return}
@@ -644,7 +724,7 @@ document.addEventListener('click',e=>{
   if(d.editsite){e.preventDefault();siteModal(S.sites.find(x=>x.id===d.editsite));return}
   if(d.chk){const p=S.plans.find(x=>x.id===d.chk);if(p){p.done=!p.done;p.doneAt=Date.now();DB.put('plans',p);renderPlans()}return}
   if(d.editplan){const p=S.plans.find(x=>x.id===d.editplan);if(p)planModal(p);return}
-  if(d.st){const w=S.work.find(x=>x.id===d.st);if(w){const order=[S0,S1,S2];w.status=order[(order.indexOf(w.status)+1)%3];DB.put('work',w);renderWork()}return}
+  if(d.wdone){const w=S.work.find(x=>x.id===d.wdone);if(w)setDone(w,!isFin(w));return}
   if(d.editwork){const w=S.work.find(x=>x.id===d.editwork);if(w)workModal(w);return}
   if(d.wf){S.wf=d.wf;renderWork();return}
   if(d.wc){S.wc=d.wc;renderWork();return}
