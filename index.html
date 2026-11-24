@@ -12,6 +12,7 @@
    IDEA: a terminal window on a polar-night desk: one prompt line runs everything, panels around it are the screens it opens
    PICTURE: the top band is the terminal itself beside today's schedule and the trip countdown, under faint snow
    COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent (also all dates), twilight rose, sun gold; Noto Serif SC titles, JetBrains Mono for the prompt, Noto Sans SC elsewhere
+   LAYOUT: phone — terminal, today, sites, plans, work stacked; desktop — terminal + today side by side, plans and work in two columns */
 :root{color-scheme:dark;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--warn:#f0b47c;--bad:#f0a0a8}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
@@ -84,7 +85,7 @@ section.s{padding:30px 0 6px}
 .cols{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
 .addrow{display:flex;gap:8px;margin-bottom:12px}
 .addrow input{flex:1}
-input[type=text],input[type=url],input[type=date],input[type=time],select,textarea{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:16px;min-height:44px;width:100%;color:var(--ink)}
+input[type=text],input[type=email],input[type=password],input[type=url],input[type=date],input[type=time],select,textarea{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:16px;min-height:44px;width:100%;color:var(--ink)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
 input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.8)}
 .grp{font-size:13px;color:var(--mut);margin:16px 0 6px;font-weight:600;display:flex;gap:10px;align-items:center}
@@ -207,7 +208,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
     <label for="auPw">密码</label><input type="password" id="auPw" autocomplete="current-password" required>
     <div id="auPw2Wrap" hidden><label for="auPw2">再输入一次密码</label><input type="password" id="auPw2" autocomplete="new-password"></div>
     <label class="remember"><input type="checkbox" id="auRemember" checked> 在这台设备上记住我，下次不用再登录</label>
-    <p class="warn" id="auWarn" hidden>密码只保存在你脑子里：忘记密码，这个账号的内容就再也打不开了。建议写在安全的地方，并定期在「设置」里导出备份。</p>
+    <p class="warn" id="auWarn" hidden>密码只保存在你脑子里：忘记密码，这个账号的内容就再也打不开了。建议写在安全的地方，并定期在「账号」里导出备份。</p>
     <button class="btn pri" type="submit" id="auGo" style="width:100%;justify-content:center;margin-top:16px">登录</button>
     <div id="auMsg" role="alert" style="min-height:1.5em;font-size:14px;margin-top:10px"></div>
     <p style="font-size:13px;opacity:.7;margin:8px 0 0" id="auWhere"></p>
