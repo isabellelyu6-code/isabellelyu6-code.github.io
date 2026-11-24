@@ -1020,12 +1020,12 @@ function selModal(mode){const T={add:'加入哪些分区？（原来的分区保
     S.sel=new Set();render();renderSel();toast(`改好了 ${n} 篇`+(skip?`（${skip} 篇只剩这一个分区，没移出）`:''))}}
 /* partition map: {notebooks:[{name,icon,color}], dated:'name', assign:[{nb,date,text}]} */
 async function importMap(o){let made=0,set=0,miss=[];const byName=n=>S.notebooks.find(x=>x.name===n);
+  if(o.rename)for(const [from,to] of Object.entries(o.rename)){const nb=byName(from);if(nb&&!byName(to)){nb.name=to;await Store.put('notebooks',structuredClone(nb))}}
   for(const [i,n] of (o.notebooks||[]).entries()){let nb=byName(n.name);if(!nb){nb={id:uid(),name:String(n.name).slice(0,30),color:COLORS.includes(n.color)?n.color:COLORS[i%COLORS.length],created:Date.now(),order:i};S.notebooks.push(nb);made++}nb.icon=n.icon||nb.icon||'';nb.order=i;await Store.put('notebooks',structuredClone(nb))}
   S.notebooks.sort((a,b)=>(a.order??99)-(b.order??99));
   const add=(e,nb)=>{const L=nbsOf(e);if(!L.includes(nb.id))L.push(nb.id);e.nb=L[0];e.also=L.slice(1);e._t=1};
   const clean=t=>String(t||'').replace(/[^\u4e00-\u9fff\u3040-\u30ffA-Za-z0-9]/g,'');
   const bi=t=>{const s=clean(t),B=new Set();for(let i=0;i<s.length-1;i++)B.add(s.slice(i,i+2));return B};
-  if(o.rename)for(const [from,to] of Object.entries(o.rename)){const nb=byName(from);if(nb&&!byName(to)){nb.name=to;await Store.put('notebooks',structuredClone(nb))}}
   if(o.dated){const nb=byName(o.dated);if(nb)for(const e of S.entries)if(isDateTitle(e.title))add(e,nb)}
   const EB=S.entries.map(e=>[e,bi((e.title||'')+(e.body||''))]);const hit={};
   for(const r of o.assign||[]){const nb=byName(r.nb);if(!nb)continue;const tb=bi(r.text);if(tb.size<12){miss.push(r);continue}
