@@ -175,9 +175,11 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .wchk[aria-pressed=true] i{background:var(--acc);border-color:var(--acc)}
 .wmain{text-align:left;padding:6px 0;min-width:0}
 .wl{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;color:var(--mut)}
-.wl .when b{color:var(--acc);font-weight:700;font-size:13.5px}
+.wk .when b{color:var(--acc);font-weight:700}
+.crs{font-family:"Noto Serif SC",serif;font-weight:900;font-size:17px;color:var(--c);letter-spacing:.01em}
+.wk .m{align-items:baseline}.wk .wt{color:var(--ink);font-weight:600}
 .cd{font-weight:600;white-space:nowrap}.cd.soon{color:var(--warn)}.cd.late{color:var(--bad)}.cd.now{color:var(--acc)}
-.wk .tt{margin:2px 0 3px}
+.wk .tt{margin:1px 0 4px;font-size:15px;font-weight:600}
 .wk .nt2{color:var(--mut)}
 .wk.fin .tt{text-decoration:line-through;color:var(--mut)}
 .wk.late{border-color:rgba(240,160,168,.45)}
@@ -286,7 +288,7 @@ const SEED_SITES=[
 ];
 const S0='未完成',S1='已提交',S2='已完成',S3='待公布';
 const SEED_WORK=[];
-const SEED_WORK_V=2;
+const SEED_WORK_V=3;
 const SEED_DROP=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
@@ -453,8 +455,9 @@ async function enterAccount(acc,key,isNew){
     const m={id:'seed',v:1,at:Date.now()};S.meta.push(m);await DB.put('meta',m);
   }
   if(SEED_WORK.length&&!S.meta.find(x=>x.id==='ddl'+SEED_WORK_V)){
+    const doneKey=new Set(S.work.filter(isFin).map(w=>(w.date||'')+'|'+cKey(w.course)+'|'+(w.time||'')));
     for(const w of S.work)await DB.del('work',w.id);S.work=[];
-    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};S.work.push(it);await DB.put('work',it)}
+    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};if(doneKey.has((it.date||'')+'|'+cKey(it.course)+'|'+(it.time||'')))it.status=S2;S.work.push(it);await DB.put('work',it)}
     const m={id:'ddl'+SEED_WORK_V,at:Date.now()};S.meta.push(m);await DB.put('meta',m)}
   for(const x of [...S.sites])if(SEED_DROP.some(u=>(x.url||'').includes(u))){S.sites=S.sites.filter(y=>y!==x);await DB.del('sites',x.id)}
   if(!S.sites.some(x=>/timetable\.ucl\.ac\.uk/.test(x.url||''))){const it={id:uid(),order:-1,name:'UCL 课表',url:'https://timetable.ucl.ac.uk/tt/homePage.do',desc:'官方个人课表',color:'#8fb8f0',icon:'calendar'};S.sites.push(it);await DB.put('sites',it)}
@@ -624,13 +627,7 @@ function renderWork(){
   const pool=workSorted().filter(w=>S.wc==='all'||cKey(w.course)===S.wc);
   const open=S.work.filter(w=>!isFin(w)),soon=open.filter(w=>['soon','now'].includes(workDue(w).c)).length,late=open.filter(w=>workDue(w).c==='late').length;
   $('#workCount').textContent=`${open.length} 项待办${soon?` · ${soon} 项很近`:''}${late?` · ${late} 项已过期`:''}`;
-  /* next up */
-  const next=pool.find(w=>!isFin(w)&&w.date&&!w.approx&&endOf(w)>=now);
   let html='';
-  if(next&&S.wf!=='fin'){const du=workDue(next),st=startOf(next),ms=st-now;
-    const big=ms<=0?'进行中':ms<864e5?fmtLeft(ms):`${Math.round((pd(next.date)-pd(dk(now)))/864e5)} 天`;
-    html+=`<div class="next" style="--c:${cColor(next.course)}"><div><span class="lab">下一个</span><div class="nt">${esc(next.task)}</div><div class="m"><span class="pill" style="--c:${cColor(next.course)}">${esc(next.course)}</span><span>${esc(whenText(next))}</span>${next.weight?`<span>${esc(next.weight)}</span>`:''}</div>${next.note?`<div class="nn">${esc(next.note)}</div>`:''}</div>
-      <div class="nr"><b>${big}</b><span>${ms<=0?'':'后'}</span><button class="btn pri" data-wdone="${esc(next.id)}">完成 ✓</button></div></div>`}
   let list=pool;
   if(S.wf==='todo')list=pool.filter(w=>!isFin(w));else if(S.wf==='fin')list=pool.filter(isFin).reverse();
   if(!list.length){html+=`<div class="empty">${S.wf==='todo'?'没有待办的 DDL，太棒了。':'这里还没有内容。'}</div>`}
@@ -640,9 +637,9 @@ function renderWork(){
         return `<div class="wk ${f?'fin':''} ${!f?du.c:''}" style="--c:${cColor(w.course)}">
         <button class="wchk" data-wdone="${esc(w.id)}" aria-pressed="${f}" aria-label="${f?'标记为未完成':'标记为完成'}"><i>${f?'✓':''}</i></button>
         <button class="wmain" data-editwork="${esc(w.id)}">
-          <div class="wl"><span class="when">${d?`<b>${d.getMonth()+1}/${d.getDate()}</b> 周${WD[d.getDay()]}`:'<b>'+esc(whenText(w))+'</b>'}${d&&w.dateEnd?` 至 ${md(w.dateEnd)}`:''}${d&&w.time?` · ${w.time}${w.endTime?'–'+w.endTime:''}`:''}</span>${!f?`<span class="cd ${du.c}">${du.t}</span>`:''}</div>
+          <div class="wl"><span class="crs">${esc(w.course)}</span>${!f?`<span class="cd ${du.c}">${du.t}</span>`:''}</div>
           <div class="tt">${esc(w.task)}</div>
-          <div class="m"><span class="pill" style="--c:${cColor(w.course)}">${esc(w.course)}</span>${w.weight?`<span>${esc(w.weight)}</span>`:''}${w.note?`<span class="nt2">${esc(w.note)}</span>`:''}</div>
+          <div class="m"><span class="when">${d?`<b>${d.getMonth()+1}/${d.getDate()}</b> 周${WD[d.getDay()]}`:'<b>'+esc(whenText(w))+'</b>'}${d&&w.dateEnd?` 至 ${md(w.dateEnd)}`:''}${d&&w.time?` · ${w.time}${w.endTime?'–'+w.endTime:''}`:''}</span>${w.weight?`<span class="wt">${esc(w.weight)}</span>`:''}${w.note?`<span class="nt2">${esc(w.note)}</span>`:''}</div>
         </button></div>`}).join('')}).join('')}
   const doneN=pool.filter(isFin).length;
   if(S.wf==='todo'&&doneN)html+=`<button class="chip" style="margin-top:6px" data-wf="fin">看已完成的 ${doneN} 项</button>`;
