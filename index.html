@@ -122,7 +122,7 @@ a{color:inherit}
 .cls small{grid-column:2;color:var(--mut);font-size:12.5px}
 .cls.now .t,.cls.now b{color:var(--acc)}
 .cls.past{opacity:.45}
-.trip{background:linear-gradient(135deg,#1a3350,#152439 60%,#1a2c45);position:relative;overflow:hidden}
+.trip{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--card2)),var(--card) 60%,var(--card2));position:relative;overflow:hidden}
 .trip::after{content:"";position:absolute;inset:auto -30px -50px auto;width:170px;height:120px;background:radial-gradient(closest-side,rgba(134,217,195,.32),transparent);filter:blur(4px)}
 .trip .big{font-size:clamp(40px,9vw,54px);line-height:1;font-family:var(--hf);color:var(--acc)}
 .trip .big small{font-size:16px;color:var(--ink);font-family:"Noto Sans SC",sans-serif;margin-left:6px}
@@ -158,6 +158,10 @@ section.s{padding:30px 0 6px}
 .editing .site .ed{display:grid}
 .lower{display:grid;grid-template-columns:minmax(0,1fr);column-gap:26px}
 .modoff{display:none!important}
+.cbg{position:relative;cursor:pointer}.cbg input{width:18px;height:18px;border:0;padding:0;background:none;border-radius:50%;cursor:pointer}
+body.nostars .snow{background-image:none}
+body.bggrad{background:linear-gradient(165deg,var(--bg) 0%,var(--bg) 35%,var(--bgG) 100%) fixed}
+body.bggrad .band{background-color:transparent}
 .ctx{position:fixed;z-index:90;min-width:188px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 16px 40px rgba(0,0,0,.5);animation:ctxin .12s ease-out}
 .ctx button{display:flex;align-items:center;gap:9px;width:100%;height:34px;padding:0 10px;border-radius:8px;font-size:14px;text-align:left;color:var(--ink)}
 .ctx button:hover,.ctx button:focus{background:color-mix(in srgb,var(--acc) 16%,transparent);outline:none}
@@ -689,6 +693,12 @@ function loadFont(k){const f=FONTS[k];if(!f||!f[2]||document.querySelector(`link
 function applyFonts(st){const r=document.documentElement.style;const b=FONTS[st&&st.bodyFont]?st.bodyFont:'sans',h=FONTS[st&&st.headFont]?st.headFont:'serif';loadFont(b);loadFont(h);r.setProperty('--bf',FONTS[b][1]);r.setProperty('--hf',FONTS[h][1])}
 function fontChips(cur,list,attr,sample){return `<div class="chips wrapc fontc">${list.map(k=>{loadFont(k);return `<button class="chip" ${attr}="${k}" aria-pressed="${cur===k}" style="font-family:${FONTS[k][1].replace(/"/g,'&quot;')}">${FONTS[k][0]}${sample?` <small style="opacity:.6">${sample}</small>`:''}</button>`}).join('')}</div>`}
 
+/* custom background: any colour becomes a full dark palette (kept dark so text stays readable) */
+function hexHsl(h){const n=parseInt(h.slice(1),16);let r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let H=0,S=0;if(mx!==mn){const d=mx-mn;S=l>.5?d/(2-mx-mn):d/(mx+mn);H=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;H*=60}return[H,S*100,l*100]}
+const hsl=(h,s,l)=>`hsl(${h.toFixed(0)} ${Math.min(s,60).toFixed(0)}% ${l.toFixed(1)}%)`;
+function bgPalette(hex){if(!/^#[0-9a-f]{6}$/i.test(hex||''))hex='#0f1b2d';const [h,s0,l0]=hexHsl(hex),s=Math.min(s0,55),L=Math.min(Math.max(l0,5),20);
+  return{'--bg':hsl(h,s,L),'--bg2':hsl(h,s,Math.max(3,L-3)),'--card':hsl(h,s,L+5),'--card2':hsl(h,s,L+8.5),'--line':hsl(h,s*.9,L+16),'--bgG':hsl((h+38)%360,s,Math.max(4,L-2))}}
+function bgPaletteOf(st){if(st.bg==='custom')return bgPalette(st.bgColor);return null}
 /* ---------- settings (saved in the encrypted account, synced) ---------- */
 const ACCENTS=[['极光绿','#86d9c3'],['玫瑰','#e9b0c2'],['暖金','#e8c98e'],['冰蓝','#8fb8f0'],['薰衣草','#b9a4f0'],['珊瑚','#f0a08a']];
 const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439','--card2':'#1a2c45','--line':'#263b58'}],
@@ -705,8 +715,9 @@ let SET=structuredClone(DEF_SET);
 function inkFor(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#08261b';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1a24':'#ffffff'}
 function applySettings(){
   const st=document.documentElement.style;const a=/^#[0-9a-f]{6}$/i.test(SET.accent)?SET.accent:DEF_SET.accent;st.setProperty('--acc',a);st.setProperty('--accInk',inkFor(a));
-  const B=(BGS[SET.bg]||BGS.night)[1];for(const k in B)st.setProperty(k,B[k]);
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content',B['--bg']);
+  const B=bgPaletteOf(SET)||{...(BGS[SET.bg]||BGS.night)[1]};B['--bgG']=B['--bgG']||B['--bg2'];for(const k in B)st.setProperty(k,B[k]);
+  document.body.classList.toggle('nostars',SET.bgStars===false);document.body.classList.toggle('bggrad',!!SET.bgGrad);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content',SET.bg==='custom'?(SET.bgColor||'#0f1b2d'):B['--bg']);
   applyFonts(SET);
   document.body.style.zoom=zoomOf(SET)/100;
   const hid=new Set(SET.hidden||[]);
@@ -727,7 +738,9 @@ function settingsModal(){
   const topRows=MODS.filter(m=>!LOWER.includes(m[0])).map(([k,n])=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${n}</label></div>`).join('');
   modal(`<h3>设置</h3><p class="sethint">所有设置都存在你的账号里，换设备也一样。</p>
   <div class="setg"><h4>主题色</h4><div class="sw2">${ACCENTS.map(([n,c])=>`<button data-acc="${c}" style="--c:${c}" aria-pressed="${SET.accent===c}" title="${n}"><i></i><span>${n}</span></button>`).join('')}<label class="cust"><input type="color" id="accC" value="${esc(SET.accent)}"><span>自定义</span></label></div></div>
-  <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}</div></div>
+  <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}<label class="chip cbg" aria-pressed="${SET.bg==='custom'}"><input type="color" id="bgC" value="${esc(SET.bgColor||'#1a2440')}">自定义颜色</label></div>
+    <div class="chips wrapc" style="margin-top:4px"><button class="chip" data-bgstars="1" aria-pressed="${SET.bgStars!==false}">✦ 星点</button><button class="chip" data-bggrad="1" aria-pressed="${!!SET.bgGrad}">◐ 渐变</button></div>
+    <p class="sethint">自定义颜色会自动配好卡片和线条的深浅；太亮的颜色会被压暗一点，字才看得清。</p></div>
   <div class="setg"><h4>字体</h4><p class="sethint">主页和日记一起改。</p><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
   <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放"><p class="sethint">整个页面放大缩小，主页和日记一起变。</p></div>
   <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
@@ -745,6 +758,8 @@ function settingsModal(){
     if(d.a==='reset'){SET={...structuredClone(DEF_SET)};saveSettings();renderAll();loadWeather(true);return re()}
     if(d.acc){SET.accent=d.acc;saveSettings();return re()}
     if(d.bg){SET.bg=d.bg;saveSettings();return re()}
+    if(d.bgstars){SET.bgStars=SET.bgStars===false;saveSettings();return re()}
+    if(d.bggrad){SET.bgGrad=!SET.bgGrad;saveSettings();return re()}
     if(d.hf){SET.headFont=d.hf;saveSettings();return re()}
     if(d.bf){SET.bodyFont=d.bf;saveSettings();return re()}
     if(d.size){SET.size=d.size;saveSettings();return re()}
@@ -756,6 +771,7 @@ function settingsModal(){
     if(d.act==='geo'){if(!navigator.geolocation)return toast('这个浏览器不能定位');navigator.geolocation.getCurrentPosition(p=>{SET.loc={name:'当前位置',lat:+p.coords.latitude.toFixed(4),lng:+p.coords.longitude.toFixed(4),tz:Intl.DateTimeFormat().resolvedOptions().timeZone};WX=null;saveSettings();tick();renderSky();loadWeather(true);re()},()=>toast('没有拿到位置（可能没给定位权限）'));return}
   };
   $('#accC').oninput=e=>{SET.accent=e.target.value;saveSettings()};
+  $('#bgC').oninput=e=>{SET.bg='custom';SET.bgColor=e.target.value;saveSettings();document.querySelectorAll('[data-bg]').forEach(b=>b.setAttribute('aria-pressed','false'));$('.cbg')?.setAttribute('aria-pressed','true')};
   $('#zoomR').oninput=e=>{SET.zoom=+e.target.value;$('#zoomV').textContent=SET.zoom+'%';saveSettings()};
   $('#setName').oninput=e=>{SET.name=e.target.value.trim().slice(0,20);saveSettings();tick()};
   $('#locF').onsubmit=async e=>{e.preventDefault();const q=$('#locQ').value.trim();if(!q)return;$('#locR').innerHTML='<div class="empty"><span class="spin"></span> 搜索中…</div>';
