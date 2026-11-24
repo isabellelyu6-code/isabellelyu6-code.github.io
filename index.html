@@ -300,8 +300,8 @@ const SEED_WORK_V=4;
 const SEED_DROP=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
-const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
-const SUPABASE_ANON_KEY='';
+const SUPABASE_URL='https://naedsprhisphrqmduaap.supabase.co';      // e.g. https://abcd1234.supabase.co
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZWRzcHJoaXNwaHJxbWR1YWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MzgwMTYsImV4cCI6MjExMTExNDAxNn0.BrNZN9tHjJNo58ppGJoTaxKv_sqzEzA2wu4sxJ6iJ5o';
 const OWNER='Lyra';        // only this username may log in or be created
 const OWNER_EMAIL='';      // with Supabase: the owner's email (also turn off sign-ups in Supabase) // the project's "anon public" key (safe to publish; rows are protected by RLS)
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('无法加载 '+src));document.head.appendChild(s)})}

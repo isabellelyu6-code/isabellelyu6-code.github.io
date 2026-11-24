@@ -10,6 +10,7 @@ create table if not exists public.records (
   primary key (user_id, kind, id)
 );
 alter table public.records enable row level security;
+grant select, insert, update, delete on public.records to authenticated;
 drop policy if exists "own rows only" on public.records;
 create policy "own rows only" on public.records
   for all to authenticated
