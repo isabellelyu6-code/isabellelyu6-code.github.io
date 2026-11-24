@@ -12,6 +12,7 @@ An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
 - Mood (7-point scale like Apple's State of Mind), places, tags, favourites, photos, voice dictation
 - Calendar with mood dots, streaks, "on this day", and a yearly review (entries, words, months, moods, tags)
 - Writing prompts
+- **Import from Apple Journal**: the export ZIP (Settings › Apps › Journal › Export), or the `.html` files in `Entries/`. It brings in the title, text, reflection prompt, photos, places, and State of Mind words, which become tags. HEIC photos only decode in Safari
 - **Import**: `.txt` / `.md` files, which are split into entries automatically at date lines such as `2025-11-24`, `2025年11月24日 星期一`, `11月24日`, `2025/11/24 20:30`; a JSON backup; or photos (one entry each, with optional OCR). You can also paste a large block of text
 - **Export**: a full JSON backup (including photos) or Markdown
 

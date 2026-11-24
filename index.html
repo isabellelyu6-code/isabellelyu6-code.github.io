@@ -212,7 +212,7 @@ textarea{resize:vertical}
 </div>
 <input type="file" id="filePhoto" accept="image/*" multiple hidden>
 <input type="file" id="fileOcr" accept="image/*" hidden>
-<input type="file" id="fileImport" accept=".txt,.md,.markdown,.json,text/plain,application/json,image/*" multiple hidden>
+<input type="file" id="fileImport" accept=".zip,.html,.htm,.txt,.md,.markdown,.json,application/zip,text/html,text/plain,application/json,image/*" multiple hidden>
 
 <script>
 {
@@ -465,7 +465,7 @@ function renderJournal(){
     <button class="chip" data-mood="bad" aria-pressed="${S.f.mood==='bad'}"><span class="dot" style="background:${MOODS[1].c}"></span>不愉快</button></div>`;
   const bar=`<div class="bar"><label class="search">${IC.search}<input type="search" id="q" placeholder="搜索文字、#标签、地点…" value="${esc(S.q)}" aria-label="搜索日记"></label>${nbchips}${filt}</div>`;
   let body='';
-  if(!S.entries.length){body=`<div class="empty"><h2 class="serif">日记本还是空的</h2><p>把过去一年的日记搬进来：可以一次选很多个 .txt / .md 文件、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
+  if(!S.entries.length){body=`<div class="empty"><h2 class="serif">日记本还是空的</h2><p>把过去一年的日记搬进来：苹果「日记」导出的 ZIP、手机「文件」里的 .txt / .md、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
   else if(!list.length){body=`<div class="empty"><h2 class="serif">没有找到</h2><p>换个关键词，或清除筛选。</p><div class="row"><button class="btn line" data-act="clearall">清除筛选</button></div></div>`}
   else{
     let cur='';const parts=[];
@@ -531,7 +531,7 @@ function renderSettings(){
   return banner()+`<section class="section"><h2>设置</h2>
   <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
   <h3>导入过去的日记</h3>
-  <p class="muted">支持一次选很多文件：.txt / .md（文件里有“2025-11-24”或“2025年11月24日”这类日期行会自动拆成多篇）、本应用导出的 .json 备份、照片（每张一篇，可识别照片里的文字）。</p>
+  <p class="muted"><b>苹果「日记」：</b>在 iPhone 打开 设置 › App › 日记 › 导出，存到「文件」，然后在这里选那个 ZIP（或解压后 Entries 里的 .html），照片、地点、心情词都会一起导入。<br>也支持一次选很多文件：.txt / .md（文件里有“2025-11-24”或“2025年11月24日”这类日期行会自动拆成多篇）、本应用导出的 .json 备份、照片（每张一篇，可识别照片里的文字）。</p>
   <div class="field"><label for="impNb">放进哪个分区</label><select id="impNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div>
   <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
@@ -699,7 +699,9 @@ async function importFiles(files){
   modal(`<h3>正在导入</h3><p class="muted" id="impProg">0 / ${files.length}</p>`);
   for(let i=0;i<files.length;i++){const f=files[i];$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${f.name}`);
     try{
-      if(/\.json$/i.test(f.name)||f.type==='application/json'){const o=JSON.parse(await f.text());total+=await importBackup(o)}
+      if(/\.zip$/i.test(f.name)||f.type==='application/zip'||f.type==='application/x-zip-compressed'){total+=await importZip(f,nb,useOcr,(t)=>{$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${t}`)})}
+      else if(/\.html?$/i.test(f.name)){if(!/^index\.html?$/i.test(f.name)){const it=parseAppleJournal(await f.text(),f.name,new Date(f.lastModified||Date.now()));if(it){const e=fixEntry({id:uid(),nb,...it.entry,created:Date.now(),updated:Date.now()});S.entries.push(e);await Store.put('entries',e);total++}}}
+      else if(/\.json$/i.test(f.name)||f.type==='application/json'){const o=JSON.parse(await f.text());total+=await importBackup(o)}
       else if(f.type.startsWith('image/')){const d=new Date(f.lastModified||Date.now());const e=fixEntry({id:uid(),nb,date:localISO(d),title:'',body:'',created:Date.now(),updated:Date.now()});await attachPhoto(e,f);if(useOcr){try{e.body=await ocr(f)}catch(err){fail++}}S.entries.push(e);await Store.put('entries',e);total++}
       else{const txt=await f.text();const fd=new Date(f.lastModified||Date.now());const items=splitText(txt,fd.getFullYear(),fd,f.name.replace(/\.[^.]+$/,''));total+=await addImported(items,nb)}
     }catch(err){fail++}}
@@ -716,6 +718,59 @@ function pasteImport(){
   $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;
     if(a==='ok'){const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');const nb=$('#pNb').value;closeModal();try{const n=await addImported(it,nb);toast(`导入了 ${n} 篇`)}catch(err){toast('导入失败')}render()}else closeModal()};
 }
+
+/* ---------- Apple Journal export (ZIP or HTML files from 设置 › App › 日记 › 导出) ---------- */
+const MONTHS_EN=['january','february','march','april','may','june','july','august','september','october','november','december'];
+function parseAppleDate(t){if(!t)return null;let m;
+  if((m=t.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/)))return new Date(+m[1],+m[2]-1,+m[3],12,0);
+  if((m=t.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/))&&MONTHS_EN.indexOf(m[2].toLowerCase())>=0)return new Date(+m[3],MONTHS_EN.indexOf(m[2].toLowerCase()),+m[1],12,0);
+  if((m=t.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/))&&MONTHS_EN.indexOf(m[1].toLowerCase())>=0)return new Date(+m[3],MONTHS_EN.indexOf(m[1].toLowerCase()),+m[2],12,0);
+  if((m=t.match(/(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})/)))return new Date(+m[1],+m[2]-1,+m[3],12,0);
+  return null}
+function parseAppleJournal(html,name,fallback){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const header=doc.querySelector('.pageHeader')?.textContent.trim();
+  const isApple=!!(header||doc.querySelector('.pageContainer,.assetGrid'));
+  const d=parseAppleDate(header)||parseAppleDate(name)||fallback;
+  const title=(doc.querySelector('.title')?.textContent||'').trim()||(isApple?'':(doc.title||'').trim());
+  const prompt=(doc.querySelector('.reflectionPrompt')?.textContent||'').trim();
+  let paras=[...doc.querySelectorAll('p:not(.p1), li')].map(p=>(p.tagName==='LI'?'• ':'')+p.textContent.replace(/ /g,' ').trimEnd()).filter((t,i,a)=>t.trim()||i&&a[i-1].trim());
+  if(!paras.length){const bt=doc.querySelector('.bodyText')||(!isApple&&doc.body);if(bt)paras=[bt.innerText||bt.textContent||''];}
+  let body=(prompt?prompt+'\n\n':'')+paras.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  const tags=[],imgs=[];let place='';
+  for(const g of doc.querySelectorAll('.assetGrid .gridItem')){const type=([...g.classList].find(c=>c.startsWith('assetType_'))||'').slice(10).toLowerCase();
+    const head=(g.querySelector('.gridItemOverlayHeader')?.textContent||g.querySelector('.gridItemOverlayText,.mediaTitle,.activityType')?.textContent||'').trim();
+    const src=g.querySelector('img')?.getAttribute('src');
+    if(/photo|image/.test(type)&&src)imgs.push(src);
+    else if(/map|location|place/.test(type)&&head&&!place)place=head.slice(0,80);
+    else if(/stateofmind/.test(type)&&head)head.split(/[,，、]/).map(x=>x.trim()).filter(Boolean).forEach(t=>tags.push(t.slice(0,30)));
+    else if(head&&!/contact/.test(type)&&body.length<20000)body+=`\n\n[${head}]`;}
+  if(!body.trim()&&!title&&!imgs.length)return null;
+  return{entry:{date:localISO(d),title:title.slice(0,80),body:body.trim(),tags:[...new Set(tags)],place},imgs}}
+function zipResolve(base,rel){const parts=base.split('/');parts.pop();for(const seg of decodeURIComponent(rel).split('/')){if(seg==='..')parts.pop();else if(seg&&seg!=='.')parts.push(seg)}return parts.join('/')}
+const IMG_RE=/\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i;
+const mimeOf=n=>({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',heic:'image/heic',heif:'image/heif',bmp:'image/bmp'})[n.split('.').pop().toLowerCase()]||'application/octet-stream';
+async function importZip(file,nb,useOcr,progress){
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  if(!window.JSZip)throw new Error('解压组件没有加载');
+  const zip=await window.JSZip.loadAsync(file);
+  const all=Object.values(zip.files).filter(f=>!f.dir&&!/(^|\/)(__MACOSX|\._)/.test(f.name)&&!/(^|\/)\.[^/]*$/.test(f.name));
+  const byName=new Map(all.map(f=>[f.name,f]));
+  const htmls=all.filter(f=>/\.html?$/i.test(f.name)&&!/(^|\/)index\.html?$/i.test(f.name)).sort((a,b)=>a.name.localeCompare(b.name));
+  let n=0,photoFail=0;
+  for(let i=0;i<htmls.length;i++){const f=htmls[i];progress(`日记 ${i+1}/${htmls.length}`);
+    const it=parseAppleJournal(await f.async('string'),f.name.split('/').pop(),f.date||new Date());if(!it)continue;
+    const e=fixEntry({id:uid(),nb,...it.entry,created:Date.now(),updated:Date.now()});
+    for(const src of it.imgs.slice(0,20)){const zf=byName.get(zipResolve(f.name,src));if(!zf)continue;
+      try{const blob=new Blob([await zf.async('arraybuffer')],{type:mimeOf(zf.name)});await attachPhoto(e,blob)}catch(err){photoFail++}}
+    if(!e.body&&!e.title&&!e.photos.length)continue;
+    S.entries.push(e);await Store.put('entries',e);n++}
+  for(const f of all.filter(f=>/\.(txt|md|markdown)$/i.test(f.name))){const txt=await f.async('string');const d=f.date||new Date();n+=await addImported(splitText(txt,d.getFullYear(),d,f.name.split('/').pop().replace(/\.[^.]+$/,'')),nb)}
+  for(const f of all.filter(f=>/\.json$/i.test(f.name))){try{n+=await importBackup(JSON.parse(await f.async('string')))}catch(err){}}
+  if(!htmls.length){const imgs=all.filter(f=>IMG_RE.test(f.name));for(let i=0;i<imgs.length;i++){const f=imgs[i];progress(`照片 ${i+1}/${imgs.length}`);
+    try{const blob=new Blob([await f.async('arraybuffer')],{type:mimeOf(f.name)});const e=fixEntry({id:uid(),nb,date:localISO(f.date||new Date()),created:Date.now(),updated:Date.now()});await attachPhoto(e,blob);if(useOcr){try{e.body=await ocr(blob)}catch(err){}}S.entries.push(e);await Store.put('entries',e);n++}catch(err){photoFail++}}}
+  if(photoFail)setTimeout(()=>toast(`${photoFail} 张照片没能读取（多半是 HEIC 格式，用 iPhone 的 Safari 导入可以读）`,6000),4200);
+  return n}
 $('#fileImport').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)importFiles(fs)};
 
 /* ---------- export ---------- */
