@@ -36,6 +36,18 @@ button{cursor:pointer;border:0;background:none}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
 .jside{display:none}
+.stat[data-stat]{cursor:pointer;transition:border-color .15s,transform .15s}.stat[data-stat]:hover{border-color:var(--acc);transform:translateY(-1px)}
+.box.wide{max-width:720px}
+.dhead{display:flex;justify-content:space-between;margin-bottom:-6px}.dhead .btn{height:32px;font-size:13px}
+.box h4{margin:18px 0 8px;font-size:13.5px;color:var(--mut);font-weight:600}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media (max-width:600px){.dgrid{grid-template-columns:1fr}}
+.dbars{display:grid;gap:5px}.dbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 4em;gap:8px;align-items:center;font-size:13px}.dbar i{height:9px;border-radius:5px;background:var(--acc);display:block;min-width:2px}.dbar em{font-style:normal;color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+.vbars{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;height:130px;align-items:end}.vbars div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--mut)}.vbars i{width:100%;max-width:28px;background:linear-gradient(var(--acc),var(--acc2));border-radius:5px 5px 2px 2px;min-height:2px}.vbars em{font-style:normal}
+.drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;width:100%;text-align:left;padding:9px 4px;border-top:1px solid var(--line);font-size:14px;align-items:center}.drow:first-of-type{border-top:0}.drow:hover{background:var(--card)}.drow b{color:var(--acc);font-weight:600;font-variant-numeric:tabular-nums}.drow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.drow em{font-style:normal;color:var(--mut);font-size:12.5px}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;overflow-x:auto}
+.heat button,.heat i{aspect-ratio:1;min-width:8px;border-radius:2px;background:color-mix(in srgb,var(--acc) calc(var(--a,0)*100%),var(--card2));padding:0}
+.heat button.fut{opacity:.35}.heat i.pad{background:none}.heat button:not(:disabled):hover{outline:1.5px solid var(--ink)}
+.heatm{display:grid;grid-template-columns:repeat(12,1fr);font-size:10.5px;color:var(--mut);margin-top:4px}
 .fab[hidden]{display:none!important}
 .nblist{display:grid;gap:4px;margin:8px 0}
 .nbline{display:flex;gap:6px;align-items:center}
@@ -989,10 +1001,10 @@ function renderInsights(){
   <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
   ${(()=>{const yd=S.year===new Date().getFullYear()?Math.round((new Date()-new Date(S.year,0,1))/864e5)+1:(S.year%4?365:366);const wf=w>=10000?[(w/10000).toFixed(w>=100000?0:1),'万字']:[w.toLocaleString(),'字'];
   return `<div class="stats" style="margin-top:10px">
-  <div class="stat"><span>日记</span><b>${ys.length}<i>篇</i></b><em>平均每天 ${(ys.length/Math.max(1,days)).toFixed(1)} 篇</em></div>
-  <div class="stat"><span>有记录</span><b>${days}<i>天</i></b><em>占 ${S.year} 年的 ${Math.round(days/yd*100)}%</em></div>
-  <div class="stat"><span>写了</span><b>${wf[0]}<i>${wf[1]}</i></b><em>每篇约 ${ys.length?Math.round(w/ys.length).toLocaleString():0} 字</em></div>
-  <div class="stat"><span>连续</span><b>${st.cur}<i>天</i></b><em>最长 ${st.best} 天</em></div></div>`})()}
+  <div class="stat" role="button" tabindex="0" data-stat="n"><span>日记</span><b>${ys.length}<i>篇</i></b><em>平均每天 ${(ys.length/Math.max(1,days)).toFixed(1)} 篇</em></div>
+  <div class="stat" role="button" tabindex="0" data-stat="d"><span>有记录</span><b>${days}<i>天</i></b><em>占 ${S.year} 年的 ${Math.round(days/yd*100)}%</em></div>
+  <div class="stat" role="button" tabindex="0" data-stat="w"><span>写了</span><b>${wf[0]}<i>${wf[1]}</i></b><em>每篇约 ${ys.length?Math.round(w/ys.length).toLocaleString():0} 字</em></div>
+  <div class="stat" role="button" tabindex="0" data-stat="s"><span>连续</span><b>${st.cur}<i>天</i></b><em>最长 ${st.best} 天</em></div></div>`})()}
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
   <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有心情记录</p>'}
   <h3>分区</h3>${nbc.filter(([,c])=>c).sort((x,y)=>y[1]-x[1]).map(([n,c])=>`<div class="hbar"><span>${n.icon?esc(n.icon)+' ':''}${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
@@ -1000,6 +1012,41 @@ function renderInsights(){
   <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
 }
 
+
+/* ---------- stat details ---------- */
+const WDN=['日','一','二','三','四','五','六'];
+function bars(rows,fmt=v=>v){const mx=Math.max(1,...rows.map(r=>r[1]));return `<div class="dbars">${rows.map(([l,v,t])=>`<div class="dbar" title="${esc(t||'')}"><span>${l}</span><i style="width:${v/mx*100}%"></i><em>${fmt(v)}</em></div>`).join('')}</div>`}
+function vbars(rows){const mx=Math.max(1,...rows.map(r=>r[1]));return `<div class="vbars">${rows.map(([l,v])=>`<div title="${l}：${v}"><em>${v||''}</em><i style="height:${v/mx*100}%"></i><span>${l}</span></div>`).join('')}</div>`}
+function entryRows(list,extra){return list.map(e=>`<button class="drow" data-dopen="${esc(e.id)}"><b>${e.date.slice(0,10).replace(/-/g,'/')}</b><span>${esc(e.title||snippet(e.body,[]).slice(0,28)||'无标题')}</span><em>${extra(e)}</em></button>`).join('')}
+function heatmap(year,per){const first=new Date(year,0,1),last=new Date(year,11,31),today=new Date();let h='<div class="heat">';const lead=(first.getDay()+6)%7;for(let i=0;i<lead;i++)h+='<i class="pad"></i>';
+  const mx=Math.max(1,...Object.values(per));for(const d=new Date(first);d<=last;d.setDate(d.getDate()+1)){const k=dayKey(d),n=per[k]||0,fut=d>today;h+=`<button ${n?`data-dday="${k}"`:'disabled'} class="${fut?'fut':''}" style="--a:${n?.25+.75*n/mx:0}" title="${k}${n?' · '+n+' 篇':''}"></button>`}
+  return h+'</div><div class="heatm">'+['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'].map(m=>`<span>${m}</span>`).join('')+'</div>'}
+function runsOf(ds){const k=[...ds].sort();const out=[];let st=null,pv=null,n=0;for(const x of k){const t=parseDate(x);if(pv&&(t-pv)/864e5<1.5){n++}else{if(st)out.push({from:st,to:dayKey(pv),n});st=x;n=1}pv=t}if(st)out.push({from:st,to:dayKey(pv),n});return out}
+function statDetail(kind){const y=S.year,ys=S.entries.filter(e=>+e.date.slice(0,4)===y);let h='';
+  const per={};ys.forEach(e=>{const k=e.date.slice(0,10);per[k]=(per[k]||0)+1});
+  if(kind==='n'){const mo=Array(12).fill(0),wd=Array(7).fill(0),hr=Array(8).fill(0);ys.forEach(e=>{const d=parseDate(e.date);mo[d.getMonth()]++;wd[d.getDay()]++;hr[Math.floor(d.getHours()/3)]++});
+    const top=Object.entries(per).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    h=`<h3>${y} 年 · ${ys.length} 篇日记</h3><h4>每个月</h4>${vbars(mo.map((v,i)=>[i+1,v]))}
+     <div class="dgrid"><div><h4>星期几写得多</h4>${bars([1,2,3,4,5,6,0].map(i=>['周'+WDN[i],wd[i]]))}</div><div><h4>几点写</h4>${bars(hr.map((v,i)=>[`${i*3}–${i*3+3}点`,v]))}</div></div>
+     <h4>一天写最多的</h4>${top.map(([k,n])=>`<button class="drow" data-dday="${k}"><b>${k.replace(/-/g,'/')}</b><span>周${WDN[parseDate(k).getDay()]}</span><em>${n} 篇</em></button>`).join('')}`}
+  if(kind==='d'){const yd=y===new Date().getFullYear()?Math.round((new Date()-new Date(y,0,1))/864e5)+1:(y%4?365:366);const days=Object.keys(per).length;
+    const miss=[];for(const d=new Date(y,0,1);dayKey(d)<=dayKey(new Date())&&d.getFullYear()===y;d.setDate(d.getDate()+1)){const k=dayKey(d);if(!per[k])miss.push(k)}
+    h=`<h3>${y} 年 · ${days} 天有记录</h3><p class="muted" style="margin:0 0 10px">到今天为止 ${yd} 天，有 ${Math.round(days/yd*100)}% 的日子写了日记。</p>${heatmap(y,per)}
+     <h4>没写的日子 · ${miss.length} 天</h4><div class="missl">${miss.slice(-120).map(k=>`<button class="chip" disabled>${+k.slice(5,7)}/${+k.slice(8)}</button>`).join('')||'<span class="muted">没有</span>'}</div>`}
+  if(kind==='w'){const mo=Array(12).fill(0);ys.forEach(e=>mo[+e.date.slice(5,7)-1]+=words(e.title+e.body));const tot=mo.reduce((a,b)=>a+b,0);
+    const longest=[...ys].sort((a,b)=>words(b.title+b.body)-words(a.title+a.body)).slice(0,8);
+    const fmt=v=>v>=10000?(v/10000).toFixed(1)+'万':v.toLocaleString();
+    h=`<h3>${y} 年 · ${fmt(tot)} 字</h3><p class="muted" style="margin:0 0 10px">差不多是 ${Math.max(1,Math.round(tot/80000))} 本小说的长度。平均每篇 ${ys.length?Math.round(tot/ys.length).toLocaleString():0} 字。</p>
+     <h4>每个月写了多少</h4>${bars(mo.map((v,i)=>[(i+1)+'月',v]),fmt)}
+     <h4>写得最长的</h4>${entryRows(longest,e=>words(e.title+e.body).toLocaleString()+' 字')}`}
+  if(kind==='s'){const real=runsOf(daySet()).sort((a,b)=>b.n-a.n);const st=streaks();
+    h=`<h3>连续 ${st.cur} 天 · 最长 ${st.best} 天</h3>${S.settings.streakFill?`<p class="muted" style="margin:0 0 10px">从 ${S.settings.streakFill.from.replace(/-/g,'/')} 起按每天都写算。</p>`:''}
+     <h4>按实际日记算，最长的几段</h4>${real.slice(0,10).map(r=>`<button class="drow" data-dday="${r.from}"><b>${r.n} 天</b><span>${r.from.replace(/-/g,'/')} – ${r.to.slice(5).replace('-','/')}</span><em></em></button>`).join('')}`}
+  modal(`<div class="dhead"><span></span><button class="btn line" data-a="no">关闭</button></div>${h}`);$('#modalBox').classList.add('wide');
+  $('#modalBox').onclick=ev=>{const t=ev.target.closest('[data-a=no],[data-dopen],[data-dday]');if(!t)return;$('#modalBox').onclick=null;$('#modalBox').classList.remove('wide');closeModal();
+    if(t.dataset.dopen){const e=S.entries.find(x=>x.id===t.dataset.dopen);if(e)openEditor(e)}else if(t.dataset.dday){S.day=t.dataset.dday;S.view='journal';render();window.scrollTo(0,0)}}}
+document.addEventListener('click',ev=>{const c=ev.target.closest('[data-stat]');if(c&&!ev.target.closest('#modal'))statDetail(c.dataset.stat)});
+document.addEventListener('keydown',ev=>{const c=ev.target.closest&&ev.target.closest('[data-stat]');if(c&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();statDetail(c.dataset.stat)}});
 /* ---------- settings ---------- */
 function renderSettings(){
   const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
@@ -1184,8 +1231,8 @@ function nbEdit(nb){let color=nb.color;modal(`<h3>编辑分区</h3><div class="f
   <div class="field"><label for="neN">名字</label><input type="text" id="neN" value="${esc(nb.name)}"></div><div class="swatches" id="neC">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div>
   <div class="row">${S.notebooks.length>1?'<button class="btn danger sp" data-a="del">删除分区</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#neC').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
-    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();if(a==='del')return delNotebook(nb.id);if(a!=='ok')return;
-    nb.name=$('#neN').value.trim().slice(0,30)||nb.name;nb.icon=[...$('#neI').value.trim()].slice(0,2).join('');nb.color=color;Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存失败'));render()}}
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;const nm=$('#neN').value.trim().slice(0,30),ic=[...$('#neI').value.trim()].slice(0,2).join('');$('#modalBox').onclick=null;closeModal();if(a==='del')return delNotebook(nb.id);if(a!=='ok')return;
+    nb.name=nm||nb.name;nb.icon=ic;nb.color=color;Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存失败'));render()}}
 function jCtx(t,cx,cy){const c=t.closest('.card[data-open]');if(c){const e=S.entries.find(x=>x.id===c.dataset.open);if(e){entryMenu(e,cx,cy);return true}}
   const nbb=t.closest('[data-nb]');if(nbb&&nbb.dataset.nb!=='all'){const nb=nbById(nbb.dataset.nb);if(nb){nbMenu(nb,cx,cy);return true}}
   if(t.closest('.jside')){ctxMenu(cx,cy,[{icon:ICN.hide,label:'收起右边的概览',act:()=>toggleAside(false)}]);return true}
