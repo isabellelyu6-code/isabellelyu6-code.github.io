@@ -1,6 +1,17 @@
 # Ego 日记 (Ego Journal)
 
-**在线使用 Live:** https://isabellelyu6-code.github.io/Journal/
+**在线使用 Live:** 
+- 主页 Lyra 的终端: https://isabellelyu6-code.github.io/Journal/
+- Ego 日记: https://isabellelyu6-code.github.io/Journal/journal/
+
+主页和日记共用同一个账号（同一个网址下，登录一次两边都能用）。配置 Supabase 后就是云端账号，任何浏览器都能登录。
+
+## 主页 Hub (`index.html`)
+- A terminal-style command line: `todo 内容 明天`, `ddl`, `today`, `sites`, `help`
+- Links to all my sites, a to-do list, and a coursework and exam tracker
+- Encrypted per account with the same scheme as the journal. Back up or restore with JSON from 账号 › 导出/导入
+
+The public version contains no personal timetable, coursework, or travel data.
 
 An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
 
@@ -28,6 +39,7 @@ An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
 - JSON exports are *not* encrypted, so keep them safe.
 
 ## 云端同步（任何浏览器都能登录）Cloud sync with Supabase
+Set the same two constants at the top of **both** `index.html` and `journal/index.html`.
 Without this, accounts live only in the browser where they were created.
 1. Create a free project at https://supabase.com.
 2. Open **SQL Editor**, paste [`supabase.sql`](supabase.sql), and click Run.

@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f1b2d">
+<title>Ego 日记</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet">
+<!--
+  Ego Journal — open-source, single-file journal app. MIT License.
+  Storage: Claude artifact private db when available, otherwise IndexedDB in this browser.
+-->
+<style>
+/* VOICE: quiet, private — the same slate night palette as her Nordic trip page, but a reading notebook, not a dashboard
+   IDEA: a diary laid out as a timeline down a single reading column; each 分区 is a coloured node on the line
+   PICTURE: today's prompt as a pull-quote, then the timeline of entries
+   COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent and dates; Noto Serif SC headings and writing, Noto Sans SC UI
+   LAYOUT: one centred column up to 760px; tab bar at bottom on phones, left rail on wide screens */
+:root{color-scheme:dark;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#5fb8a4;--rose:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--mark:rgba(134,217,195,.3);--hero:#0f1b2d}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.serif{font-family:"Noto Serif SC","Songti SC",serif}
+.disp{font-family:"Noto Serif SC","Songti SC",serif;font-weight:900;letter-spacing:0;text-wrap:balance}
+.app{display:grid;grid-template-columns:minmax(0,1fr);min-height:100%;padding-bottom:76px}
+.rail{display:none}
+main{max-width:880px;width:100%;margin:0 auto}
+.tabs{position:fixed;inset:auto 0 0 0;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(15,27,45,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{height:60px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.tabs button svg{width:22px;height:22px}
+.tabs button[aria-current=true]{color:var(--acc)}
+.hero{position:relative;overflow:hidden;background:var(--hero);padding:30px max(5vw,18px) 24px;border-bottom:1px solid var(--line)}
+
+.snow{background-image:radial-gradient(circle,#cfe3ff40 1px,transparent 1.5px),radial-gradient(circle,#cfe3ff26 1.3px,transparent 1.8px);background-size:120px 90px,170px 130px;background-position:10px 20px,70px 60px}
+.hero h1,.hero .sub,.hero .prompt{text-shadow:0 1px 12px rgba(10,20,40,.85)}
+.hero>*{position:relative}
+.hero h1{font-size:clamp(34px,8vw,52px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
+.hero .sub{color:var(--mut);font-size:15px}
+.hero .sub b{color:var(--acc);font-weight:600}
+.hero .prompt{margin:18px 0 16px;font-size:18px;max-width:34em;line-height:1.6}
+.hero .row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{height:44px;padding:0 18px;border-radius:22px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:15px}
+.btn.pri{background:var(--acc);color:var(--accInk)}
+.btn.pri:hover{background:#a3e6d4}
+.btn.ghost{background:rgba(255,255,255,.07);border:1px solid var(--line)}
+.btn.line{border:1px solid var(--line);background:var(--card)}
+.btn.danger{color:#ff8a8a;border:1px solid rgba(255,138,138,.5)}
+.btn:disabled{opacity:.5}
+.otd{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--mut)}
+.otd button{color:var(--acc);text-decoration:underline;text-underline-offset:3px;padding:0;text-align:left}
+.bar{padding:14px max(5vw,16px) 8px;position:sticky;top:0;background:rgba(15,27,45,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:10;border-bottom:1px solid transparent}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;height:46px}
+.search:focus-within{border-color:var(--acc)}
+.search input{flex:1;border:0;background:none;font-size:16px;outline:none;height:100%}
+.search svg{width:18px;height:18px;color:var(--mut);flex:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 13px;border-radius:17px;border:1px solid var(--line);font-size:14px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;background:var(--card);color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--acc);color:var(--accInk);border-color:var(--acc);font-weight:600}
+.chip small{opacity:.7;font-size:12px}
+.nbtabs{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none}
+.nbtabs::-webkit-scrollbar{display:none}
+.nbtab{flex:none;min-width:92px;padding:9px 14px 9px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:left;position:relative;overflow:hidden}
+.nbtab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.nbtab b{display:block;font-size:14px;font-weight:600;white-space:nowrap}
+.nbtab span{font-size:12px;color:var(--mut)}
+.nbtab[aria-pressed=true]{background:color-mix(in srgb,var(--c) 22%,var(--card));border-color:var(--c)}
+.nbtab.add{min-width:auto;display:grid;place-items:center;color:var(--mut);font-size:14px}
+.nbtab.add::before{display:none}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.list{padding:0 max(5vw,16px) 40px}
+.month{font-size:13px;color:var(--mut);margin:24px 0 10px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.month::after{content:"";flex:1;height:1px;background:var(--line)}
+.card{display:grid;grid-template-columns:50px minmax(0,1fr);gap:12px;padding:14px 14px 14px 12px;margin:0 0 10px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-align:left;width:100%;position:relative;overflow:hidden;transition:border-color .15s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,#3ddc97)}
+.card:hover{border-color:var(--c,#3ddc97)}
+.card .d{text-align:center;padding-top:2px}
+.card .d b{display:block;font-size:26px;line-height:1;font-family:"Noto Serif SC",serif;font-weight:900;color:var(--acc)}
+.card .d span{font-size:12px;color:var(--mut)}
+.card h3{margin:0 0 4px;font-size:17px;font-weight:700;font-family:"Noto Serif SC",serif;line-height:1.4}
+.card p{margin:0;color:#b9c5dc;font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--mut);margin-top:9px;align-items:center}
+.meta span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.pill{padding:2px 9px;border-radius:10px;background:color-mix(in srgb,var(--c) 20%,transparent);color:color-mix(in srgb,var(--c) 70%,#fff);font-weight:600}
+.thumbs{display:flex;gap:6px;margin-top:10px;overflow:hidden}
+.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex:none;background:var(--card2)}
+mark{background:var(--mark);color:#fff;border-radius:3px;padding:0 1px}
+.empty{padding:48px 8px;text-align:center;color:var(--mut)}
+.empty h2{color:var(--ink);font-size:24px;margin:0 0 8px}
+.empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.fab{position:fixed;right:18px;bottom:88px;width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--accInk);box-shadow:0 8px 24px rgba(134,217,195,.35);z-index:15;display:grid;place-items:center}
+.fab svg{width:26px;height:26px}
+.section{padding:22px max(5vw,16px)}
+.section h2{font-size:26px;margin:0 0 12px}
+.section h3{font-size:16px;margin:26px 0 10px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.section h3::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--acc)}
+.muted{color:var(--mut);font-size:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head b{font-size:22px;font-family:"Noto Serif SC",serif;font-weight:700}
+.icon{width:44px;height:44px;border-radius:22px;display:grid;place-items:center}
+.icon:hover{background:var(--card)}
+.icon svg{width:20px;height:20px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.grid7 .wd{font-size:12px;color:var(--mut);text-align:center;padding:4px 0}
+.day{aspect-ratio:1;border-radius:12px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;gap:3px;position:relative}
+.day.out{background:none;border-color:transparent;color:var(--mut);opacity:.4}
+.day.today{border-color:var(--acc);color:var(--acc)}
+.day .dots{display:flex;gap:2px;height:7px}
+.day .dots i{width:6px;height:6px;border-radius:50%}
+.day.has{font-weight:700;background:var(--card2)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.stat b{display:block;font-size:clamp(28px,6vw,36px);line-height:1.1;font-family:"Noto Serif SC",serif;font-weight:700;color:var(--acc)}
+.stat span{font-size:13px;color:var(--mut)}
+.hbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
+.hbar .t{height:12px;background:var(--card2);border-radius:6px;overflow:hidden}
+.hbar .t i{display:block;height:100%;border-radius:6px}
+.hbar em{font-style:normal;text-align:right;color:var(--mut)}
+.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:130px;margin-top:10px}
+.months div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:11px;color:var(--mut)}
+.months i{width:100%;max-width:26px;background:linear-gradient(var(--acc),var(--acc2));border-radius:5px 5px 2px 2px;min-height:2px}
+.tagcloud{display:flex;flex-wrap:wrap;gap:8px}
+.field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.field label{font-size:14px;color:var(--mut)}
+input[type=text],input[type=email],input[type=password],input[type=datetime-local],input[type=date],input[type=number],select,textarea{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:10px 12px;font-size:16px;min-height:44px;width:100%;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
+input[type=datetime-local]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8)}
+textarea{resize:vertical}
+.nbrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent}
+.sw[aria-pressed=true]{border-color:#fff;box-shadow:0 0 0 2px var(--bg)}
+/* reports */
+.seg2{display:inline-grid;grid-auto-flow:column;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg2 button{height:38px;padding:0 16px;border-radius:9px;color:var(--mut);font-weight:600}
+.seg2 button[aria-pressed=true]{background:var(--acc);color:var(--accInk)}
+.rep-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rep-nav{display:flex;align-items:center;gap:4px}
+.rep-nav b{font-size:15px;min-width:9em;text-align:center}
+.report{background:linear-gradient(180deg,rgba(134,217,195,.08),transparent 40%),var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;line-height:1.8;font-size:15.5px}
+.report h4{font-size:16px;margin:16px 0 6px;color:var(--acc)}
+.report h4:first-child{margin-top:0}
+.report p{margin:6px 0}
+.report ul{margin:6px 0;padding-left:1.2em}
+.report li{margin:3px 0}
+.report .src{font-size:13px;color:var(--mut);margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.progress{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;background:var(--acc);transition:width .3s}
+/* editor sheet */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:40;display:flex;flex-direction:column}
+.sheet[hidden]{display:none}
+.sh-top{display:flex;align-items:center;gap:8px;padding:8px max(4vw,10px);border-bottom:1px solid var(--line);padding-top:max(8px,env(safe-area-inset-top))}
+.sh-top .st{flex:1;font-size:13px;color:var(--mut);text-align:center}
+.sh-body{flex:1;overflow-y:auto;padding:16px max(5vw,18px) 120px;max-width:760px;width:100%;margin:0 auto}
+.ed-meta{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
+.ed-title{border:0!important;padding:14px 0 4px!important;font-size:26px!important;font-weight:700;font-family:"Noto Serif SC",serif;background:none!important;outline:none}
+.ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.9;font-family:"Noto Serif SC",serif;min-height:40vh;background:none!important;outline:none;resize:none}
+.tools{position:sticky;bottom:0;display:flex;gap:4px;overflow-x:auto;padding:8px max(4vw,10px);border-top:1px solid var(--line);background:var(--bg2);padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.tools button{flex:none;height:44px;padding:0 12px;border-radius:12px;display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;color:var(--ink)}
+.tools button:hover{background:var(--card)}
+.tools button svg{width:20px;height:20px;color:var(--acc)}
+.tools button.on{background:var(--acc);color:var(--accInk)}
+.tools button.on svg{color:var(--accInk)}
+.moods{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 4px}
+.moods button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;opacity:.5}
+.moods button[aria-pressed=true]{opacity:1;border-color:#fff}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:12px 0}
+.photos figure{margin:0;position:relative;aspect-ratio:1}
+.photos img{width:100%;height:100%;object-fit:cover;border-radius:12px;background:var(--card)}
+.photos .x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:16px;line-height:1}
+.tagin{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.tagin .chip{height:30px}
+.tagin input{flex:1;min-width:8em;border:0!important;padding:4px!important;min-height:34px;background:none!important}
+/* modal + toast */
+.modal{position:fixed;inset:0;background:rgba(3,8,20,.7);z-index:60;display:grid;place-items:center;padding:18px}
+.modal[hidden]{display:none}
+.box{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:20px;max-width:460px;width:100%;max-height:86vh;overflow:auto}
+.box h3{margin:0 0 8px;font-size:19px}
+.box .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.viewer{position:fixed;inset:0;background:#000;z-index:70;display:grid;place-items:center}
+.viewer[hidden]{display:none}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain}
+.viewer button{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;color:#fff;background:rgba(255,255,255,.18)}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:80;font-size:14px;max-width:90vw;font-weight:500}
+.toast[hidden]{display:none}
+.banner{margin:10px max(5vw,16px) 0;padding:10px 14px;border-radius:12px;background:rgba(240,180,124,.15);border:1px solid rgba(240,180,124,.4);font-size:14px}
+.lock{position:fixed;inset:0;background:var(--bg);color:var(--ink);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:max(10vh,24px) 20px 20px;overflow-y:auto}
+.lock[hidden]{display:none}
+.auth{width:100%;max-width:380px;display:flex;flex-direction:column;position:relative;z-index:1}
+.auth label{font-size:14px;color:var(--mut);margin:12px 0 6px}
+.auth .remember{display:flex;align-items:center;gap:10px;margin:14px 0 0;color:var(--ink);font-size:15px}
+.auth .remember input{width:20px;height:20px;accent-color:var(--acc)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{height:40px;border-radius:9px;color:var(--mut);font-weight:600}
+.seg button[aria-pressed=true]{background:var(--acc);color:var(--accInk)}
+.warn{font-size:13px;background:rgba(240,180,124,.12);border:1px solid rgba(240,180,124,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0}
+.spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.card>div{transition:none}}
+/* ---- diary layout: a quiet reading column with a timeline, unlike the hub's dashboard ---- */
+main{max-width:760px}
+.hero{background:none;border:0;padding:26px max(5vw,18px) 6px;overflow:visible}
+.hero h1{font-size:clamp(28px,6vw,40px);margin:0 0 4px}
+.hero .sub{font-size:14px}
+.hero .prompt{margin:16px 0 14px;padding:14px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 14px 14px 0;font-family:"Noto Serif SC",serif;font-size:17px;max-width:none}
+.hero .otd{border-top:0;padding-top:4px}
+.bar{background:rgba(15,27,45,.96)}
+.month{font-family:"Noto Serif SC",serif;font-size:20px;font-weight:900;color:var(--ink);letter-spacing:0;margin:30px 0 12px}
+.month::after{display:none}
+.list{position:relative}
+.card{overflow:visible;background:none;border:0;border-radius:0;margin:0;padding:0 0 22px 26px;grid-template-columns:minmax(0,1fr);gap:6px;border-left:2px solid var(--line);margin-left:7px}
+.card:hover{border-color:var(--line)}
+.card::before{left:-8px;top:4px;bottom:auto;width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px var(--bg)}
+.card .d{display:flex;align-items:baseline;gap:8px;text-align:left;padding:0}
+.card .d b{font-size:18px;display:inline}
+.card .d b::after{content:"日"}
+.card .d span{font-size:13px}
+.card>div:last-child{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;transition:border-color .15s}
+.card:hover>div:last-child{border-color:var(--c)}
+.card p{color:#c4d0e3}
+@media (min-width:900px){.hero{padding-top:36px}}
+
+@media (min-width:900px){
+  .app{grid-template-columns:250px minmax(0,1fr);padding-bottom:0}
+  .tabs{display:none}
+  .rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 14px;border-right:1px solid var(--line);overflow-y:auto;background:var(--bg2)}
+  .rail .brand{font-family:"Noto Serif SC",serif;font-size:28px;padding:0 10px 16px;color:var(--ink)}
+  .rail .brand i{color:var(--acc);font-style:normal}
+  .rail button{height:40px;border-radius:10px;padding:0 10px;text-align:left;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink)}
+  .rail button:hover{background:var(--card)}
+  .rail button[aria-current=true]{background:var(--card2);font-weight:600;box-shadow:inset 3px 0 0 var(--acc)}
+  .rail button svg{color:var(--mut)}
+  .rail .lab{font-size:12px;color:var(--mut);padding:20px 10px 6px;letter-spacing:.06em}
+  .rail button em{margin-left:auto;font-style:normal;font-size:13px;color:var(--mut)}
+  .rail .nb{border-left:4px solid var(--c);border-radius:4px 10px 10px 4px}
+  .fab{bottom:28px;right:28px}
+  .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .nbchips{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" id="rail" aria-label="导航"></nav>
+  <main id="main" aria-live="polite"><div class="empty"><span class="spin"></span><p>正在打开日记本…</p></div></main>
+</div>
+<nav class="tabs" id="tabs" aria-label="主导航"></nav>
+<button class="fab" id="fab" aria-label="写新日记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<section class="sheet" id="editor" hidden aria-label="编辑日记">
+  <div class="sh-top">
+    <button class="btn line" id="edClose">完成</button>
+    <span class="st" id="edStatus"></span>
+    <button class="icon" id="edFav" aria-label="收藏"></button>
+    <button class="icon" id="edDel" aria-label="删除这篇"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+  </div>
+  <div class="sh-body" id="edBody"></div>
+  <div class="tools" id="edTools"></div>
+</section>
+
+<div class="modal" id="modal" hidden><div class="box" id="modalBox" role="dialog" aria-modal="true"></div></div>
+<div class="viewer" id="viewer" hidden><img id="viewerImg" alt=""><button class="icon" id="viewerX" aria-label="关闭">✕</button></div>
+<div class="toast" id="toast" hidden></div>
+<div class="lock snow" id="auth" hidden>
+  <form class="auth" id="authForm" autocomplete="on">
+    <div class="disp" style="font-size:44px;line-height:1.1">Ego <span style="color:var(--acc)">日记</span></div>
+    <p style="margin:6px 0 18px;opacity:.85" id="authSub">每个账号的日记都用自己的密码加密保存。</p>
+    <div class="seg" role="tablist"><button type="button" data-mode="login" aria-pressed="true">登录</button><button type="button" data-mode="register" aria-pressed="false">创建账号</button></div>
+    <label for="auName">用户名</label><input type="text" id="auName" autocomplete="username" required maxlength="30">
+    <label for="auPw">密码</label><input type="password" id="auPw" autocomplete="current-password" required>
+    <div id="auPw2Wrap" hidden><label for="auPw2">再输入一次密码</label><input type="password" id="auPw2" autocomplete="new-password"></div>
+    <label class="remember"><input type="checkbox" id="auRemember" checked> 在这台设备上记住我，下次不用再登录</label>
+    <p class="warn" id="auWarn" hidden>密码只保存在你脑子里：忘记密码，这个账号的日记就再也打不开了。建议写在安全的地方，并定期在「设置」里导出备份。</p>
+    <button class="btn pri" type="submit" id="auGo" style="width:100%;justify-content:center;margin-top:16px">登录</button>
+    <div id="auMsg" role="alert" style="min-height:1.5em;font-size:14px;margin-top:10px"></div>
+    <p style="font-size:13px;opacity:.7;margin:8px 0 0" id="auWhere"></p>
+  </form>
+</div>
+<input type="file" id="filePhoto" accept="image/*" multiple hidden>
+<input type="file" id="fileOcr" accept="image/*" hidden>
+<input type="file" id="fileImport" accept=".zip,.html,.htm,.txt,.md,.markdown,.json,application/zip,text/html,text/plain,application/json,image/*" multiple hidden>
+
+<script>
+{
+/* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
+const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
+const SUPABASE_ANON_KEY=''; // the project's "anon public" key (safe to publish; rows are protected by RLS)
+const HOME_URL='../'; // Lyra 的终端
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,9);
+const pad=n=>String(n).padStart(2,'0');
+const localISO=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dayKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const WD=['日','一','二','三','四','五','六'];
+const parseDate=s=>{const [a,b]=s.split('T');const [y,m,d]=a.split('-').map(Number);const [h,mi]=(b||'12:00').split(':').map(Number);return new Date(y,m-1,d,h||0,mi||0)};
+const words=s=>((s||'').match(/[㐀-鿿]/g)||[]).length+((s||'').match(/[A-Za-z0-9']+/g)||[]).length;
+const MOODS=[{n:'非常不愉快',c:'#7b8cff'},{n:'不愉快',c:'#8fb0f0'},{n:'有点不愉快',c:'#a9cbe8'},{n:'平静',c:'#a7b8a6'},{n:'有点愉快',c:'#f3d06b'},{n:'愉快',c:'#f7a25a'},{n:'非常愉快',c:'#ff7a5c'}];
+const COLORS=['#86d9c3','#8fb8f0','#e8c98e','#e9b0c2','#b9a4f0','#7fd0e6','#d9d28e','#a9b8cc'];
+const OLDCOL={"#3ddc97": "#86d9c3", "#5aa9ff": "#8fb8f0", "#ffb454": "#e8c98e", "#ff7a8a": "#e9b0c2", "#b18cff": "#b9a4f0", "#4fd1e8": "#7fd0e6", "#e6d36b": "#d9d28e", "#9fb3c8": "#a9b8cc", "#0f4c55": "#86d9c3", "#e8553a": "#e9b0c2", "#3b6fd8": "#8fb8f0", "#d19a12": "#e8c98e", "#6f8a2e": "#d9d28e", "#b04878": "#b9a4f0", "#5d6370": "#a9b8cc", "#8a5a2b": "#7fd0e6"};
+const PROMPTS=['今天有什么小事让你笑了？','此刻你最想感谢的人是谁，为什么？','今天学到的一件新东西是什么？','如果用一种天气形容今天的心情，会是什么？','最近一直在想的一个问题是什么？','这周最想记住的一个瞬间。','你现在最期待的一件事是什么？','今天的自己和一年前有什么不同？','写一封给明年今天的自己的短信。','今天去过的地方里，哪一处最难忘？','最近读到、听到或看到的、打动你的一句话。','今天有没有一件事你希望能重来？'];
+const IC={
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>',
+ cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+ chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+ star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+ starF:'<svg viewBox="0 0 24 24" fill="#e8553a" stroke="#e8553a" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+ photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>',
+ scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 10h8M8 14h5"/></svg>',
+ mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+ spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>',
+ left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>',
+ right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 5 7 7-7 7"/></svg>'
+};
+function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,ms)}
+function modal(html){$('#modalBox').innerHTML=html;$('#modal').hidden=false}
+function closeModal(){$('#modal').hidden=true;$('#modalBox').innerHTML=''}
+function ask(title,msg,ok='确定',danger=false){return new Promise(res=>{modal(`<h3>${esc(title)}</h3><p class="muted">${esc(msg)}</p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn ${danger?'danger':'pri'}" data-a="yes">${esc(ok)}</button></div>`);$('#modalBox').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;closeModal();res(a==='yes')}})}
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('无法加载 '+src));document.head.appendChild(s)})}
+
+/* ---------- storage adapters ---------- */
+const KINDS=['notebooks','entries','photos','meta'];
+const idbReq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+function makeLocal(name,kinds){return{
+  db:null,
+  open(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open(name,1)}catch(e){return rej(e)}r.onupgradeneeded=()=>kinds.forEach(k=>{if(!r.result.objectStoreNames.contains(k))r.result.createObjectStore(k,{keyPath:'id'})});r.onsuccess=()=>{this.db=r.result;res(this)};r.onerror=()=>rej(r.error)})},
+  st(k,m){return this.db.transaction(k,m).objectStore(k)},
+  all(k){return idbReq(this.st(k,'readonly').getAll())},
+  get(k,id){return idbReq(this.st(k,'readonly').get(id))},
+  put(k,o){return idbReq(this.st(k,'readwrite').put(o))},
+  del(k,id){return idbReq(this.st(k,'readwrite').delete(id))}
+}}
+function makeMem(){return{m:{},b(k){return this.m[k]||(this.m[k]=new Map())},async open(){return this},async all(k){return[...this.b(k).values()]},async get(k,id){return this.b(k).get(id)},async put(k,o){this.b(k).set(o.id,o)},async del(k,id){this.b(k).delete(id)}}}
+function makeRemote(base){return{
+  base,chain:new Map(),async open(){return this},
+  col(k){return this.base.collection(k)},
+  async all(k,prog){const out=[];let last=null;const P=50;
+    for(let i=0;i<2000;i++){let q=this.col(k);if(last)q=q.where('id','>',last);let snap=null,err=null;
+      for(let t=0;t<4&&!snap;t++){try{snap=await q.orderBy('id').limit(P).get()}catch(e){err=e;if(e&&(e.code==='revoked'||e.code==='invalid_argument'))break;await new Promise(r=>setTimeout(r,700*(t+1)))}}
+      if(!snap)throw err||new Error('load failed');
+      snap.docs.forEach(d=>{if(d.exists)out.push(structuredClone(d.data()))});if(prog)prog(out.length);
+      if(snap.size<P)break;last=snap.docs[snap.docs.length-1].id}
+    return out},
+  async get(k,id){const d=await this.col(k).doc(id).get();return d.exists?structuredClone(d.data()):null},
+  q(key,fn){const p=(this.chain.get(key)||Promise.resolve()).catch(()=>{}).then(fn);this.chain.set(key,p);return p},
+  put(k,o){const body=JSON.parse(JSON.stringify(o));return this.q(k+'/'+o.id,()=>this.col(k).doc(o.id).set(body))},
+  del(k,id){return this.q(k+'/'+id,()=>this.col(k).doc(id).delete())}
+}}
+function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
+  async open(){return this},
+  async all(k){const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}return out},
+  async get(k,id){return chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle())},
+  async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
+  async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
+  async clear(k){chk(await T().delete().eq('kind',k))}
+}}
+let sb=null;
+/* ---------- encryption (AES-GCM 256, key wrapped by PBKDF2-SHA256 of the password) ---------- */
+const TE=new TextEncoder(),TD=new TextDecoder();
+const b64=buf=>{const a=new Uint8Array(buf);let s='';for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s)};
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const ITER=310000;
+async function deriveKek(pw,salt,iter){const base=await crypto.subtle.importKey('raw',TE.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function seal(key,bytes){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,bytes);return{iv:b64(iv),ct:b64(ct)}}
+async function open_(key,o){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(o.iv)},key,ub64(o.ct)))}
+const importDataKey=raw=>crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['encrypt','decrypt']);
+function makeEncrypted(raw,key){return{
+  raw,
+  async dec(r){try{return JSON.parse(TD.decode(await open_(key,r)))}catch(e){return null}},
+  async all(k,prog){const rows=await raw.all(k,prog);const out=(await Promise.all(rows.map(r=>this.dec(r)))).filter(Boolean);if(rows.length&&!out.length)throw new Error('decrypt');return out},
+  async get(k,id){const r=await raw.get(k,id);return r?this.dec(r):null},
+  async put(k,o){const e=await seal(key,TE.encode(JSON.stringify(o)));return raw.put(k,{id:o.id,v:1,...e})},
+  del(k,id){return raw.del(k,id)}
+}}
+let Store=makeMem();
+const Sys={accounts:null,mkData:null,legacy:null};
+
+/* ---------- state ---------- */
+const S={mode:'memory',notebooks:[],entries:[],photos:new Map(),settings:{id:'settings'},account:null,view:'journal',nb:'all',q:'',day:null,f:{fav:false,photo:false,mood:''},cal:new Date(),year:new Date().getFullYear(),ed:null,dirty:false,prompt:Math.floor(Math.random()*PROMPTS.length),banner:''};
+const caps={sample:null,dl:null,dict:null};
+S.reports=new Map();S.rep={type:'week',at:null};S.repBusy=false;
+const nbById=id=>S.notebooks.find(n=>n.id===id);
+const nbColor=id=>nbById(id)?.color||'#a9b8cc';
+
+/* ---------- init ---------- */
+async function init(){
+  let db=null,user=null;
+  if(window.claude&&typeof window.claude.use==='function'){
+    const u=n=>window.claude.use(n).catch(()=>null);
+    [db,user,caps.sample,caps.dl,caps.dict]=await Promise.all([u('db'),u('user'),u('sample'),u('downloads'),u('dictation')]);
+  }
+  let id=null;
+  if(db&&user){try{id=await user.id()}catch(e){}}
+  if(!(db&&id)&&SUPABASE_URL&&SUPABASE_ANON_KEY){
+    try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){sb=null;S.banner='连不上云端，暂时只能用这台设备上的本地账号。'}
+  }
+  if(sb){
+    S.mode='supa';const raw=makeSupa(sb);
+    Sys.accounts={async all(){try{const r=await raw.get('sys','account');return r?[JSON.parse(r.ct)]:[]}catch(e){return[]}},put:(k,a)=>raw.put('sys',{id:'account',iv:'',ct:JSON.stringify(a)}),del:()=>raw.del('sys','account')};
+    Sys.mkData=()=>Promise.resolve(raw);
+    Sys.legacy=null;
+  }else if(db&&id){
+    const root='data/users/'+id;S.mode='cloud';
+    Sys.accounts=makeRemote(db.doc(root+'/system'));
+    Sys.mkData=acc=>makeRemote(db.doc(root+'/acc-'+acc.id)).open();
+    Sys.legacy=makeRemote(db.doc(root+'/journal'));
+  }else{
+    try{Sys.accounts=await makeLocal('ego-accounts',['accounts']).open();S.mode='local';
+      Sys.mkData=acc=>makeLocal('ego-acc-'+acc.id,KINDS).open();
+      Sys.legacy=await makeLocal('ego-journal',KINDS).open().catch(()=>null)}
+    catch(e){S.mode='memory';Sys.accounts=makeMem();const mems={};Sys.mkData=acc=>Promise.resolve(mems[acc.id]||(mems[acc.id]=makeMem()));S.banner='这个浏览器不能保存数据，关闭页面后内容会丢失。请用“导出”备份。'}
+  }
+  if(!window.crypto||!crypto.subtle){$('#auMsg').textContent='这个浏览器不支持加密（需要 https 打开），无法登录。';}
+  setupDictation();
+  if(!(await autoLogin()))showAuth();
+}
+/* ---------- remember this device (non-extractable key kept in this browser's IndexedDB) ---------- */
+const Device={db:null,
+  async open(){if(this.db)return this.db;try{this.db=await makeLocal('ego-device',['keys']).open()}catch(e){this.db=null}return this.db},
+  async save(acc,key){const d=await this.open();if(d)try{await d.put('keys',{id:S.mode,accId:acc.id,key})}catch(e){}},
+  async load(){const d=await this.open();if(!d)return null;try{return await d.get('keys',S.mode)}catch(e){return null}},
+  async clear(){const d=await this.open();if(d)try{await d.del('keys',S.mode)}catch(e){}}};
+async function autoLogin(){
+  const rem=await Device.load();if(!rem||!rem.key)return false;
+  try{
+    if(S.mode==='supa'){const {data}=await sb.auth.getSession();if(!data||!data.session){await Device.clear();return false}}
+    const acc=(await listAccounts()).find(a=>a.id===rem.accId);if(!acc){await Device.clear();return false}
+    await enterAccount(acc,rem.key,false);return true;
+  }catch(e){return false}}
+/* ---------- accounts ---------- */
+let authMode='login';
+async function listAccounts(){try{return await Sys.accounts.all('accounts')}catch(e){return[]}}
+async function showAuth(){
+  $('#main').innerHTML='';$('#auth').hidden=false;
+  const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
+  $('#auWhere').textContent={supa:'账号在云端：任何浏览器、任何设备都能登录。日记在你的设备上加密以后才上传，云端只存加密后的内容。',cloud:'账号和加密后的日记保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的日记保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
+  const accs=supa?[]:await listAccounts();setAuthMode(supa||accs.length?'login':'register');
+  if(accs.length===1)$('#auName').value=accs[0].name;
+  setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
+}
+function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+  $('#auPw2Wrap').hidden=m!=='register';$('#auWarn').hidden=m!=='register';$('#auGo').textContent=m==='register'?'创建账号':'登录';$('#auMsg').textContent='';
+  $('#auPw').autocomplete=m==='register'?'new-password':'current-password'}
+document.querySelector('.seg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setAuthMode(b.dataset.mode)});
+$('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go=$('#auGo'),msg=$('#auMsg');
+  const name=$('#auName').value.trim(),pw=$('#auPw').value;if(!name||!pw)return;
+  go.disabled=true;msg.innerHTML='<span class="spin"></span> '+(authMode==='register'?'正在创建…':'正在解锁…');
+  try{
+    if(S.mode==='supa'){
+      if(authMode==='register'){
+        if(pw.length<6)throw new Error('密码至少 6 位');if(pw!==$('#auPw2').value)throw new Error('两次密码不一样');
+        const r=await sb.auth.signUp({email:name,password:pw});
+        if(r.error)throw new Error(/registered|exists/i.test(r.error.message)?'这个邮箱已经注册过了，请直接登录':'注册失败：'+r.error.message);
+        if(!r.data.session)throw new Error('请先去邮箱点确认链接，然后回来登录');
+      }else{
+        const r=await sb.auth.signInWithPassword({email:name,password:pw});
+        if(r.error)throw new Error(/invalid/i.test(r.error.message)?'邮箱或密码不对':/confirm/i.test(r.error.message)?'请先去邮箱点确认链接':'登录失败：'+r.error.message);
+      }
+    }
+    const accs=await listAccounts();let acc=accs.find(a=>a.name.toLowerCase()===name.toLowerCase())||(S.mode==='supa'?accs[0]:null);
+    if(S.mode==='supa'&&authMode==='login'&&!acc){authMode='register';$('#auPw2').value=pw}
+    if(authMode==='register'){
+      if(acc)throw new Error('这个用户名已经有了，请直接登录');
+      if(pw.length<6)throw new Error('密码至少 6 位');
+      if(pw!==$('#auPw2').value)throw new Error('两次密码不一样');
+      const raw=crypto.getRandomValues(new Uint8Array(32)),salt=crypto.getRandomValues(new Uint8Array(16));
+      const kek=await deriveKek(pw,salt,ITER);
+      const a={id:uid(),name:name.slice(0,30),salt:b64(salt),iter:ITER,wk:await seal(kek,raw),created:Date.now()};
+      await Sys.accounts.put('accounts',a);
+      const k=await importDataKey(raw);await enterAccount(a,k,true);if($('#auRemember').checked)Device.save(a,k);
+    }else{
+      if(!acc)throw new Error('没有这个用户名。第一次用请点「创建账号」');
+      let raw;try{raw=await open_(await deriveKek(pw,ub64(acc.salt),acc.iter||ITER),acc.wk)}catch(e){throw new Error('密码不对')}
+      const k=await importDataKey(raw);await enterAccount(acc,k,false);if($('#auRemember').checked)Device.save(acc,k);
+    }
+    $('#auPw').value='';$('#auPw2').value='';msg.textContent='';$('#auth').hidden=true;
+  }catch(e){msg.textContent=e.message||'出错了，请再试一次'}
+  finally{go.disabled=false}
+});
+async function enterAccount(acc,key,isNew){
+  S.account=acc;S.key=key;Store=makeEncrypted(await Sys.mkData(acc),key);
+  S.notebooks=[];S.entries=[];S.photos=new Map();S.settings={id:'settings'};S.reports=new Map();S.rep={type:'week',at:null};S.nb='all';S.q='';S.day=null;S.view='journal';S.banner='';
+  $('#main').innerHTML=`<div class="empty"><span class="spin"></span><p id="loadMsg">正在打开日记本…</p></div>`;
+  const lm=t=>{const m=$('#loadMsg');if(m)m.textContent=t};
+  let nbs,ens,meta;
+  try{
+    nbs=await Store.all('notebooks');
+    ens=await Store.all('entries',n=>lm(`正在加载日记… ${n} 篇`));
+    lm('快好了…');meta=await Store.all('meta');
+  }catch(e){
+    $('#main').innerHTML=`<div class="empty"><h2 class="disp">日记暂时没加载出来</h2><p>你的日记还在，没有丢，只是这次没连上（网络慢或者断了）。</p><div class="row"><button class="btn pri" data-act="retryload">再试一次</button></div><p class="muted" style="margin-top:14px">${esc((e&&(e.code||e.message))||'')}</p></div>`;
+    $('#tabs').innerHTML='';$('#fab').hidden=true;return;
+  }
+  nbs.forEach(n=>{if(OLDCOL[n.color])n.color=OLDCOL[n.color]});
+  S.notebooks=nbs.sort((a,b)=>(a.order??0)-(b.order??0)||a.created-b.created);
+  S.entries=ens.map(fixEntry);
+  S.settings=meta.find(m=>m.id==='settings')||{id:'settings'};
+  meta.forEach(m=>{if(typeof m.id==='string'&&m.id.startsWith('rep:')&&typeof m.text==='string')S.reports.set(m.id,m)});
+  /* remove empty duplicate notebooks (same name) */
+  const used=new Set(S.entries.map(e=>e.nb)),seen=new Set();
+  for(const n of [...S.notebooks]){if(seen.has(n.name)&&!used.has(n.id)){S.notebooks=S.notebooks.filter(x=>x!==n);Store.del('notebooks',n.id).catch(()=>{})}else seen.add(n.name)}
+  /* entries whose notebook vanished go to the first notebook */
+  let moved=0;if(isNew)moved=await migrateLegacy();
+  if(!S.notebooks.length){const nb={id:uid(),name:'我的日记',color:COLORS[0],created:Date.now(),order:0};S.notebooks.push(nb);Store.put('notebooks',nb).catch(()=>{})}
+  render();if(moved)toast(`之前保存的 ${moved} 篇日记已加密放进这个账号`,5000);
+}
+/* data saved by the first version (no accounts, not encrypted) moves into the first new account */
+async function migrateLegacy(){const L=Sys.legacy;if(!L)return 0;
+  try{const [nbs,ens,meta]=await Promise.all([L.all('notebooks'),L.all('entries'),L.all('meta')]);if(!ens.length&&!nbs.length)return 0;
+    for(const nb of nbs){await Store.put('notebooks',nb);S.notebooks.push(nb)}
+    for(const e of ens){for(const p of e.photos||[]){const ph=await L.get('photos',p);if(ph){await Store.put('photos',ph);await L.del('photos',p)}}await Store.put('entries',e);S.entries.push(fixEntry(e));await L.del('entries',e.id)}
+    for(const nb of nbs)await L.del('notebooks',nb.id);for(const m of meta)await L.del('meta',m.id);
+    S.notebooks.sort((a,b)=>(a.order??0)-(b.order??0));return ens.length}catch(e){return 0}}
+function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
+async function changePassword(){
+  modal(`<h3>修改密码</h3><div class="field"><label for="cp0">当前密码</label><input type="password" id="cp0" autocomplete="current-password"></div><div class="field"><label for="cp1">新密码（至少 6 位）</label><input type="password" id="cp1" autocomplete="new-password"></div><div class="field"><label for="cp2">再输入一次</label><input type="password" id="cp2" autocomplete="new-password"></div><p class="muted" id="cpMsg"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
+  $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
+    const m=$('#cpMsg'),acc=S.account,p0=$('#cp0').value,p1=$('#cp1').value;
+    if(p1.length<6)return m.textContent='新密码至少 6 位';if(p1!==$('#cp2').value)return m.textContent='两次不一样';
+    m.innerHTML='<span class="spin"></span> 正在处理…';
+    let raw;try{raw=await open_(await deriveKek(p0,ub64(acc.salt),acc.iter||ITER),acc.wk)}catch(err){return m.textContent='当前密码不对'}
+    const salt=crypto.getRandomValues(new Uint8Array(16));const na={...acc,salt:b64(salt),iter:ITER,wk:await seal(await deriveKek(p1,salt,ITER),raw)};
+    try{if(S.mode==='supa'){const r=await sb.auth.updateUser({password:p1});if(r.error)throw r.error}await Sys.accounts.put('accounts',na);S.account=na;$('#modalBox').onclick=null;closeModal();toast('密码已修改')}catch(err){m.textContent='保存失败，请再试'}}}
+async function deleteAccount(){
+  if(!(await ask(`删除账号「${S.account.name}」？`,`这会永久删除这个账号和里面全部 ${S.entries.length} 篇日记、照片。建议先导出备份。`,'永久删除',true)))return;
+  toast('正在删除…',20000);
+  try{for(const k of KINDS){if(Store.raw.clear){await Store.raw.clear(k);continue}const rows=await Store.raw.all(k);for(const r of rows)await Store.raw.del(k,r.id)}await Sys.accounts.del('accounts',S.account.id);toast('账号已删除')}catch(e){toast('删除没有完成，请再试')}
+  logout()}
+function fixEntry(e){return Object.assign({title:'',body:'',mood:null,tags:[],place:'',photos:[],thumbs:{},fav:false},e,{tags:[...(e.tags||[])],photos:[...(e.photos||[])],thumbs:{...(e.thumbs||{})}})}
+
+
+
+/* ---------- filtering ---------- */
+function tokens(){return S.q.trim().toLowerCase().split(/\s+/).filter(Boolean)}
+function visible(){
+  const toks=tokens();
+  return S.entries.filter(e=>{
+    if(S.nb!=='all'&&e.nb!==S.nb)return false;
+    if(S.day&&e.date.slice(0,10)!==S.day)return false;
+    if(S.f.fav&&!e.fav)return false;
+    if(S.f.photo&&!e.photos.length)return false;
+    if(S.f.mood==='good'&&!(e.mood>=5))return false;
+    if(S.f.mood==='calm'&&e.mood!==4)return false;
+    if(S.f.mood==='bad'&&!(e.mood&&e.mood<=3))return false;
+    if(!toks.length)return true;
+    const hay=(e.title+'\n'+e.body+'\n'+e.place+'\n'+e.tags.map(t=>'#'+t).join(' ')+'\n'+(nbById(e.nb)?.name||'')).toLowerCase();
+    return toks.every(t=>hay.includes(t));
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function hl(text,toks){let h=esc(text);for(const t of toks){const et=esc(t).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');if(et)h=h.replace(new RegExp(et,'gi'),m=>`<mark>${m}</mark>`)}return h}
+function snippet(body,toks){const b=body.replace(/\s+/g,' ').trim();if(!toks.length)return b.slice(0,160);const low=b.toLowerCase();let i=-1;for(const t of toks){i=low.indexOf(t);if(i>=0)break}if(i<0)return b.slice(0,160);const s=Math.max(0,i-40);return (s?'…':'')+b.slice(s,s+160)}
+
+/* ---------- streak / stats ---------- */
+function daySet(list=S.entries){return new Set(list.map(e=>e.date.slice(0,10)))}
+function streaks(){const ds=daySet();let cur=0;const d=new Date();if(!ds.has(dayKey(d)))d.setDate(d.getDate()-1);while(ds.has(dayKey(d))){cur++;d.setDate(d.getDate()-1)}const sorted=[...ds].sort();let best=0,run=0,prev=null;for(const k of sorted){const t=parseDate(k);if(prev&&(t-prev)/864e5<1.5)run++;else run=1;best=Math.max(best,run);prev=t}return{cur,best}}
+function onThisDay(){const t=new Date();const md=`-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;return S.entries.filter(e=>e.date.slice(4,10)===md&&e.date.slice(0,4)!==String(t.getFullYear())).sort((a,b)=>b.date.localeCompare(a.date))}
+
+/* ---------- AI: reports ---------- */
+function mdHtml(t){const out=[];let ul=false;const inl=x=>esc(x).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  for(const ln of String(t).split('\n')){const l=ln.trim();
+    if(/^#{1,6}\s/.test(l)){if(ul){out.push('</ul>');ul=false}out.push('<h4>'+inl(l.replace(/^#+\s*/,''))+'</h4>')}
+    else if(/^([-*•]|\d+[.、)])\s+/.test(l)){if(!ul){out.push('<ul>');ul=true}out.push('<li>'+inl(l.replace(/^([-*•]|\d+[.、)])\s+/,''))+'</li>')}
+    else if(l){if(ul){out.push('</ul>');ul=false}out.push('<p>'+inl(l)+'</p>')}}
+  if(ul)out.push('</ul>');return out.join('')}
+function repRange(){
+  if(!S.rep.at){const last=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date))[0];S.rep.at=last?parseDate(last.date):new Date()}
+  const t=S.rep.type,a=new Date(S.rep.at);a.setHours(0,0,0,0);let s,e;
+  if(t==='day'){s=new Date(a);e=new Date(a);e.setDate(e.getDate()+1)}
+  else if(t==='week'){s=new Date(a);s.setDate(s.getDate()-((s.getDay()+6)%7));e=new Date(s);e.setDate(e.getDate()+7)}
+  else{s=new Date(a.getFullYear(),a.getMonth(),1);e=new Date(a.getFullYear(),a.getMonth()+1,1)}
+  const l=new Date(e-864e5);
+  const label=t==='day'?`${s.getFullYear()}年${s.getMonth()+1}月${s.getDate()}日 周${WD[s.getDay()]}`:t==='week'?`${s.getFullYear()}年 ${s.getMonth()+1}/${s.getDate()} – ${l.getMonth()+1}/${l.getDate()}`:`${s.getFullYear()}年${s.getMonth()+1}月`;
+  return{s,e,key:`rep:${t}:${dayKey(s)}`,label}}
+function repEntries(r){const a=dayKey(r.s),b=dayKey(r.e);return S.entries.filter(x=>{const k=x.date.slice(0,10);return k>=a&&k<b}).sort((x,y)=>x.date.localeCompare(y.date))}
+function repShift(n){const r=repRange(),d=new Date(r.s);if(S.rep.type==='day')d.setDate(d.getDate()+n);else if(S.rep.type==='week')d.setDate(d.getDate()+7*n);else d.setMonth(d.getMonth()+n);S.rep.at=d;render()}
+function renderReportPanel(){
+  const r=repRange(),list=repEntries(r),saved=S.reports.get(r.key);
+  let inner;
+  if(saved)inner=mdHtml(saved.text)+`<div class="src">根据 ${saved.n} 篇日记生成 · ${esc(new Date(saved.created).toLocaleString('zh-CN',{hour12:false}))}${saved.n!==list.length?' · 之后日记有变动，可以重新生成':''}</div>`;
+  else if(list.length)inner=`<p class="muted">这段时间有 <b style="color:var(--acc)">${list.length}</b> 篇日记。${caps.sample?'让 AI 读一遍，总结你在忙什么、情绪怎么变化、有哪些值得记住的事。':'AI 报告需要在 Claude 里打开这个 App 才能用。'}</p>`;
+  else inner=`<p class="muted">这段时间没有日记。用左右箭头换一段时间看看。</p>`;
+  return `<h3>AI 报告</h3><div class="rep-head"><div class="seg2" role="tablist">${[['day','日'],['week','周'],['month','月']].map(([k,n])=>`<button data-rtype="${k}" aria-pressed="${S.rep.type===k}">${n}</button>`).join('')}</div>
+  <div class="rep-nav"><button class="icon" data-act="repprev" aria-label="上一段">${IC.left}</button><b>${esc(r.label)}</b><button class="icon" data-act="repnext" aria-label="下一段">${IC.right}</button></div></div>
+  <div class="report" id="repBox">${inner}</div>
+  ${caps.sample&&list.length?`<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn pri" data-act="repgen" ${S.repBusy?'disabled':''}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>${S.repBusy?'生成中…':saved?'重新生成':'生成报告'}</button></div>`:''}`}
+async function genReport(){
+  if(S.repBusy||!caps.sample)return;const r=repRange(),list=repEntries(r);if(!list.length)return;
+  S.repBusy=true;render();const box=$('#repBox');if(box)box.innerHTML=`<p class="muted"><span class="spin"></span> 正在阅读 ${list.length} 篇日记…</p>`;
+  const per=Math.max(300,Math.min(3000,Math.floor(60000/list.length)));
+  const docs=list.map(e=>{const nb=nbById(e.nb)?.name||'';return `【${e.date.replace('T',' ')}】${e.title?'《'+e.title+'》':''}${nb?' 分区:'+nb:''}${e.mood?' 心情:'+MOODS[e.mood-1].n:''}${e.place?' 地点:'+e.place:''}${e.tags.length?' 标签:'+e.tags.join('、'):''}\n${e.body.slice(0,per)}`}).join('\n\n');
+  const span={day:'这一天',week:'这一周',month:'这个月'}[S.rep.type];
+  const prompt=`你是一位温和、细心又诚实的日记分析助手。下面是我在 ${r.label}（${span}）写的 ${list.length} 篇日记。请用中文、用"你"称呼我，写一份${span}报告。只根据日记内容，不要编造；提到具体事情时带上日期。用 Markdown，按下面的小标题写：\n### 一句话总结\n### 你在忙什么\n（学习、工作、生活、爱好等，分点）\n### 情绪和状态\n（情绪的起伏和可能的原因）\n### 重要的人和事\n### 值得记住的瞬间\n### 给你的小建议\n（1–3 条，具体、温柔）\n${S.rep.type==='day'?'这是一天的报告，写短一点。':''}\n\n日记：\n${docs}`;
+  let text='';
+  try{const res=await caps.sample(prompt,{modelTier:'default',onText:({text:t})=>{text=t;const b=$('#repBox');if(b&&t)b.innerHTML=mdHtml(t)}});text=(res&&res.text)||text;
+    if(text.trim()){const rec={id:r.key,text,n:list.length,created:Date.now()};S.reports.set(r.key,rec);Store.put('meta',rec).catch(()=>{})}}
+  catch(e){toast(e&&e.code==='rate_limited'?'请求太频繁，稍后再试':e&&e.code==='not_granted'?'没有允许使用 AI':'生成失败，请再试')}
+  finally{S.repBusy=false;if(S.view==='insights')render()}}
+
+/* ---------- AI: organise entries into notebooks, add mood / place / tags ---------- */
+async function askJSON(prompt){
+  if(typeof caps.sample.json==='function'){try{return await caps.sample.json(prompt,{modelTier:'quick'})}catch(e){if(e&&e.code)throw e}}
+  const r=await caps.sample(prompt,{modelTier:'quick'});const t=(r&&r.text)||'';const m=t.match(/[\[{][\s\S]*[\]}]/);return JSON.parse(m?m[0]:t)}
+let orgCancel=false;
+async function offerOrganize(ids){if(!caps.sample||!ids.length)return;
+  if(await ask('让 AI 自动整理？',`刚导入的 ${ids.length} 篇日记，AI 可以帮你分进合适的分区，并补上心情、地点和标签（之后都能改）。`,'开始整理'))aiOrganize(ids)}
+async function aiOrganize(ids){
+  if(!caps.sample)return toast('AI 整理需要在 Claude 里打开这个 App');
+  const set=new Set(ids),list=S.entries.filter(e=>set.has(e.id));if(!list.length)return toast('没有需要整理的日记');
+  orgCancel=false;
+  modal(`<h3>AI 正在整理</h3><p class="muted" id="orgMsg">先看看你的日记大概有哪些类别…</p><div class="progress"><i id="orgBar" style="width:3%"></i></div><p class="muted">可以离开这个窗口去做别的，但请别关掉页面。</p><div class="row"><button class="btn line" data-a="stop">停止</button></div>`);
+  $('#modalBox').onclick=e=>{if(e.target.closest('[data-a=stop]')){orgCancel=true;$('#orgMsg').textContent='正在停下…'}};
+  const msg=t=>{const m=$('#orgMsg');if(m)m.textContent=t};
+  const call=async pr=>{for(let i=0;i<4;i++){try{return await askJSON(pr)}catch(e){if(e&&e.code==='not_granted')throw e;if(e&&e.code==='rate_limited'){msg('AI 有点忙，等一会儿继续…');await new Promise(r=>setTimeout(r,15000*(i+1)));continue}if(i>=1)throw e}}throw new Error('AI 暂时不可用')};
+  let done=0;
+  try{
+    const existing=S.notebooks.map(n=>n.name).filter(n=>n!=='我的日记');
+    const smp=[...list].sort(()=>Math.random()-.5).slice(0,120).map(e=>`- ${e.title||''} ${e.body.replace(/\s+/g,' ').slice(0,50)}`).join('\n');
+    const cats=await call(`下面是一个人的日记标题和开头（共 ${list.length} 篇，这里是抽样）。请为这些日记设计 4 到 8 个"分区"（像文件夹），每个名字 2 到 4 个中文字，能覆盖大部分内容、互相不重叠，例如：学习、梦境、日常、情绪、朋友、恋爱、旅行、追星、灵感。${existing.length?'已有分区（合适就沿用）：'+existing.join('、')+'。':''}不要用"我的日记""其他"这种泛泛的名字。只返回 JSON 数组，例如 ["学习","梦境"]。\n\n${smp}`);
+    const names=(Array.isArray(cats)?cats:[]).filter(x=>typeof x==='string').map(x=>x.trim().slice(0,8)).filter(Boolean).slice(0,8);
+    if(!names.length)throw new Error('AI 没给出分区');
+    for(const nm of names)if(!S.notebooks.find(n=>n.name===nm)){const nb={id:uid(),name:nm,color:COLORS[S.notebooks.length%COLORS.length],created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);await Store.put('notebooks',nb)}
+    const B=8;
+    for(let i=0;i<list.length&&!orgCancel;i+=B){
+      const batch=list.slice(i,i+B);msg(`正在整理第 ${i+1}–${Math.min(i+B,list.length)} 篇，共 ${list.length} 篇`);
+      const items=batch.map((e,j)=>`#${j}\n日期:${e.date.slice(0,10)}\n标题:${e.title}\n${e.body.slice(0,1200)}`).join('\n\n');
+      let res;try{res=await call(`给每篇日记归类并提取信息。分区只能从这些里选一个：${names.join('、')}。\n返回 JSON 数组，每篇一项：{"i":序号,"notebook":"分区名","mood":1到7的整数(1非常不愉快,4平静,7非常愉快;看不出就4),"place":"日记里明确提到的主要地点，没有就空字符串","tags":["2到4个简短标签"]}。只返回 JSON。\n\n${items}`)}catch(e){if(e&&e.code==='not_granted')throw e;continue}
+      for(const r of Array.isArray(res)?res:[]){const e=batch[r&&r.i];if(!e)continue;
+        const nb=S.notebooks.find(n=>n.name===r.notebook);if(nb)e.nb=nb.id;
+        if(!e.mood&&Number.isInteger(r.mood)&&r.mood>=1&&r.mood<=7)e.mood=r.mood;
+        if(!e.place&&typeof r.place==='string'&&r.place.trim())e.place=r.place.trim().slice(0,60);
+        if(Array.isArray(r.tags))for(const t of r.tags)if(typeof t==='string'&&t.trim()&&!e.tags.includes(t.trim())&&e.tags.length<8)e.tags.push(t.trim().slice(0,20));
+        e.ai=1;e.updated=Date.now();try{await Store.put('entries',structuredClone(e));done++}catch(err){}}
+      const bar=$('#orgBar');if(bar)bar.style.width=Math.min(100,Math.round((i+B)/list.length*100))+'%';
+    }
+    const def=S.notebooks.find(n=>n.name==='我的日记');
+    if(def&&S.notebooks.length>1&&!S.entries.some(e=>e.nb===def.id)){S.notebooks=S.notebooks.filter(n=>n!==def);Store.del('notebooks',def.id).catch(()=>{});if(S.nb===def.id)S.nb='all'}
+    closeModal();render();toast(orgCancel?`已停止，整理了 ${done} 篇`:`整理好了 ${done} 篇：分区、心情、地点、标签都加上了`,5000);
+  }catch(e){closeModal();render();toast(e&&e.code==='not_granted'?'没有允许使用 AI':`AI 整理没完成${done?`（已整理 ${done} 篇）`:''}：${e.message||'请稍后再试'}`,5000)}
+}
+
+
+/* ---------- render shell ---------- */
+const VIEWS=[['journal','日记',IC.book],['calendar','日历',IC.cal],['insights','回顾',IC.chart],['settings','设置',IC.gear]];
+function go(v){S.view=v;render();window.scrollTo(0,0)}
+function render(){
+  $('#tabs').innerHTML=VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}">${i}<span>${n}</span></button>`).join('');
+  const counts={};S.entries.forEach(e=>counts[e.nb]=(counts[e.nb]||0)+1);
+  $('#rail').innerHTML=`<a href="${esc(HOME_URL)}" style="color:var(--mut);font-size:13px;padding:0 10px 10px;text-decoration:none">← Lyra 的终端</a><div class="brand">Ego <i>日记</i></div>`+VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}"><span style="width:20px;height:20px;display:inline-flex">${i}</span>${n}</button>`).join('')+
+   `<div class="lab">分区</div><button data-nb="all" aria-current="${S.view==='journal'&&S.nb==='all'}"><span class="dot" style="background:var(--ink)"></span>全部日记<em>${S.entries.length}</em></button>`+
+   S.notebooks.map(n=>`<button class="nb" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}">${esc(n.name)}<em>${counts[n.id]||0}</em></button>`).join('')+
+   `<button data-act="newnb" style="color:var(--mut)">+ 新建分区</button><div class="lab">${esc(S.account?.name||'')}</div><button data-act="logout" style="color:var(--mut)">退出登录</button>`;
+  $('#fab').hidden=S.view==='settings';
+  const m=$('#main');
+  if(S.view==='journal')m.innerHTML=renderJournal();
+  else if(S.view==='calendar')m.innerHTML=renderCalendar();
+  else if(S.view==='insights')m.innerHTML=renderInsights();
+  else m.innerHTML=renderSettings();
+}
+function banner(){return S.banner?`<div class="banner">${esc(S.banner)}</div>`:''}
+
+/* ---------- journal view ---------- */
+function renderJournal(){
+  const t=new Date(),st=streaks(),otd=onThisDay();
+  const toks=tokens(),list=visible();
+  const searching=toks.length||S.day||S.f.fav||S.f.photo||S.f.mood;
+  const hero=searching?'':`<section class="hero"><h1 class="disp">${t.getMonth()+1}月${t.getDate()}日 · 星期${WD[t.getDay()]}</h1>
+    <div class="sub">${esc(S.account?.name||'')} · ${st.cur?`已连续写了 <b>${st.cur}</b> 天`:'今天还没有写'} · 共 <b>${S.entries.length}</b> 篇</div>
+    <p class="prompt serif">${esc(PROMPTS[S.prompt])}</p>
+    <div class="row"><button class="btn pri" data-act="new-prompt">回答这个问题</button><button class="btn ghost" data-act="new">随便写写</button><button class="btn ghost" data-act="shuffle">换一个</button></div>
+    ${caps.sample&&S.entries.filter(e=>!e.ai).length>=5?`<div class="otd">有 ${S.entries.filter(e=>!e.ai).length} 篇日记还没整理：<button data-act="aiorg">让 AI 自动分区、加心情和地点</button></div>`:''}
+    ${otd.length?`<div class="otd">那年今日：${otd.slice(0,3).map(e=>`<button data-open="${esc(e.id)}">${e.date.slice(0,4)}年 · ${esc(e.title||snippet(e.body,[]).slice(0,18)||'无标题')}</button>`).join('，')}</div>`:''}
+  </section>`;
+  const counts={};S.entries.forEach(e=>counts[e.nb]=(counts[e.nb]||0)+1);
+  const nbchips=`<div class="nbtabs nbchips"><button class="nbtab" style="--c:#e9eef8" data-nb="all" aria-pressed="${S.nb==='all'}"><b>全部</b><span>${S.entries.length} 篇</span></button>${S.notebooks.map(n=>`<button class="nbtab" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-pressed="${S.nb===n.id}"><b>${esc(n.name)}</b><span>${counts[n.id]||0} 篇</span></button>`).join('')}<button class="nbtab add" data-act="newnb">+ 新分区</button></div>`;
+  const filt=`<div class="chips">${S.day?`<button class="chip" aria-pressed="true" data-act="clearday">${esc(S.day)} ✕</button>`:''}
+    <button class="chip" data-f="fav" aria-pressed="${S.f.fav}">收藏</button>
+    <button class="chip" data-f="photo" aria-pressed="${S.f.photo}">有照片</button>
+    <button class="chip" data-mood="good" aria-pressed="${S.f.mood==='good'}"><span class="dot" style="background:${MOODS[5].c}"></span>愉快</button>
+    <button class="chip" data-mood="calm" aria-pressed="${S.f.mood==='calm'}"><span class="dot" style="background:${MOODS[3].c}"></span>平静</button>
+    <button class="chip" data-mood="bad" aria-pressed="${S.f.mood==='bad'}"><span class="dot" style="background:${MOODS[1].c}"></span>不愉快</button></div>`;
+  const bar=`<div class="bar"><label class="search">${IC.search}<input type="search" id="q" placeholder="搜索文字、#标签、地点…" value="${esc(S.q)}" aria-label="搜索日记"></label>${nbchips}${filt}</div>`;
+  let body='';
+  if(!S.entries.length){body=`<div class="empty"><h2 class="disp">日记本还是空的</h2><p>把过去一年的日记搬进来：苹果「日记」导出的 ZIP、手机「文件」里的 .txt / .md、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
+  else if(!list.length){body=`<div class="empty"><h2 class="disp">没有找到</h2><p>换个关键词，或清除筛选。</p><div class="row"><button class="btn line" data-act="clearall">清除筛选</button></div></div>`}
+  else{
+    let cur='';const parts=[];
+    if(searching)parts.push(`<div class="month">找到 ${list.length} 篇</div>`);
+    for(const e of list.slice(0,600)){
+      const d=parseDate(e.date),mk=`${d.getFullYear()}年${d.getMonth()+1}月`;
+      if(mk!==cur){cur=mk;const n=list.filter(x=>x.date.slice(0,7)===e.date.slice(0,7)).length;parts.push(`<div class="month">${mk} · ${n} 篇</div>`)}
+      const nb=nbById(e.nb);
+      const th=e.photos.slice(0,5).map(p=>e.thumbs[p]?`<img src="${esc(e.thumbs[p])}" alt="">`:'').join('');
+      parts.push(`<button class="card" style="--c:${esc(nbColor(e.nb))}" data-open="${esc(e.id)}"><div class="d"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span></div><div>
+        ${e.title?`<h3>${hl(e.title,toks)}</h3>`:''}<p>${hl(snippet(e.body,toks),toks)||'<i>（只有照片）</i>'}</p>
+        <div class="meta">${nb?`<span class="pill">${esc(nb.name)}</span>`:''}
+        ${e.mood?`<span><i class="dot" style="background:${MOODS[e.mood-1].c}"></i>${MOODS[e.mood-1].n}</span>`:''}
+        ${e.place?`<span><i style="width:13px;height:13px;display:inline-flex">${IC.pin}</i>${hl(e.place,toks)}</span>`:''}${e.tags.slice(0,4).map(t=>`<span>#${hl(t,toks)}</span>`).join('')}
+        ${e.fav?`<span style="width:15px;height:15px">${IC.starF}</span>`:''}<span>${pad(d.getHours())}:${pad(d.getMinutes())}</span></div>
+        ${th?`<div class="thumbs">${th}</div>`:''}</div></button>`);
+    }
+    if(list.length>600)parts.push(`<p class="muted">还有 ${list.length-600} 篇，请用搜索或日历缩小范围。</p>`);
+    body=parts.join('');
+  }
+  return hero+banner()+bar+`<div class="list">${body}</div>`;
+}
+
+/* ---------- calendar ---------- */
+function renderCalendar(){
+  const c=S.cal,y=c.getFullYear(),mo=c.getMonth();
+  const first=new Date(y,mo,1),start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
+  const by={};S.entries.forEach(e=>{if(S.nb==='all'||e.nb===S.nb)(by[e.date.slice(0,10)]||(by[e.date.slice(0,10)]=[])).push(e)});
+  const today=dayKey(new Date());const cells=[];
+  for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=dayKey(d),es=by[k]||[];
+    cells.push(`<button class="day ${d.getMonth()!==mo?'out':''} ${k===today?'today':''} ${es.length?'has':''}" data-day="${k}" aria-label="${k} ${es.length} 篇">${d.getDate()}<span class="dots">${es.slice(0,3).map(e=>`<i style="background:${e.mood?MOODS[e.mood-1].c:esc(nbColor(e.nb))}"></i>`).join('')}</span></button>`)}
+  const inMonth=S.entries.filter(e=>e.date.startsWith(`${y}-${pad(mo+1)}`)&&(S.nb==='all'||e.nb===S.nb)).length;
+  return banner()+`<section class="section"><div class="cal-head"><button class="icon" data-act="calprev" aria-label="上个月">${IC.left}</button><b>${y}年${mo+1}月</b><button class="icon" data-act="calnext" aria-label="下个月">${IC.right}</button></div>
+  <div class="chips">${['all',...S.notebooks.map(n=>n.id)].map(id=>{const n=nbById(id);return `<button class="chip" data-calnb="${esc(id)}" aria-pressed="${S.nb===id}">${n?`<span class="dot" style="background:${esc(n.color)}"></span>${esc(n.name)}`:'全部分区'}</button>`}).join('')}</div>
+  <div class="grid7">${WD.slice(1).concat(WD[0]).map(w=>`<div class="wd">${w}</div>`).join('')}${cells.join('')}</div>
+  <p class="muted">这个月写了 ${inMonth} 篇。点日期查看那天的日记；圆点颜色是心情（没有心情时是分区颜色）。</p>
+  <div class="row" style="display:flex;gap:10px"><button class="btn line" data-act="caltoday">回到本月</button></div></section>`;
+}
+
+/* ---------- insights ---------- */
+function renderInsights(){
+  const years=[...new Set(S.entries.map(e=>+e.date.slice(0,4)))].sort((a,b)=>b-a);
+  if(!years.includes(S.year))years.unshift(S.year);
+  const ys=S.entries.filter(e=>+e.date.slice(0,4)===S.year);
+  const st=streaks(),w=ys.reduce((a,e)=>a+words(e.title+e.body),0),days=daySet(ys).size,ph=ys.reduce((a,e)=>a+e.photos.length,0);
+  const mc=Array(7).fill(0);ys.forEach(e=>{if(e.mood)mc[e.mood-1]++});const mmax=Math.max(1,...mc);
+  const months=Array(12).fill(0);ys.forEach(e=>months[+e.date.slice(5,7)-1]++);const mx=Math.max(1,...months);
+  const tags={};ys.forEach(e=>e.tags.forEach(t=>tags[t]=(tags[t]||0)+1));const top=Object.entries(tags).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  const nbc=S.notebooks.map(n=>[n,ys.filter(e=>e.nb===n.id).length]);const nmax=Math.max(1,...nbc.map(x=>x[1]));
+  return banner()+`<section class="section"><h2 class="disp">回顾</h2>${renderReportPanel()}<h3>${S.year} 年数据</h3>
+  <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
+  <div class="stats" style="margin-top:10px"><div class="stat"><b>${ys.length}</b><span>篇日记</span></div><div class="stat"><b>${days}</b><span>天有记录</span></div><div class="stat"><b>${w.toLocaleString()}</b><span>字</span></div><div class="stat"><b>${st.cur}<small style="font-size:15px"> / 最长 ${st.best}</small></b><span>连续天数</span></div></div>
+  <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
+  <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有记录心情。写日记时点一下心情圆点就行。</p>'}
+  <h3>分区</h3>${nbc.map(([n,c])=>`<div class="hbar"><span>${esc(n.name)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
+  <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
+  <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p></section>`;
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
+  const todo=S.entries.filter(e=>!e.ai).length;
+  return banner()+`<section class="section"><p style="margin:0 0 10px"><a href="${esc(HOME_URL)}" style="color:var(--acc)">← 回到 Lyra 的终端</a></p><h2 class="disp">设置</h2>
+  <h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 会读你的日记，自动建好分区（比如学习、梦境、朋友），把每篇放进去，并补上心情、地点和标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
+  ${caps.sample?`<button class="btn pri" data-act="aiorg" ${todo?'':'disabled'}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>整理 ${todo} 篇</button>`:''}
+  <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
+  <h3>导入过去的日记</h3>
+  <p class="muted"><b>苹果「日记」：</b>在 iPhone 打开 设置 › App › 日记 › 导出，存到「文件」，然后在这里选那个 ZIP（或解压后 Entries 里的 .html），照片、地点、心情词都会一起导入。<br>也支持一次选很多文件：.txt / .md（文件里有“2025-11-24”或“2025年11月24日”这类日期行会自动拆成多篇）、本应用导出的 .json 备份、照片（每张一篇，可识别照片里的文字）。</p>
+  <div class="field"><label for="impNb">放进哪个分区</label><select id="impNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div>
+  <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
+  <h3>导出与备份</h3><p class="muted">JSON 是完整备份（含照片），可以在任何地方用本应用再导入到某个账号；导出的文件<b>不加密</b>，请妥善保存。Markdown 方便阅读或放进其他笔记软件。</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button></div>
+  <h3>分区</h3>${S.notebooks.map(n=>`<div class="nbrow"><div><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
+  <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
+  <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
+  <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
+  <h3>关于</h3><p class="muted">Ego 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
+}
+
+/* ---------- editor ---------- */
+function newEntry(prompt){
+  const nb=S.nb!=='all'&&nbById(S.nb)?S.nb:S.notebooks[0].id;
+  openEditor({id:uid(),nb,date:localISO(new Date()),title:'',body:prompt?PROMPTS[S.prompt]+'\n\n':'',mood:null,tags:[],place:'',photos:[],thumbs:{},fav:false,created:Date.now(),updated:Date.now()},true);
+}
+function openEditor(e,isNew=false){
+  S.ed=fixEntry(structuredClone(e));S.edNew=isNew;S.dirty=false;
+  $('#edBody').innerHTML=`<div class="ed-meta"><input type="datetime-local" id="edDate" value="${esc(S.ed.date)}" aria-label="日期时间"><select id="edNb" aria-label="分区">${S.notebooks.map(n=>`<option value="${esc(n.id)}" ${n.id===S.ed.nb?'selected':''}>${esc(n.name)}</option>`).join('')}</select></div>
+   <input type="text" class="ed-title" id="edTitle" placeholder="标题" value="${esc(S.ed.title)}">
+   <div class="photos" id="edPhotos"></div>
+   <textarea class="ed-text" id="edText" placeholder="开始写…">${esc(S.ed.body)}</textarea>
+   <div class="moods" id="edMoods"></div>
+   <div class="field"><label for="edPlace">地点</label><input type="text" id="edPlace" value="${esc(S.ed.place)}" placeholder="例如：UCL 图书馆"></div>
+   <div class="field"><label for="edTagIn">标签</label><div class="tagin" id="edTags"></div></div>`;
+  $('#edTools').innerHTML=`<button data-t="photo">${IC.photo}照片</button><button data-t="ocr">${IC.scan}识别文字</button><button data-t="mic" id="micBtn">${IC.mic}语音</button>${caps.sample?`<button data-t="ai">${IC.spark}智能标签</button>`:''}`;
+  renderEdPhotos();renderEdMoods();renderEdTags();renderEdFav();
+  $('#edStatus').textContent=isNew?'新日记':'';
+  $('#editor').hidden=false;document.body.style.overflow='hidden';
+  autosize();if(isNew)setTimeout(()=>$('#edText').focus(),60);
+}
+function autosize(){const t=$('#edText');if(!t)return;t.style.height='auto';t.style.height=Math.max(t.scrollHeight,window.innerHeight*.4)+'px'}
+function renderEdFav(){$('#edFav').innerHTML=S.ed.fav?IC.starF:IC.star;$('#edFav').setAttribute('aria-pressed',S.ed.fav)}
+function renderEdMoods(){$('#edMoods').innerHTML=`<span class="muted" style="margin-right:4px">心情</span>`+MOODS.map((m,i)=>`<button data-mood-set="${i+1}" style="background:${m.c}" aria-pressed="${S.ed.mood===i+1}" aria-label="${m.n}" title="${m.n}"></button>`).join('')+`<span class="muted" id="moodName">${S.ed.mood?MOODS[S.ed.mood-1].n:''}</span>`}
+function renderEdTags(){$('#edTags').innerHTML=S.ed.tags.map((t,i)=>`<button class="chip" data-tagdel="${i}">#${esc(t)} ✕</button>`).join('')+`<input type="text" id="edTagIn" placeholder="输入后按回车，空格分隔多个">`}
+function renderEdPhotos(){const e=S.ed;$('#edPhotos').innerHTML=e.photos.map(p=>`<figure><img src="${esc(S.photos.get(p)||e.thumbs[p]||'')}" data-view="${esc(p)}" alt="照片"><button class="x" data-pdel="${esc(p)}" aria-label="移除照片">✕</button></figure>`).join('');$('#edPhotos').style.display=e.photos.length?'':'none'}
+let saveT=null;
+function touch(){S.dirty=true;$('#edStatus').textContent='编辑中…';clearTimeout(saveT);saveT=setTimeout(persist,1200)}
+async function persist(){
+  clearTimeout(saveT);const e=S.ed;if(!e||!S.dirty)return;
+  if(!e.title.trim()&&!e.body.trim()&&!e.photos.length)return;
+  S.dirty=false;e.updated=Date.now();const copy=structuredClone(e);
+  const i=S.entries.findIndex(x=>x.id===e.id);if(i<0)S.entries.push(copy);else S.entries[i]=copy;S.edNew=false;
+  $('#edStatus').textContent='保存中…';
+  try{await Store.put('entries',copy);if(S.ed&&S.ed.id===copy.id)$('#edStatus').textContent='已保存'}
+  catch(err){S.dirty=true;$('#edStatus').textContent='保存失败';toast(err&&err.code==='quota_exceeded'?'存储已满：请导出备份并删除一些照片':'保存失败，稍后会再试');saveT=setTimeout(persist,5000)}
+}
+async function closeEditor(){await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
+$('#edClose').onclick=closeEditor;
+$('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
+$('#edDel').onclick=async()=>{const e=S.ed;if(!(await ask('删除这篇日记？','删除后无法恢复。','删除',true)))return;clearTimeout(saveT);S.entries=S.entries.filter(x=>x.id!==e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';render();try{await Store.del('entries',e.id);for(const p of e.photos)await Store.del('photos',p)}catch(err){toast('删除失败')}};
+$('#edBody').addEventListener('input',ev=>{const id=ev.target.id,e=S.ed;if(!e)return;
+  if(id==='edTitle')e.title=ev.target.value;else if(id==='edText'){e.body=ev.target.value;autosize()}else if(id==='edPlace')e.place=ev.target.value;else if(id==='edDate'){if(ev.target.value)e.date=ev.target.value.slice(0,16)}else if(id==='edNb')e.nb=ev.target.value;else return;touch()});
+$('#edBody').addEventListener('change',ev=>{if(ev.target.id==='edNb'&&S.ed){S.ed.nb=ev.target.value;touch()}});
+$('#edBody').addEventListener('keydown',ev=>{if(ev.target.id!=='edTagIn')return;if(ev.key==='Enter'||ev.key===','||ev.key==='，'){ev.preventDefault();addTags(ev.target.value)}else if(ev.key==='Backspace'&&!ev.target.value&&S.ed.tags.length){S.ed.tags.pop();renderEdTags();$('#edTagIn').focus();touch()}});
+$('#edBody').addEventListener('focusout',ev=>{if(ev.target.id!=='edTagIn')return;const v=ev.target.value;if(!v.trim())return;ev.target.value='';setTimeout(()=>{if(S.ed)addTags(v,false)},0)});
+function addTags(v,refocus=true){const inp=$('#edTagIn');if(inp)inp.value='';const ts=v.split(/[\s,，#]+/).map(s=>s.trim()).filter(Boolean);for(const t of ts)if(!S.ed.tags.includes(t))S.ed.tags.push(t.slice(0,30));renderEdTags();if(refocus)$('#edTagIn').focus();touch()}
+$('#edBody').addEventListener('click',async ev=>{const t=ev.target.closest('button,img');if(!t)return;const e=S.ed;
+  if(t.dataset.moodSet){const m=+t.dataset.moodSet;e.mood=e.mood===m?null:m;renderEdMoods();touch()}
+  else if(t.dataset.tagdel){e.tags.splice(+t.dataset.tagdel,1);renderEdTags();touch()}
+  else if(t.dataset.pdel){const p=t.dataset.pdel;e.photos=e.photos.filter(x=>x!==p);delete e.thumbs[p];renderEdPhotos();touch();Store.del('photos',p).catch(()=>{})}
+  else if(t.dataset.view){viewPhoto(t.dataset.view)}});
+$('#edTools').addEventListener('click',ev=>{const t=ev.target.closest('[data-t]');if(!t)return;const k=t.dataset.t;
+  if(k==='photo')$('#filePhoto').click();else if(k==='ocr')$('#fileOcr').click();else if(k==='mic')toggleMic();else if(k==='ai')aiSuggest(t)});
+$('#filePhoto').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';if(!fs.length)return;toast('正在处理照片…',8000);for(const f of fs)await attachPhoto(S.ed,f);renderEdPhotos();touch();toast('已添加 '+fs.length+' 张照片')};
+$('#fileOcr').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const e=S.ed;
+  $('#edStatus').innerHTML='<span class="spin"></span> 正在识别文字…';
+  try{await attachPhoto(e,f);renderEdPhotos();const txt=await ocr(f);if(S.ed!==e)return;const ta=$('#edText');e.body=(e.body.trim()?e.body.replace(/\s*$/,'\n\n'):'')+txt;ta.value=e.body;autosize();touch();toast(txt?'已识别并加入正文':'没有识别到文字')}
+  catch(err){$('#edStatus').textContent='';toast('识别失败：'+(err.message||err))}};
+async function viewPhoto(p){let src=S.photos.get(p);if(!src){try{const o=await Store.get('photos',p);if(o){src=o.data;S.photos.set(p,src)}}catch(e){}}if(!src)src=S.ed?.thumbs[p];if(!src)return toast('照片还没加载');$('#viewerImg').src=src;$('#viewer').hidden=false}
+$('#viewerX').onclick=()=>{$('#viewer').hidden=true;$('#viewerImg').removeAttribute('src')};
+
+/* ---------- photos ---------- */
+async function toImg(file){try{return await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){return await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('无法读取这张图片'));i.src=URL.createObjectURL(file)})}}
+async function resize(img,max,limit){let w=img.width,h=img.height,s=Math.min(1,max/Math.max(w,h)),q=.82,url='';
+  for(let i=0;i<8;i++){const c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);url=c.toDataURL('image/jpeg',q);if(url.length<=limit)break;if(q>.55)q-=.12;else s*=.8}return url}
+async function attachPhoto(e,file){const img=await toImg(file);const full=await resize(img,1600,175000),th=await resize(img,220,14000);const pid=uid();S.photos.set(pid,full);await Store.put('photos',{id:pid,data:full});e.photos.push(pid);if(Object.keys(e.thumbs).length<6)e.thumbs[pid]=th;return pid}
+
+/* ---------- recognition ---------- */
+async function ocr(file){
+  if(caps.sample){
+    let lim=null;try{lim=await caps.sample.limits()}catch(e){}
+    if(lim&&lim.images){
+      try{const img=await toImg(file);const url=await resize(img,1800,900000);const blob=await (await fetch(url)).blob();
+        const r=await caps.sample('请识别这张图片里的全部文字（可能是手写或打印的日记，中文或英文）。按原来的段落输出纯文字；不要解释，不要加标题或引号；看不清的字用□代替。如果图片里没有文字，只回答：（无文字）',{images:[blob],modelTier:'default'});
+        const t=(r.text||'').trim();return t==='（无文字）'?'':t}
+      catch(e){if(e&&e.code==='rate_limited')throw new Error('请求太频繁，请稍后再试');if(e&&e.code!=='not_granted')throw new Error(e.message||'识别失败')}
+    }
+  }
+  await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+  if(!window.Tesseract)throw new Error('识别组件没有加载');
+  const r=await window.Tesseract.recognize(file,'chi_sim+eng');
+  return (r.data.text||'').replace(/([㐀-鿿])\s+(?=[㐀-鿿])/g,'$1').trim();
+}
+async function aiSuggest(btn){
+  const e=S.ed;if(!caps.sample)return;if(!e.body.trim()&&!e.title.trim())return toast('先写点内容');
+  btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="spin"></span>思考中';
+  try{
+    const ask=`你是日记整理助手。读下面这篇日记，返回 JSON：{"title":"不超过14字的标题","tags":["2到4个简短标签"],"mood":1到7的整数}。mood：1非常不愉快，2不愉快，3有点不愉快，4平静，5有点愉快，6愉快，7非常愉快。标签用日记的语言。只返回 JSON。\n\n日记：\n${(e.title+'\n'+e.body).slice(0,5000)}`;
+    let v=typeof caps.sample.json==='function'?await caps.sample.json(ask,{modelTier:'quick'}):JSON.parse(((await caps.sample(ask,{modelTier:'quick'})).text||'').replace(/^[^{]*/,'').replace(/[^}]*$/,''));
+    if(S.ed!==e)return;
+    if(v&&typeof v.title==='string'&&!e.title.trim()){e.title=v.title.slice(0,40);$('#edTitle').value=e.title}
+    if(v&&Array.isArray(v.tags))for(const t of v.tags)if(typeof t==='string'&&t.trim()&&!e.tags.includes(t.trim()))e.tags.push(t.trim().slice(0,30));
+    if(v&&Number.isInteger(v.mood)&&v.mood>=1&&v.mood<=7&&!e.mood)e.mood=v.mood;
+    renderEdTags();renderEdMoods();touch();toast('已补上标题、标签和心情（可以再改）');
+  }catch(err){toast(err&&err.code==='rate_limited'?'请求太频繁，稍后再试':'暂时无法使用智能标签')}
+  finally{btn.disabled=false;btn.innerHTML=old}
+}
+
+/* ---------- dictation ---------- */
+let rec=null,listening=false;
+function setupDictation(){const d=caps.dict;if(!d)return;try{d.onFinal(({text})=>appendSpeech(text));d.onState(({state})=>{listening=state==='listening';$('#micBtn')?.classList.toggle('on',listening)})}catch(e){}}
+function appendSpeech(text){if(!S.ed||!text)return;const ta=$('#edText');S.ed.body+=text;if(ta){ta.value=S.ed.body;autosize()}touch()}
+function toggleMic(){
+  if(caps.dict){if(listening){caps.dict.stop().catch(()=>{});return}caps.dict.start().catch(e=>toast(e&&e.code==='not_granted'?'没有麦克风权限':'无法开始语音输入'));return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return toast('这个浏览器不支持语音输入，可以用键盘上的麦克风');
+  if(listening){stopMic();return}
+  rec=new SR();rec.lang='zh-CN';rec.continuous=true;rec.interimResults=false;
+  rec.onresult=ev=>{for(let i=ev.resultIndex;i<ev.results.length;i++)if(ev.results[i].isFinal)appendSpeech(ev.results[i][0].transcript)};
+  rec.onend=()=>{listening=false;$('#micBtn')?.classList.remove('on')};
+  try{rec.start();listening=true;$('#micBtn').classList.add('on')}catch(e){toast('无法开始语音输入')}
+}
+function stopMic(){if(caps.dict&&listening){caps.dict.stop().catch(()=>{})}if(rec){try{rec.stop()}catch(e){}rec=null}listening=false}
+
+/* ---------- notebooks ---------- */
+async function newNotebook(){
+  modal(`<h3>新建分区</h3><div class="field"><label for="nbN">名字</label><input type="text" id="nbN" placeholder="例如：学习、旅行、梦"></div><div class="swatches" id="nbSw">${COLORS.map((c,i)=>`<button class="sw" style="background:${c}" data-c="${c}" aria-pressed="${i===1}" aria-label="颜色"></button>`).join('')}</div><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">创建</button></div>`);
+  let color=COLORS[1];setTimeout(()=>$('#nbN')?.focus(),50);
+  $('#modalBox').onclick=async e=>{const sw=e.target.closest('.sw');if(sw){color=sw.dataset.c;$('#nbSw').querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='ok'){const name=$('#nbN').value.trim();if(!name)return $('#nbN').focus();const nb={id:uid(),name:name.slice(0,30),color,created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);S.nb=nb.id;Store.put('notebooks',nb).catch(()=>toast('保存分区失败'))}
+    $('#modalBox').onclick=null;closeModal();render()};
+}
+const nbSaveT={};
+function saveNb(nb){clearTimeout(nbSaveT[nb.id]);nbSaveT[nb.id]=setTimeout(()=>Store.put('notebooks',structuredClone(nb)).catch(()=>toast('保存分区失败')),700)}
+async function delNotebook(id){const nb=nbById(id);const n=S.entries.filter(e=>e.nb===id).length;const target=S.notebooks.find(x=>x.id!==id);
+  if(!(await ask(`删除分区「${nb.name}」？`,n?`里面的 ${n} 篇日记会移到「${target.name}」，不会被删除。`:'这个分区是空的。','删除分区',true)))return;
+  S.notebooks=S.notebooks.filter(x=>x.id!==id);if(S.nb===id)S.nb='all';
+  for(const e of S.entries)if(e.nb===id){e.nb=target.id;await Store.put('entries',structuredClone(e)).catch(()=>{})}
+  await Store.del('notebooks',id).catch(()=>{});render();toast('已删除分区')}
+
+/* ---------- import ---------- */
+const DATE_RE=/^\s*[#>*\-\s]*(\d{4})\s*[-./年]\s*(\d{1,2})\s*[-./月]\s*(\d{1,2})\s*日?(?:\s*(?:星期|周)[一二三四五六日天])?(?:\s*(\d{1,2})[:：](\d{2}))?\s*[，,:：\-—|]*\s*(.*)$/;
+const MD_RE=/^\s*[#>*\-\s]*(\d{1,2})\s*月\s*(\d{1,2})\s*日(?:\s*(?:星期|周)[一二三四五六日天])?\s*[，,:：\-—|]*\s*(.*)$/;
+function splitText(text,year,fallback,fallbackTitle){
+  const lines=text.replace(/\r\n?/g,'\n').split('\n');const out=[];let cur=null;
+  for(const ln of lines){let m=ln.length<80&&ln.match(DATE_RE),d=null,title='';
+    if(m){d=new Date(+m[1],+m[2]-1,+m[3],m[4]?+m[4]:21,m[5]?+m[5]:0);title=m[6]}
+    else if(ln.length<60&&(m=ln.match(MD_RE))){d=new Date(year,+m[1]-1,+m[2],21,0);title=m[3]}
+    if(d&&!isNaN(d)&&d.getMonth()>=0){cur={date:localISO(d),title:title.replace(/^#+\s*/,'').trim().slice(0,60),body:[]};out.push(cur);continue}
+    if(!cur){if(!ln.trim())continue;cur={date:localISO(fallback),title:fallbackTitle||'',body:[]};out.push(cur)}
+    cur.body.push(ln)}
+  return out.map(o=>({...o,body:o.body.join('\n').trim()})).filter(o=>o.body||o.title);
+}
+async function addImported(items,nb){let n=0;for(const it of items){const e=fixEntry({id:uid(),nb,date:it.date,title:it.title||'',body:it.body||'',created:Date.now(),updated:Date.now()});S.entries.push(e);await Store.put('entries',e);n++}return n}
+async function importBackup(obj){let n=0;
+  for(const nb of obj.notebooks||[])if(nb&&nb.id&&typeof nb.name==='string'){if(!nbById(nb.id))S.notebooks.push({id:String(nb.id),name:nb.name.slice(0,30),color:COLORS.includes(nb.color)?nb.color:COLORS[0],created:nb.created||Date.now(),order:S.notebooks.length});await Store.put('notebooks',structuredClone(nbById(nb.id)))}
+  for(const p of obj.photos||[])if(p&&p.id&&typeof p.data==='string'&&p.data.startsWith('data:image/')){await Store.put('photos',{id:String(p.id),data:p.data});S.photos.set(p.id,p.data)}
+  for(const r of obj.reports||[])if(r&&typeof r.id==='string'&&r.id.startsWith('rep:')&&typeof r.text==='string'){const rec={id:r.id,text:r.text.slice(0,50000),n:+r.n||0,created:+r.created||Date.now()};S.reports.set(rec.id,rec);await Store.put('meta',rec)}
+  for(const raw of obj.entries||[]){if(!raw||!raw.id||typeof raw.date!=='string')continue;const e=fixEntry({...raw,id:String(raw.id),title:String(raw.title||''),body:String(raw.body||''),place:String(raw.place||''),tags:(raw.tags||[]).map(String),photos:(raw.photos||[]).map(String),thumbs:Object.fromEntries(Object.entries(raw.thumbs||{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))),mood:Number.isInteger(raw.mood)&&raw.mood>=1&&raw.mood<=7?raw.mood:null,fav:!!raw.fav});
+    if(!nbById(e.nb))e.nb=S.notebooks[0].id;const i=S.entries.findIndex(x=>x.id===e.id);if(i<0)S.entries.push(e);else S.entries[i]=e;await Store.put('entries',e);n++}
+  return n}
+async function importFiles(files){
+  const nb=$('#impNb')?.value||S.notebooks[0].id,useOcr=$('#impOcr')?.checked;let total=0,fail=0;const before=new Set(S.entries.map(e=>e.id));
+  modal(`<h3>正在导入</h3><p class="muted" id="impProg">0 / ${files.length}</p>`);
+  for(let i=0;i<files.length;i++){const f=files[i];$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${f.name}`);
+    try{
+      if(/\.zip$/i.test(f.name)||f.type==='application/zip'||f.type==='application/x-zip-compressed'){total+=await importZip(f,nb,useOcr,(t)=>{$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${t}`)})}
+      else if(/\.html?$/i.test(f.name)){if(!/^index\.html?$/i.test(f.name)){const it=parseAppleJournal(await f.text(),f.name,new Date(f.lastModified||Date.now()));if(it){const e=fixEntry({id:uid(),nb,...it.entry,created:Date.now(),updated:Date.now()});S.entries.push(e);await Store.put('entries',e);total++}}}
+      else if(/\.json$/i.test(f.name)||f.type==='application/json'){const o=JSON.parse(await f.text());total+=await importBackup(o)}
+      else if(f.type.startsWith('image/')){const d=new Date(f.lastModified||Date.now());const e=fixEntry({id:uid(),nb,date:localISO(d),title:'',body:'',created:Date.now(),updated:Date.now()});await attachPhoto(e,f);if(useOcr){try{e.body=await ocr(f)}catch(err){fail++}}S.entries.push(e);await Store.put('entries',e);total++}
+      else{const txt=await f.text();const fd=new Date(f.lastModified||Date.now());const items=splitText(txt,fd.getFullYear(),fd,f.name.replace(/\.[^.]+$/,''));total+=await addImported(items,nb)}
+    }catch(err){fail++}}
+  closeModal();render();toast(`导入了 ${total} 篇${fail?`，${fail} 个文件/识别失败`:''}`,4000);
+  const fresh=S.entries.filter(e=>!before.has(e.id)&&!e.ai).map(e=>e.id);if(fresh.length)setTimeout(()=>offerOrganize(fresh),600);
+}
+function pasteImport(){
+  const y=new Date().getFullYear();
+  modal(`<h3>粘贴日记</h3><p class="muted">每篇以日期开头的一行分隔，例如“2025-11-24 雨天”或“11月24日 周一”。没有年份的按下面的年份。</p>
+  <textarea id="pTxt" rows="8" placeholder="2025年11月24日 星期一&#10;今天……&#10;&#10;2025年11月25日&#10;……"></textarea>
+  <div class="ed-meta" style="margin-top:8px"><div class="field"><label for="pYear">默认年份</label><input type="number" id="pYear" value="${y}"></div><div class="field"><label for="pNb">分区</label><select id="pNb">${S.notebooks.map(n=>`<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></div></div>
+  <p class="muted" id="pPrev"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">导入</button></div>`);
+  const prev=()=>{const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');$('#pPrev').textContent=it.length?`会拆成 ${it.length} 篇：${it.slice(0,3).map(x=>x.date.slice(0,10)).join('、')}${it.length>3?'…':''}`:''};
+  $('#pTxt').oninput=prev;$('#pYear').oninput=prev;
+  $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;
+    if(a==='ok'){const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');const nb=$('#pNb').value;closeModal();const before=new Set(S.entries.map(e=>e.id));try{const n=await addImported(it,nb);toast(`导入了 ${n} 篇`);const fresh=S.entries.filter(e=>!before.has(e.id)).map(e=>e.id);if(fresh.length)setTimeout(()=>offerOrganize(fresh),600)}catch(err){toast('导入失败')}render()}else closeModal()};
+}
+
+/* ---------- Apple Journal export (ZIP or HTML files from 设置 › App › 日记 › 导出) ---------- */
+const MONTHS_EN=['january','february','march','april','may','june','july','august','september','october','november','december'];
+function parseAppleDate(t){if(!t)return null;let m;
+  if((m=t.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/)))return new Date(+m[1],+m[2]-1,+m[3],12,0);
+  if((m=t.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/))&&MONTHS_EN.indexOf(m[2].toLowerCase())>=0)return new Date(+m[3],MONTHS_EN.indexOf(m[2].toLowerCase()),+m[1],12,0);
+  if((m=t.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/))&&MONTHS_EN.indexOf(m[1].toLowerCase())>=0)return new Date(+m[3],MONTHS_EN.indexOf(m[1].toLowerCase()),+m[2],12,0);
+  if((m=t.match(/(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})/)))return new Date(+m[1],+m[2]-1,+m[3],12,0);
+  return null}
+function parseAppleJournal(html,name,fallback){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const header=doc.querySelector('.pageHeader')?.textContent.trim();
+  const isApple=!!(header||doc.querySelector('.pageContainer,.assetGrid'));
+  const d=parseAppleDate(header)||parseAppleDate(name)||fallback;
+  const title=(doc.querySelector('.title')?.textContent||'').trim()||(isApple?'':(doc.title||'').trim());
+  const prompt=(doc.querySelector('.reflectionPrompt')?.textContent||'').trim();
+  let paras=[...doc.querySelectorAll('p:not(.p1), li')].map(p=>(p.tagName==='LI'?'• ':'')+p.textContent.replace(/ /g,' ').trimEnd()).filter((t,i,a)=>t.trim()||i&&a[i-1].trim());
+  if(!paras.length){const bt=doc.querySelector('.bodyText')||(!isApple&&doc.body);if(bt)paras=[bt.innerText||bt.textContent||''];}
+  let body=(prompt?prompt+'\n\n':'')+paras.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  const tags=[],imgs=[];let place='';
+  for(const g of doc.querySelectorAll('.assetGrid .gridItem')){const type=([...g.classList].find(c=>c.startsWith('assetType_'))||'').slice(10).toLowerCase();
+    const head=(g.querySelector('.gridItemOverlayHeader')?.textContent||g.querySelector('.gridItemOverlayText,.mediaTitle,.activityType')?.textContent||'').trim();
+    const src=g.querySelector('img')?.getAttribute('src');
+    if(/photo|image/.test(type)&&src)imgs.push(src);
+    else if(/map|location|place/.test(type)&&head&&!place)place=head.slice(0,80);
+    else if(/stateofmind/.test(type)&&head)head.split(/[,，、]/).map(x=>x.trim()).filter(Boolean).forEach(t=>tags.push(t.slice(0,30)));
+    else if(head&&!/contact/.test(type)&&body.length<20000)body+=`\n\n[${head}]`;}
+  if(!body.trim()&&!title&&!imgs.length)return null;
+  return{entry:{date:localISO(d),title:title.slice(0,80),body:body.trim(),tags:[...new Set(tags)],place},imgs}}
+function zipResolve(base,rel){const parts=base.split('/');parts.pop();for(const seg of decodeURIComponent(rel).split('/')){if(seg==='..')parts.pop();else if(seg&&seg!=='.')parts.push(seg)}return parts.join('/')}
+const IMG_RE=/\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i;
+const mimeOf=n=>({jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',heic:'image/heic',heif:'image/heif',bmp:'image/bmp'})[n.split('.').pop().toLowerCase()]||'application/octet-stream';
+async function importZip(file,nb,useOcr,progress){
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  if(!window.JSZip)throw new Error('解压组件没有加载');
+  const zip=await window.JSZip.loadAsync(file);
+  const all=Object.values(zip.files).filter(f=>!f.dir&&!/(^|\/)(__MACOSX|\._)/.test(f.name)&&!/(^|\/)\.[^/]*$/.test(f.name));
+  const byName=new Map(all.map(f=>[f.name,f]));
+  const htmls=all.filter(f=>/\.html?$/i.test(f.name)&&!/(^|\/)index\.html?$/i.test(f.name)).sort((a,b)=>a.name.localeCompare(b.name));
+  let n=0,photoFail=0;
+  for(let i=0;i<htmls.length;i++){const f=htmls[i];progress(`日记 ${i+1}/${htmls.length}`);
+    const it=parseAppleJournal(await f.async('string'),f.name.split('/').pop(),f.date||new Date());if(!it)continue;
+    const e=fixEntry({id:uid(),nb,...it.entry,created:Date.now(),updated:Date.now()});
+    for(const src of it.imgs.slice(0,20)){const zf=byName.get(zipResolve(f.name,src));if(!zf)continue;
+      try{const blob=new Blob([await zf.async('arraybuffer')],{type:mimeOf(zf.name)});await attachPhoto(e,blob)}catch(err){photoFail++}}
+    if(!e.body&&!e.title&&!e.photos.length)continue;
+    S.entries.push(e);await Store.put('entries',e);n++}
+  for(const f of all.filter(f=>/\.(txt|md|markdown)$/i.test(f.name))){const txt=await f.async('string');const d=f.date||new Date();n+=await addImported(splitText(txt,d.getFullYear(),d,f.name.split('/').pop().replace(/\.[^.]+$/,'')),nb)}
+  for(const f of all.filter(f=>/\.json$/i.test(f.name))){try{n+=await importBackup(JSON.parse(await f.async('string')))}catch(err){}}
+  if(!htmls.length){const imgs=all.filter(f=>IMG_RE.test(f.name));for(let i=0;i<imgs.length;i++){const f=imgs[i];progress(`照片 ${i+1}/${imgs.length}`);
+    try{const blob=new Blob([await f.async('arraybuffer')],{type:mimeOf(f.name)});const e=fixEntry({id:uid(),nb,date:localISO(f.date||new Date()),created:Date.now(),updated:Date.now()});await attachPhoto(e,blob);if(useOcr){try{e.body=await ocr(blob)}catch(err){}}S.entries.push(e);await Store.put('entries',e);n++}catch(err){photoFail++}}}
+  if(photoFail)setTimeout(()=>toast(`${photoFail} 张照片没能读取（多半是 HEIC 格式，用 iPhone 的 Safari 导入可以读）`,6000),4200);
+  return n}
+$('#fileImport').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)importFiles(fs)};
+
+/* ---------- export ---------- */
+async function saveFile(name,text,type){
+  if(caps.dl){try{await caps.dl.save({filename:name,data:new Blob([text],{type})});toast('已导出 '+name);return}catch(e){if(e&&(e.code==='dismissed'||e.code==='cancelled'))return}}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已导出 '+name)}catch(e){toast('导出失败')}
+}
+async function exportJson(){toast('正在打包照片…',10000);const photos=[];
+  for(const e of S.entries)for(const p of e.photos){let d=S.photos.get(p);if(!d){try{const o=await Store.get('photos',p);d=o&&o.data}catch(err){}}if(d)photos.push({id:p,data:d})}
+  const obj={app:'ego-journal',version:1,exported:new Date().toISOString(),notebooks:S.notebooks,entries:S.entries,photos,reports:[...S.reports.values()]};
+  await saveFile(`ego-journal-${dayKey(new Date())}.json`,JSON.stringify(obj),'application/json')}
+function exportMd(){const list=[...S.entries].sort((a,b)=>a.date.localeCompare(b.date));
+  const md='# Ego 日记\n\n'+list.map(e=>`## ${e.date.replace('T',' ')}${e.title?' · '+e.title:''}\n\n`+`*${nbById(e.nb)?.name||''}${e.mood?' · '+MOODS[e.mood-1].n:''}${e.place?' · '+e.place:''}${e.tags.length?' · '+e.tags.map(t=>'#'+t).join(' '):''}*\n\n${e.body}\n`).join('\n');
+  saveFile(`ego-journal-${dayKey(new Date())}.md`,md,'text/markdown')}
+
+
+
+/* ---------- global events ---------- */
+document.addEventListener('click',async ev=>{
+  if(ev.target.closest('#editor,#modal,#viewer,#auth'))return;
+  const b=ev.target.closest('button');if(!b)return;const d=b.dataset;
+  if(d.go){if(d.go==='journal')S.day=null;go(d.go)}
+  else if(d.nb){S.nb=d.nb;S.day=null;if(S.view!=='journal')S.view='journal';render()}
+  else if(d.calnb){S.nb=d.calnb;render()}
+  else if(d.open){const e=S.entries.find(x=>x.id===d.open);if(e)openEditor(e)}
+  else if(d.f){S.f[d.f]=!S.f[d.f];render()}
+  else if(d.mood){S.f.mood=S.f.mood===d.mood?'':d.mood;render()}
+  else if(d.day){S.day=d.day;S.view='journal';render();window.scrollTo(0,0)}
+  else if(d.year){S.year=+d.year;render()}
+  else if(d.tag){S.q='#'+d.tag;S.view='journal';S.day=null;render()}
+  else if(d.nbcolor){const nb=nbById(d.nbcolor);nb.color=d.c;saveNb(nb);render()}
+  else if(d.nbdel){delNotebook(d.nbdel)}
+  else if(d.rtype){S.rep.type=d.rtype;render()}
+  else if(d.act){const a=d.act;
+    if(a==='retryload'&&S.account&&S.key)return enterAccount(S.account,S.key,false);
+    if(a==='repprev')return repShift(-1);if(a==='repnext')return repShift(1);if(a==='repgen')return genReport();
+    if(a==='aiorg')return aiOrganize(S.entries.filter(e=>!e.ai).map(e=>e.id));
+    if(a==='new')newEntry(false);else if(a==='new-prompt')newEntry(true);
+    else if(a==='shuffle'){S.prompt=(S.prompt+1)%PROMPTS.length;render()}
+    else if(a==='newnb')newNotebook();
+    else if(a==='clearday'){S.day=null;render()}
+    else if(a==='clearall'){S.q='';S.day=null;S.f={fav:false,photo:false,mood:''};render()}
+    else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
+    else if(a==='pickimport')$('#fileImport').click();
+    else if(a==='paste')pasteImport();
+    else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
+    else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
+    else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
+    else if(a==='caltoday'){S.cal=new Date();render()}
+  }
+});
+$('#fab').onclick=()=>newEntry(false);
+let qT=null;
+document.addEventListener('input',ev=>{
+  if(ev.target.id==='q'){S.q=ev.target.value;clearTimeout(qT);qT=setTimeout(()=>{const tmp=document.createElement('div');tmp.innerHTML=renderJournal();$('.hero')?.remove();if(!tokens().length&&!S.day&&!S.f.fav&&!S.f.photo&&!S.f.mood){const h=tmp.querySelector('.hero');if(h)$('#main').prepend(h)}const nl=tmp.querySelector('.list'),ol=$('#main .list');if(nl&&ol)ol.replaceWith(nl)},200)}
+  else if(ev.target.dataset.nbname){const nb=nbById(ev.target.dataset.nbname);if(nb){nb.name=ev.target.value.slice(0,30)||'未命名';saveNb(nb)}}
+});
+document.addEventListener('change',ev=>{if(ev.target.dataset.nbname)render()});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){if(!$('#viewer').hidden)$('#viewerX').click();else if(!$('#modal').hidden)closeModal();else if(!$('#editor').hidden)closeEditor()}});
+$('#modal').addEventListener('click',ev=>{if(ev.target.id==='modal'&&!$('#impProg')){$('#modalBox').onclick=null;closeModal()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist()});
+
+init();
+}
+</script>
+</body>
+</html>
