@@ -77,7 +77,11 @@ section.s{padding:30px 0 6px}
 .sites{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
 .site{position:relative;display:flex;gap:12px;align-items:center;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-decoration:none;min-height:76px;transition:border-color .15s,transform .15s}
 .site:hover{border-color:var(--c);transform:translateY(-2px)}
-.site .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px;font-weight:700;flex:none;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);font-family:"Noto Serif SC",serif}
+.site .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.icpick{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}.icpick button{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--mut)}.icpick button[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.tilebtn{color:var(--acc);font-size:13px;font-weight:500}
+.tt-day{margin:14px 0 4px;font-weight:700;color:var(--acc);font-size:14px}
+.box.wide{max-width:640px}
 .site b{display:block;font-size:15.5px;line-height:1.3}
 .site span{font-size:12.5px;color:var(--mut);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .site .ed{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:var(--card2);display:none;place-items:center;font-size:13px}
@@ -171,7 +175,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
         <div class="hint"><button data-run="help">help</button><button data-run="today">today</button><button data-run="ddl">ddl</button><button data-run="北欧">北欧</button><button data-run="日记">日记</button></div>
       </div>
       <div class="side">
-        <div class="tile"><h2><span id="todayTitle">今天的课</span><span id="todayNote" style="font-weight:400"></span></h2><div id="today"></div></div>
+        <div class="tile"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
         <div class="tile trip" id="trip"></div>
       </div>
     </div>
@@ -405,7 +409,7 @@ async function enterAccount(acc,key,isNew){
   $('#sites').innerHTML='<div class="empty"><span class="spin"></span> 正在打开…</div>';
   try{for(const k of ['sites','plans','work','meta'])S[k]=await DB.all(k)}
   catch(e){$('#sites').innerHTML='<div class="empty">内容暂时没加载出来（数据还在）。 <button class="btn line" data-act="retry">再试一次</button></div>';return}
-  S.sites.forEach(x=>{if(MAPC[x.color])x.color=MAPC[x.color]});
+  S.sites.forEach(x=>{if(MAPC[x.color])x.color=MAPC[x.color];if(!ICONS[x.icon])x.icon=iconKey(x)});
   if(!S.meta.find(x=>x.id==='seed')){
     let o=0;for(const x of SEED_SITES){const it={id:uid(),order:o++,...x};S.sites.push(it);await DB.put('sites',it)}
     for(const r of SEED_WORK){const it={id:uid(),date:r[0],time:r[1],course:r[2],task:r[3],weight:r[4],status:r[5],note:r[6]};S.work.push(it);await DB.put('work',it)}
@@ -456,29 +460,54 @@ function renderToday(){
   $('#today').innerHTML=list.length?list.map(c=>{const st=isToday?(c.e<=now?'past':c.s<=now?'now':''):'';return `<div class="cls ${st}"><span class="t mono">${c.s}–${c.e}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}${st==='now'?' · 进行中':''}</b><small>${esc(c.room)}</small></div>`}).join(''):'<div class="empty">接下来两周没有课。</div>';
   $('#today').closest('.tile').hidden=!S.tt.length;$('#trip').hidden=!S.trip;if(!S.trip)return;
   const s=pd(S.trip.start),e=pd(S.trip.end),t0=pd(dk(n));const d=Math.round((s-t0)/864e5),after=Math.round((t0-e)/864e5);
-  $('#trip').innerHTML=`<h2 style="color:#c6d3ea">${esc(S.trip.name||'旅行')} · ${+S.trip.start.slice(5,7)}/${+S.trip.start.slice(8)} – ${+S.trip.end.slice(5,7)}/${+S.trip.end.slice(8)}</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 · 玩得开心</small></div>`:`<div class="big">✓<small>旅行结束啦</small></div>`}
-  <p>${S.trip.plan.map(p=>`${p[0]==='—'?'':p[0]+' '}${esc(p[1])}`).join(' · ')}</p>${safeUrl(S.trip.url)?`<p><a href="${esc(S.trip.url)}">打开行程 →</a></p>`:""}`;
+  const tu=safeUrl(S.trip.url);
+  $('#trip').innerHTML=`${tu?`<a href="${esc(tu)}" style="position:absolute;inset:0;z-index:2" aria-label="打开行程"></a>`:''}<h2 style="color:#c6d3ea">${esc(S.trip.name||'旅行')} · ${+S.trip.start.slice(5,7)}/${+S.trip.start.slice(8)} – ${+S.trip.end.slice(5,7)}/${+S.trip.end.slice(8)}${tu?'<span class="tilebtn">打开 →</span>':''}</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 · 玩得开心</small></div>`:`<div class="big">✓<small>旅行结束啦</small></div>`}`;
 }
 
+
+/* ---------- site icons ---------- */
+const ICONS={
+ book:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+ snow:'<path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8"/><path d="m9.5 4 2.5 2 2.5-2M9.5 20l2.5-2 2.5 2M4 10.6l3.1-.5-1-3M20 13.4l-3.1.5 1 3M4 13.4l3.1.5-1 3M20 10.6l-3.1-.5 1-3"/>',
+ mountain:'<path d="M2.5 20 9 8.5l4 6.5 2.5-3.5 6 8.5z"/><path d="M4 6c3-2 6-2.5 9-1.5s5.5.5 7.5-1"/>',
+ table:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/>',
+ calendar:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="M8 14h2M14 14h2M8 17h2"/>',
+ flask:'<path d="M9 3h6M10 3v6.2L4.6 18.4A1.8 1.8 0 0 0 6.2 21h11.6a1.8 1.8 0 0 0 1.6-2.6L14 9.2V3"/><path d="M7.2 15h9.6"/>',
+ egg:'<path d="M12 3c3.7 0 6.5 5.4 6.5 10a6.5 6.5 0 0 1-13 0C5.5 8.4 8.3 3 12 3z"/><circle cx="10" cy="12.5" r=".9" fill="currentColor"/><circle cx="14" cy="12.5" r=".9" fill="currentColor"/><path d="M10.5 15.5c.9.7 2.1.7 3 0"/>',
+ code:'<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+ cap:'<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11M21.5 9v5"/>',
+ heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+ music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ game:'<rect x="3" y="8" width="18" height="10" rx="4"/><path d="M8 11v4M6 13h4M15.5 12.5h.01M18 14.5h.01"/>',
+ home:'<path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+ star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
+};
+const CHARMAP={'记':'book','北':'snow','极':'mountain','课':'table','酶':'flask','蛋':'egg','源':'code','M':'cap'};
+const iconKey=x=>ICONS[x.icon]?x.icon:(CHARMAP[x.icon]||'link');
+const svgIcon=k=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||ICONS.link}</svg>`;
 /* ---------- sites ---------- */
 function renderSites(){
   const list=[...S.sites].sort((a,b)=>(a.order??0)-(b.order??0));
   $('#sites').className='sites'+(S.editing?' editing':'');$('#editBtn').textContent=S.editing?'完成':'编辑';
-  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${esc((x.icon||x.name||'?').slice(0,2))}</span><span style="min-width:0"><b>${esc(x.name)}</b><span>${esc(x.desc||u.replace(/^https:\/\//,''))}</span></span><button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站，点「+ 添加」。</div>';
+  $('#sites').innerHTML=list.map(x=>{const u=safeUrl(x.url);return `<a class="site" style="--c:${esc(COLORS.includes(x.color)?x.color:'#a9b8cc')}" ${u?`href="${esc(u)}"`:''} data-site="${esc(x.id)}"><span class="ic">${svgIcon(iconKey(x))}</span><span style="min-width:0"><b>${esc(x.name)}</b><span>${esc(x.desc||u.replace(/^https:\/\//,''))}</span></span><button class="ed" data-editsite="${esc(x.id)}" aria-label="编辑 ${esc(x.name)}">✎</button></a>`}).join('')||'<div class="empty">还没有网站，点「+ 添加」。</div>';
 }
 function siteModal(x){
-  const it=x||{name:'',url:'https://',desc:'',color:COLORS[0],icon:''};let color=it.color;
+  const it=x||{name:'',url:'https://',desc:'',color:COLORS[0],icon:'link'};let color=it.color,icon=iconKey(it);
   modal(`<h3>${x?'编辑网站':'添加网站'}</h3><div class="field"><label for="sN">名字</label><input type="text" id="sN" value="${esc(it.name)}"></div>
   <div class="field"><label for="sU">网址（https://…）</label><input type="url" id="sU" value="${esc(it.url)}"></div>
-  <div class="two"><div class="field"><label for="sD">说明</label><input type="text" id="sD" value="${esc(it.desc)}"></div><div class="field"><label for="sI">图标字（1–2 个字）</label><input type="text" id="sI" maxlength="2" value="${esc(it.icon)}"></div></div>
+  <div class="field"><label for="sD">说明</label><input type="text" id="sD" value="${esc(it.desc)}"></div>
+  <div class="field"><label>图标</label><div class="icpick" id="sI">${Object.keys(ICONS).map(k=>`<button data-ic="${k}" aria-pressed="${k===icon}" aria-label="${k}">${svgIcon(k)}</button>`).join('')}</div></div>
   <div class="field"><label>颜色</label><div class="sw" id="sC">${COLORS.map(c=>`<button style="background:${c}" data-c="${c}" aria-pressed="${c===color}" aria-label="颜色"></button>`).join('')}</div></div>
   <div class="row">${x?'<button class="btn danger sp" data-a="del">删除</button>':''}<button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#box').onclick=async e=>{const sw=e.target.closest('[data-c]');if(sw){color=sw.dataset.c;$('#sC').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===sw));return}
+    const ic=e.target.closest('[data-ic]');if(ic){icon=ic.dataset.ic;$('#sI').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===ic));return}
     const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;
     if(a==='no')return closeModal();
     if(a==='del'){S.sites=S.sites.filter(s=>s!==x);DB.del('sites',x.id);closeModal();renderSites();return}
     const name=$('#sN').value.trim(),url=$('#sU').value.trim();if(!name)return $('#sN').focus();if(!safeUrl(url))return toast('网址要以 https:// 开头');
-    const o=x||{id:uid(),order:S.sites.length};Object.assign(o,{name:name.slice(0,40),url,desc:$('#sD').value.trim().slice(0,60),icon:$('#sI').value.trim().slice(0,2),color});
+    const o=x||{id:uid(),order:S.sites.length};Object.assign(o,{name:name.slice(0,40),url,desc:$('#sD').value.trim().slice(0,60),icon,color});
     if(!x)S.sites.push(o);DB.put('sites',o);closeModal();renderSites()};
 }
 
@@ -549,9 +578,29 @@ function workModal(w){
     if(!w)S.work.push(o);DB.put('work',o);closeModal();renderWork()};
 }
 
+
+/* ---------- full timetable ---------- */
+let ttTerm=null;
+function ttModal(){
+  const all=S.tt||[],weekly=all.filter(c=>!c.date),once=all.filter(c=>c.date);
+  const terms=[...new Set(weekly.map(c=>c.from<'2027-01-01'?'Term 1':'Term 2'))];
+  const today=dk(new Date());
+  if(!ttTerm)ttTerm=weekly.some(c=>c.from<=today&&c.to>=today)?(weekly.find(c=>c.from<=today&&c.to>=today).from<'2027-01-01'?'Term 1':'Term 2'):(terms[0]||'Term 1');
+  const inTerm=weekly.filter(c=>(c.from<'2027-01-01'?'Term 1':'Term 2')===ttTerm);
+  const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
+  const days=[1,2,3,4,5].map(wd=>{const l=inTerm.filter(c=>c.wd===wd).sort((a,b)=>a.s.localeCompare(b.s));return l.length?`<div class="tt-day">星期${WD[wd]}</div>`+l.map(c=>`<div class="cls"><span class="t mono">${c.s}–${c.e}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}</b><small>${esc(c.room)} · ${md(c.from)}–${md(c.to)}${c.except&&c.except.length?` · ${c.except.map(md).join('、')} 不上`:''}</small></div>`).join(''):''}).join('');
+  const up=once.filter(c=>c.date>=today).sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s));
+  const sheet=S.sites.find(x=>/DDL|课表/.test(x.name));
+  modal(`<h3>全部课表</h3><div class="chips">${terms.map(t=>`<button class="chip" data-tt="${t}" aria-pressed="${t===ttTerm}">${t}</button>`).join('')}</div>
+   ${days||'<p class="empty">这个学期没有每周课程。</p>'}
+   ${up.length?`<div class="tt-day" style="color:var(--acc2)">实验、测试等单次安排</div>`+up.map(c=>{const d=pd(c.date);return `<div class="cls"><span class="t mono">${md(c.date)} 周${WD[d.getDay()]}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}</b><small>${c.s}–${c.e} · ${esc(c.room)}</small></div>`}).join(''):''}
+   <div class="row">${sheet&&safeUrl(sheet.url)?`<a class="btn line sp" href="${esc(sheet.url)}">在课程表格里看 →</a>`:''}<button class="btn pri" data-a="no">关闭</button></div>`);
+  $('#box').classList.add('wide');
+  $('#box').onclick=e=>{const t=e.target.closest('[data-tt]');if(t){ttTerm=t.dataset.tt;ttModal();return}if(e.target.closest('[data-a=no]'))closeModal()};
+}
 /* ---------- modal ---------- */
-function modal(h){$('#box').innerHTML=h;$('#modal').hidden=false;setTimeout(()=>$('#box input')?.focus(),50)}
-function closeModal(){$('#modal').hidden=true;$('#box').onclick=null}
+function modal(h){$('#box').classList.remove('wide');$('#box').innerHTML=h;$('#modal').hidden=false;setTimeout(()=>$('#box input')?.focus(),50)}
+function closeModal(){$('#modal').hidden=true;$('#box').onclick=null;$('#box').classList.remove('wide')}
 $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)closeModal();if(e.key==='/'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'){e.preventDefault();$('#cmd').focus()}});
 
@@ -559,7 +608,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden
 const hist=[];let hi=0;
 function print(text,cls='',html=false){const p=document.createElement('p');if(cls)p.className=cls;if(html)p.innerHTML=text;else p.textContent=text;const o=$('#out');o.appendChild(p);while(o.children.length>60)o.firstChild.remove();o.scrollTop=o.scrollHeight}
 function linkLine(x){const u=safeUrl(x.url);return u?`→ <a href="${esc(u)}">${esc(x.name)}</a>  <span style="color:var(--mut)">${esc(x.desc||'')}</span>`:esc(x.name)}
-const HELP=[['help','显示这些命令'],['todo 内容 [明天/周五/12/3]','加一条计划'],['done 关键词','把计划标记完成'],['today','今天/下次的课'],['ddl','最近 7 天的截止日期'],['北欧','旅行倒计时和安排'],['日记 / ddl表 / 奶蛋 …','打开对应网站'],['sites','列出所有网站'],['clear','清屏']];
+const HELP=[['help','显示这些命令'],['todo 内容 [明天/周五/12/3]','加一条计划'],['done 关键词','把计划标记完成'],['today','今天/下次的课'],['课表','打开全部课表'],['ddl','最近 7 天的截止日期'],['北欧','旅行倒计时和安排'],['日记 / ddl表 / 奶蛋 …','打开对应网站'],['sites','列出所有网站'],['clear','清屏']];
 function run(raw){
   const line=raw.trim();if(!line)return;hist.push(line);hi=hist.length;print('❯ '+line,'cmd');
   const [c0,...rest]=line.split(/\s+/);const c=c0.toLowerCase(),arg=rest.join(' ');
@@ -567,6 +616,7 @@ function run(raw){
   if(c==='clear'||c==='cls'){$('#out').innerHTML='';return}
   if(['todo','计划','+','add'].includes(c)){const p=arg&&addPlan(arg);if(p)print(`✓ 已加入计划：${p.text}${p.due?`（${dueLabel(p.due).t}）`:''}`,'ok');else print('用法：todo 内容 [明天/周五/12/3]','err');return}
   if(c==='done'||c==='完成'){const p=S.plans.find(x=>!x.done&&x.text.toLowerCase().includes(arg.toLowerCase()));if(!arg||!p)return print('没找到这条计划','err');p.done=true;p.doneAt=Date.now();DB.put('plans',p);renderPlans();print(`✓ 完成：${p.text}`,'ok');return}
+  if(c==='课表'||c==='tt'||c==='timetable'){ttModal();return}
   if(c==='today'||c==='今天'||c==='课'){const l=classesOn(new Date());if(!l.length)print('今天没有课。');l.forEach(x=>print(`  ${x.s}–${x.e}  ${x.course} ${x.type} @ ${x.room}`));return}
   if(c==='ddl'||c==='work'||c==='作业'){const now=new Date(),lim=new Date(now);lim.setDate(lim.getDate()+7);const l=workSorted().filter(w=>w.status!==S2&&w.status!==S1&&w.date&&pd(w.date)<=lim);
     if(!l.length)print('未来 7 天没有截止的作业。','ok');l.forEach(w=>print(`  ${w.date.slice(5).replace('-','/')} ${w.time||''}  ${w.course}  ${w.task}  [${workDue(w).t}]`,workDue(w).c==='late'?'err':''));$('#work-s').scrollIntoView({behavior:'smooth'});return}
@@ -593,7 +643,7 @@ document.addEventListener('click',e=>{
   if(d.editwork){const w=S.work.find(x=>x.id===d.editwork);if(w)workModal(w);return}
   if(d.wf){S.wf=d.wf;renderWork();return}
   if(d.wc){S.wc=d.wc;renderWork();return}
-  const a=d.act;if(a==='acct')return acctModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
+  const a=d.act;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
 });
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 
