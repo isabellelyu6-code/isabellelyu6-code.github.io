@@ -1110,7 +1110,11 @@ document.addEventListener('input',ev=>{
   else if(ev.target.dataset.nbname){const nb=nbById(ev.target.dataset.nbname);if(nb){nb.name=ev.target.value.slice(0,30)||'未命名';saveNb(nb)}}
 });
 document.addEventListener('change',ev=>{if(ev.target.dataset.nbname)render()});
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){if(!$('#viewer').hidden)$('#viewerX').click();else if(!$('#modal').hidden)closeModal();else if(!$('#editor').hidden)closeEditor()}});
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Enter'&&!ev.isComposing){const t=ev.target;
+    if(!$('#modal').hidden&&t.tagName==='INPUT'&&!t.closest('form')){const ok=$('#modalBox [data-a=ok]');if(ok){ev.preventDefault();ok.click();return}}
+    if((ev.metaKey||ev.ctrlKey)&&!$('#editor').hidden){ev.preventDefault();closeEditor();toast('已保存');return}}
+  if(ev.key==='Escape'){if(!$('#viewer').hidden)$('#viewerX').click();else if(!$('#modal').hidden)closeModal();else if(!$('#editor').hidden)closeEditor()}});
 $('#modal').addEventListener('click',ev=>{if(ev.target.id==='modal'&&!$('#impProg')){$('#modalBox').onclick=null;closeModal()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist()});
 
