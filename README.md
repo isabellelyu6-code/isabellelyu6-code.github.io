@@ -8,7 +8,11 @@ An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
 - **分区 Notebooks**: create as many as you want, each with its own colour; move entries between them
 - **检索 Search**: full-text search over titles, body, places, `#tags`, and notebook names, with highlighted matches; filters for favourites, photos, mood, and a calendar day
 - **识别 Recognition**: photograph a handwritten or printed page and turn it into text. It uses Claude when running as a Claude artifact; otherwise it uses [Tesseract.js](https://github.com/naptha/tesseract.js) in the browser (`chi_sim+eng`)
+- **AI reports** (Claude artifact only): daily, weekly, and monthly reports covering what you were busy with, mood changes, important people and moments, and gentle suggestions. Reports are cached, encrypted
+- **AI auto-organise** (Claude artifact only): after an import, it creates notebooks such as 学习, 梦境, or 朋友, files each entry, and fills in mood, place, and tags
 - **智能标签 Smart tags** (Claude artifact only): suggests a title, tags, and a mood
+- **Remember me**: you only log in once per device. A non-extractable copy of the account key is kept in that browser's IndexedDB; logging out removes it
+- Deep-navy theme with a jade-green accent
 - Mood (7-point scale like Apple's State of Mind), places, tags, favourites, photos, voice dictation
 - Calendar with mood dots, streaks, "on this day", and a yearly review (entries, words, months, moods, tags)
 - Writing prompts

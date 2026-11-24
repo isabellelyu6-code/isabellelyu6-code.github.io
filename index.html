@@ -3,113 +3,153 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1428">
 <title>Ego 日记</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <!--
   Ego Journal — open-source, single-file journal app. MIT License.
   Storage: Claude artifact private db when available, otherwise IndexedDB in this browser.
 -->
 <style>
-/* VOICE: quiet, private, tender — a notebook you keep for years
-   IDEA: a cloth-bound diary with coloured section tabs (分区)
-   PICTURE: the journal itself — today's page band on top, then the stack of entries
-   COLOUR and TYPE: white paper, deep teal cover band, coral pen accent; Noto Serif SC for writing, Noto Sans SC for UI
-   LAYOUT: phone first — tab bar at bottom; on wide screens a left rail with sections */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#111416);--ink:light-dark(#1b1d21,#ebe9e4);--mut:light-dark(#6b6f76,#9a9ea5);--line:light-dark(#e6e6e2,#262a2e);--card:light-dark(#f5f5f2,#191c1f);--cover:light-dark(#0f4c55,#0c3a41);--coverInk:#f3f7f6;--acc:#e8553a;--mark:light-dark(#ffe2a8,#6b4c12)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+/* VOICE: quiet, private, a little luminous — a notebook read by lamplight
+   IDEA: a midnight-blue cloth diary with jade ribbon markers; each 分区 is a coloured ribbon
+   PICTURE: the journal itself — tonight's page band with a soft aurora glow, then the stack of entries, each tagged by its ribbon
+   COLOUR and TYPE: deep navy ground, jade green accent, ribbon colours per notebook; ZCOOL XiaoWei for headings, Noto Serif SC for writing, Inter + Noto Sans SC for UI
+   LAYOUT: phone first — tab bar at bottom; wide screens get a left rail of ribbons */
+:root{color-scheme:dark;--bg:#0b1428;--bg2:#0f1b34;--card:#132241;--card2:#182a4f;--line:#22345a;--ink:#e9eef8;--mut:#93a3c0;--acc:#3ddc97;--acc2:#21b97a;--accInk:#05261a;--mark:rgba(61,220,151,.28);--hero:#0e1d3d}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans SC",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Inter","Noto Sans SC",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .serif{font-family:"Noto Serif SC","Songti SC",serif}
+.disp{font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-weight:400;letter-spacing:.02em}
 .app{display:grid;grid-template-columns:minmax(0,1fr);min-height:100%;padding-bottom:76px}
 .rail{display:none}
-main{max-width:860px;width:100%;margin:0 auto}
-.tabs{position:fixed;inset:auto 0 0 0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
-.tabs button{height:60px;font-size:13px;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+main{max-width:880px;width:100%;margin:0 auto}
+.tabs{position:fixed;inset:auto 0 0 0;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(11,20,40,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{height:60px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .tabs button svg{width:22px;height:22px}
-.tabs button[aria-current=true]{color:var(--cover)}
-:root[data-theme=dark] .tabs button[aria-current=true]{color:#7fc4cc}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .tabs button[aria-current=true]{color:#7fc4cc}}
-.hero{background:var(--cover);color:var(--coverInk);padding:28px max(5vw,18px) 24px}
-.hero h1{font-size:clamp(32px,7vw,48px);line-height:1.05;margin:0 0 6px;font-weight:700;text-wrap:balance}
-.hero .sub{opacity:.85;font-size:15px}
-.hero .prompt{margin:18px 0 16px;font-size:17px;max-width:36em}
+.tabs button[aria-current=true]{color:var(--acc)}
+.hero{position:relative;overflow:hidden;background:var(--hero);padding:30px max(5vw,18px) 24px;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:-40% -20% auto auto;width:70%;height:160%;background:radial-gradient(closest-side,rgba(61,220,151,.22),transparent 70%);pointer-events:none}
+.hero::after{content:"";position:absolute;left:-10%;bottom:-60%;width:60%;height:120%;background:radial-gradient(closest-side,rgba(90,169,255,.14),transparent 70%);pointer-events:none}
+.hero>*{position:relative}
+.hero h1{font-size:clamp(34px,8vw,52px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
+.hero .sub{color:var(--mut);font-size:15px}
+.hero .sub b{color:var(--acc);font-weight:600}
+.hero .prompt{margin:18px 0 16px;font-size:18px;max-width:34em;line-height:1.6}
 .hero .row{display:flex;gap:10px;flex-wrap:wrap}
-.btn{height:44px;padding:0 18px;border-radius:22px;font-weight:500;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
-.btn.pri{background:var(--acc);color:#fff}
-.btn.ghost{background:rgba(255,255,255,.14);color:inherit}
-.btn.line{border:1px solid var(--line);background:var(--bg)}
-.btn.danger{color:#c8361d;border:1px solid currentColor}
+.btn{height:44px;padding:0 18px;border-radius:22px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:15px}
+.btn.pri{background:var(--acc);color:var(--accInk)}
+.btn.pri:hover{background:#5ae6ab}
+.btn.ghost{background:rgba(255,255,255,.07);border:1px solid var(--line)}
+.btn.line{border:1px solid var(--line);background:var(--card)}
+.btn.danger{color:#ff8a8a;border:1px solid rgba(255,138,138,.5)}
 .btn:disabled{opacity:.5}
-.otd{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);font-size:14px}
-.otd button{color:inherit;text-decoration:underline;text-underline-offset:3px;padding:0;text-align:left}
-.bar{padding:14px max(5vw,16px) 6px;position:sticky;top:0;background:var(--bg);z-index:10}
-.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:12px;padding:0 12px;height:44px}
+.otd{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--mut)}
+.otd button{color:var(--acc);text-decoration:underline;text-underline-offset:3px;padding:0;text-align:left}
+.bar{padding:14px max(5vw,16px) 8px;position:sticky;top:0;background:rgba(11,20,40,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:10;border-bottom:1px solid transparent}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 12px;height:46px}
+.search:focus-within{border-color:var(--acc)}
 .search input{flex:1;border:0;background:none;font-size:16px;outline:none;height:100%}
 .search svg{width:18px;height:18px;color:var(--mut);flex:none}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;height:34px;padding:0 13px;border-radius:17px;border:1px solid var(--line);font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;background:var(--bg)}
-.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip{flex:none;height:34px;padding:0 13px;border-radius:17px;border:1px solid var(--line);font-size:14px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;background:var(--card);color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--acc);color:var(--accInk);border-color:var(--acc);font-weight:600}
+.chip small{opacity:.7;font-size:12px}
+.nbtabs{display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none}
+.nbtabs::-webkit-scrollbar{display:none}
+.nbtab{flex:none;min-width:92px;padding:9px 14px 9px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:left;position:relative;overflow:hidden}
+.nbtab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.nbtab b{display:block;font-size:14px;font-weight:600;white-space:nowrap}
+.nbtab span{font-size:12px;color:var(--mut)}
+.nbtab[aria-pressed=true]{background:color-mix(in srgb,var(--c) 22%,var(--card));border-color:var(--c)}
+.nbtab.add{min-width:auto;display:grid;place-items:center;color:var(--mut);font-size:14px}
+.nbtab.add::before{display:none}
 .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
 .list{padding:0 max(5vw,16px) 40px}
-.month{font-size:14px;color:var(--mut);margin:22px 0 8px;font-weight:500}
-.card{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.month{font-size:13px;color:var(--mut);margin:24px 0 10px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.month::after{content:"";flex:1;height:1px;background:var(--line)}
+.card{display:grid;grid-template-columns:50px minmax(0,1fr);gap:12px;padding:14px 14px 14px 12px;margin:0 0 10px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-align:left;width:100%;position:relative;overflow:hidden;transition:border-color .15s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,#3ddc97)}
+.card:hover{border-color:var(--c,#3ddc97)}
 .card .d{text-align:center;padding-top:2px}
-.card .d b{display:block;font-size:26px;line-height:1;font-family:"Noto Serif SC",serif}
+.card .d b{display:block;font-size:26px;line-height:1;font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-weight:400}
 .card .d span{font-size:12px;color:var(--mut)}
-.card h3{margin:0 0 3px;font-size:17px;font-weight:700;font-family:"Noto Serif SC",serif;line-height:1.35}
-.card p{margin:0;color:var(--mut);font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-.meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--mut);margin-top:7px;align-items:center}
+.card h3{margin:0 0 4px;font-size:17px;font-weight:700;font-family:"Noto Serif SC",serif;line-height:1.4}
+.card p{margin:0;color:#b9c5dc;font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--mut);margin-top:9px;align-items:center}
 .meta span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.thumbs{display:flex;gap:6px;margin-top:9px;overflow:hidden}
-.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:var(--card)}
-mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.pill{padding:2px 9px;border-radius:10px;background:color-mix(in srgb,var(--c) 20%,transparent);color:color-mix(in srgb,var(--c) 70%,#fff);font-weight:600}
+.thumbs{display:flex;gap:6px;margin-top:10px;overflow:hidden}
+.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex:none;background:var(--card2)}
+mark{background:var(--mark);color:#fff;border-radius:3px;padding:0 1px}
 .empty{padding:48px 8px;text-align:center;color:var(--mut)}
-.empty h2{color:var(--ink);font-size:22px;margin:0 0 8px}
+.empty h2{color:var(--ink);font-size:24px;margin:0 0 8px}
 .empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-.fab{position:fixed;right:18px;bottom:88px;width:58px;height:58px;border-radius:50%;background:var(--acc);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.22);z-index:15;display:grid;place-items:center}
+.fab{position:fixed;right:18px;bottom:88px;width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--accInk);box-shadow:0 8px 24px rgba(61,220,151,.35);z-index:15;display:grid;place-items:center}
 .fab svg{width:26px;height:26px}
 .section{padding:22px max(5vw,16px)}
-.section h2{font-size:22px;margin:0 0 12px;font-family:"Noto Serif SC",serif}
-.section h3{font-size:17px;margin:22px 0 8px}
+.section h2{font-size:26px;margin:0 0 12px}
+.section h3{font-size:16px;margin:26px 0 10px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.section h3::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--acc)}
 .muted{color:var(--mut);font-size:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cal-head b{font-size:20px;font-family:"Noto Serif SC",serif}
+.cal-head b{font-size:22px;font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-weight:400}
 .icon{width:44px;height:44px;border-radius:22px;display:grid;place-items:center}
+.icon:hover{background:var(--card)}
 .icon svg{width:20px;height:20px}
-.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .grid7 .wd{font-size:12px;color:var(--mut);text-align:center;padding:4px 0}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;gap:3px;position:relative}
-.day.out{background:none;color:var(--mut);opacity:.4}
-.day.today{outline:2px solid var(--acc)}
+.day{aspect-ratio:1;border-radius:12px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;gap:3px;position:relative}
+.day.out{background:none;border-color:transparent;color:var(--mut);opacity:.4}
+.day.today{border-color:var(--acc);color:var(--acc)}
 .day .dots{display:flex;gap:2px;height:7px}
 .day .dots i{width:6px;height:6px;border-radius:50%}
-.day.has{font-weight:700}
+.day.has{font-weight:700;background:var(--card2)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.stat{background:var(--card);border-radius:14px;padding:14px}
-.stat b{display:block;font-size:clamp(26px,6vw,34px);line-height:1.1;font-family:"Noto Serif SC",serif}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.stat b{display:block;font-size:clamp(28px,6vw,36px);line-height:1.1;font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-weight:400;color:var(--acc)}
 .stat span{font-size:13px;color:var(--mut)}
-.hbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:6px 0}
-.hbar .t{height:14px;background:var(--card);border-radius:7px;overflow:hidden}
-.hbar .t i{display:block;height:100%;border-radius:7px}
+.hbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
+.hbar .t{height:12px;background:var(--card2);border-radius:6px;overflow:hidden}
+.hbar .t i{display:block;height:100%;border-radius:6px}
 .hbar em{font-style:normal;text-align:right;color:var(--mut)}
 .months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:130px;margin-top:10px}
 .months div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:11px;color:var(--mut)}
-.months i{width:100%;max-width:26px;background:var(--cover);border-radius:5px 5px 2px 2px;min-height:2px}
+.months i{width:100%;max-width:26px;background:linear-gradient(var(--acc),var(--acc2));border-radius:5px 5px 2px 2px;min-height:2px}
 .tagcloud{display:flex;flex-wrap:wrap;gap:8px}
 .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
 .field label{font-size:14px;color:var(--mut)}
-input[type=text],input[type=password],input[type=datetime-local],input[type=number],select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:16px;min-height:44px;width:100%}
+input[type=text],input[type=email],input[type=password],input[type=datetime-local],input[type=date],input[type=number],select,textarea{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:10px 12px;font-size:16px;min-height:44px;width:100%;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
+input[type=datetime-local]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8)}
 textarea{resize:vertical}
-.nbrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
-.swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.nbrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent}
-.sw[aria-pressed=true]{border-color:var(--ink)}
+.sw[aria-pressed=true]{border-color:#fff;box-shadow:0 0 0 2px var(--bg)}
+/* reports */
+.seg2{display:inline-grid;grid-auto-flow:column;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg2 button{height:38px;padding:0 16px;border-radius:9px;color:var(--mut);font-weight:600}
+.seg2 button[aria-pressed=true]{background:var(--acc);color:var(--accInk)}
+.rep-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.rep-nav{display:flex;align-items:center;gap:4px}
+.rep-nav b{font-size:15px;min-width:9em;text-align:center}
+.report{background:linear-gradient(180deg,rgba(61,220,151,.08),transparent 40%),var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;line-height:1.8;font-size:15.5px}
+.report h4{font-size:16px;margin:16px 0 6px;color:var(--acc)}
+.report h4:first-child{margin-top:0}
+.report p{margin:6px 0}
+.report ul{margin:6px 0;padding-left:1.2em}
+.report li{margin:3px 0}
+.report .src{font-size:13px;color:var(--mut);margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.progress{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;background:var(--acc);transition:width .3s}
 /* editor sheet */
 .sheet{position:fixed;inset:0;background:var(--bg);z-index:40;display:flex;flex-direction:column}
 .sheet[hidden]{display:none}
@@ -117,57 +157,63 @@ textarea{resize:vertical}
 .sh-top .st{flex:1;font-size:13px;color:var(--mut);text-align:center}
 .sh-body{flex:1;overflow-y:auto;padding:16px max(5vw,18px) 120px;max-width:760px;width:100%;margin:0 auto}
 .ed-meta{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
-.ed-title{border:0!important;padding:14px 0 4px!important;font-size:24px!important;font-weight:700;font-family:"Noto Serif SC",serif;background:none!important;outline:none}
-.ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.8;font-family:"Noto Serif SC",serif;min-height:40vh;background:none!important;outline:none;resize:none}
-.tools{position:sticky;bottom:0;display:flex;gap:4px;overflow-x:auto;padding:8px max(4vw,10px);border-top:1px solid var(--line);background:var(--bg);padding-bottom:max(8px,env(safe-area-inset-bottom))}
-.tools button{flex:none;height:44px;padding:0 12px;border-radius:12px;display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
-.tools button svg{width:20px;height:20px}
-.tools button.on{background:var(--acc);color:#fff}
+.ed-title{border:0!important;padding:14px 0 4px!important;font-size:26px!important;font-weight:700;font-family:"Noto Serif SC",serif;background:none!important;outline:none}
+.ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.9;font-family:"Noto Serif SC",serif;min-height:40vh;background:none!important;outline:none;resize:none}
+.tools{position:sticky;bottom:0;display:flex;gap:4px;overflow-x:auto;padding:8px max(4vw,10px);border-top:1px solid var(--line);background:var(--bg2);padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.tools button{flex:none;height:44px;padding:0 12px;border-radius:12px;display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;color:var(--ink)}
+.tools button:hover{background:var(--card)}
+.tools button svg{width:20px;height:20px;color:var(--acc)}
+.tools button.on{background:var(--acc);color:var(--accInk)}
+.tools button.on svg{color:var(--accInk)}
 .moods{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 4px}
-.moods button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;opacity:.55}
-.moods button[aria-pressed=true]{opacity:1;border-color:var(--ink)}
+.moods button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;opacity:.5}
+.moods button[aria-pressed=true]{opacity:1;border-color:#fff}
 .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:12px 0}
 .photos figure{margin:0;position:relative;aspect-ratio:1}
-.photos img{width:100%;height:100%;object-fit:cover;border-radius:10px;background:var(--card)}
-.photos .x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:16px;line-height:1}
+.photos img{width:100%;height:100%;object-fit:cover;border-radius:12px;background:var(--card)}
+.photos .x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:16px;line-height:1}
 .tagin{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
 .tagin .chip{height:30px}
-.tagin input{flex:1;min-width:8em;border:0!important;padding:4px!important;min-height:34px}
+.tagin input{flex:1;min-width:8em;border:0!important;padding:4px!important;min-height:34px;background:none!important}
 /* modal + toast */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:grid;place-items:center;padding:18px}
+.modal{position:fixed;inset:0;background:rgba(3,8,20,.7);z-index:60;display:grid;place-items:center;padding:18px}
 .modal[hidden]{display:none}
-.box{background:var(--bg);border-radius:18px;padding:20px;max-width:440px;width:100%;max-height:86vh;overflow:auto}
+.box{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:20px;max-width:460px;width:100%;max-height:86vh;overflow:auto}
 .box h3{margin:0 0 8px;font-size:19px}
 .box .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
 .viewer{position:fixed;inset:0;background:#000;z-index:70;display:grid;place-items:center}
 .viewer[hidden]{display:none}
 .viewer img{max-width:100%;max-height:100%;object-fit:contain}
 .viewer button{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;color:#fff;background:rgba(255,255,255,.18)}
-.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:80;font-size:14px;max-width:90vw}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:80;font-size:14px;max-width:90vw;font-weight:500}
 .toast[hidden]{display:none}
-.banner{margin:10px max(5vw,16px) 0;padding:10px 14px;border-radius:12px;background:var(--mark);font-size:14px}
-.lock{position:fixed;inset:0;background:var(--cover);color:var(--coverInk);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+.banner{margin:10px max(5vw,16px) 0;padding:10px 14px;border-radius:12px;background:rgba(255,180,84,.15);border:1px solid rgba(255,180,84,.4);font-size:14px}
+.lock{position:fixed;inset:0;background:radial-gradient(ellipse at 80% 0%,rgba(61,220,151,.18),transparent 55%),radial-gradient(ellipse at 0% 100%,rgba(90,169,255,.14),transparent 55%),var(--bg);color:var(--ink);z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:max(10vh,24px) 20px 20px;overflow-y:auto}
 .lock[hidden]{display:none}
-.lock{overflow-y:auto;justify-content:flex-start;padding-top:max(10vh,24px)}
 .auth{width:100%;max-width:380px;display:flex;flex-direction:column}
-.auth label{font-size:14px;opacity:.85;margin:12px 0 6px}
-.auth input{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.25)!important;color:#fff}
-.seg{display:grid;grid-template-columns:1fr 1fr;background:rgba(0,0,0,.2);border-radius:12px;padding:4px}
-.seg button{height:40px;border-radius:9px;color:inherit;opacity:.8}
-.seg button[aria-pressed=true]{background:#fff;color:#0f4c55;opacity:1;font-weight:700}
-.warn{font-size:13px;background:rgba(232,85,58,.25);border-radius:10px;padding:10px 12px;margin:14px 0 0}
-.spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;display:inline-block}
+.auth label{font-size:14px;color:var(--mut);margin:12px 0 6px}
+.auth .remember{display:flex;align-items:center;gap:10px;margin:14px 0 0;color:var(--ink);font-size:15px}
+.auth .remember input{width:20px;height:20px;accent-color:var(--acc)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{height:40px;border-radius:9px;color:var(--mut);font-weight:600}
+.seg button[aria-pressed=true]{background:var(--acc);color:var(--accInk)}
+.warn{font-size:13px;background:rgba(255,180,84,.12);border:1px solid rgba(255,180,84,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0}
+.spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.card{transition:none}}
 @media (min-width:900px){
-  .app{grid-template-columns:240px minmax(0,1fr);padding-bottom:0}
+  .app{grid-template-columns:250px minmax(0,1fr);padding-bottom:0}
   .tabs{display:none}
-  .rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 14px;border-right:1px solid var(--line);overflow-y:auto}
-  .rail .brand{font-family:"Noto Serif SC",serif;font-size:22px;font-weight:700;padding:0 10px 14px}
-  .rail button{height:40px;border-radius:10px;padding:0 10px;text-align:left;display:flex;align-items:center;gap:10px;font-size:15px}
-  .rail button[aria-current=true]{background:var(--card);font-weight:500}
-  .rail .lab{font-size:12px;color:var(--mut);padding:18px 10px 6px}
+  .rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 14px;border-right:1px solid var(--line);overflow-y:auto;background:var(--bg2)}
+  .rail .brand{font-family:"ZCOOL XiaoWei","Noto Serif SC",serif;font-size:28px;padding:0 10px 16px;color:var(--ink)}
+  .rail .brand i{color:var(--acc);font-style:normal}
+  .rail button{height:40px;border-radius:10px;padding:0 10px;text-align:left;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink)}
+  .rail button:hover{background:var(--card)}
+  .rail button[aria-current=true]{background:var(--card2);font-weight:600;box-shadow:inset 3px 0 0 var(--acc)}
+  .rail button svg{color:var(--mut)}
+  .rail .lab{font-size:12px;color:var(--mut);padding:20px 10px 6px;letter-spacing:.06em}
   .rail button em{margin-left:auto;font-style:normal;font-size:13px;color:var(--mut)}
+  .rail .nb{border-left:4px solid var(--c);border-radius:4px 10px 10px 4px}
   .fab{bottom:28px;right:28px}
   .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
   .nbchips{display:none}
@@ -198,12 +244,13 @@ textarea{resize:vertical}
 <div class="toast" id="toast" hidden></div>
 <div class="lock" id="auth" hidden>
   <form class="auth" id="authForm" autocomplete="on">
-    <div class="serif" style="font-size:34px;font-weight:700;line-height:1.1">Ego 日记</div>
+    <div class="disp" style="font-size:44px;line-height:1.1">Ego <span style="color:var(--acc)">日记</span></div>
     <p style="margin:6px 0 18px;opacity:.85" id="authSub">每个账号的日记都用自己的密码加密保存。</p>
     <div class="seg" role="tablist"><button type="button" data-mode="login" aria-pressed="true">登录</button><button type="button" data-mode="register" aria-pressed="false">创建账号</button></div>
     <label for="auName">用户名</label><input type="text" id="auName" autocomplete="username" required maxlength="30">
     <label for="auPw">密码</label><input type="password" id="auPw" autocomplete="current-password" required>
     <div id="auPw2Wrap" hidden><label for="auPw2">再输入一次密码</label><input type="password" id="auPw2" autocomplete="new-password"></div>
+    <label class="remember"><input type="checkbox" id="auRemember" checked> 在这台设备上记住我，下次不用再登录</label>
     <p class="warn" id="auWarn" hidden>密码只保存在你脑子里：忘记密码，这个账号的日记就再也打不开了。建议写在安全的地方，并定期在「设置」里导出备份。</p>
     <button class="btn pri" type="submit" id="auGo" style="width:100%;justify-content:center;margin-top:16px">登录</button>
     <div id="auMsg" role="alert" style="min-height:1.5em;font-size:14px;margin-top:10px"></div>
@@ -229,8 +276,9 @@ const dayKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const WD=['日','一','二','三','四','五','六'];
 const parseDate=s=>{const [a,b]=s.split('T');const [y,m,d]=a.split('-').map(Number);const [h,mi]=(b||'12:00').split(':').map(Number);return new Date(y,m-1,d,h||0,mi||0)};
 const words=s=>((s||'').match(/[㐀-鿿]/g)||[]).length+((s||'').match(/[A-Za-z0-9']+/g)||[]).length;
-const MOODS=[{n:'非常不愉快',c:'#4e5fa8'},{n:'不愉快',c:'#6c86c4'},{n:'有点不愉快',c:'#93aed6'},{n:'平静',c:'#9aa596'},{n:'有点愉快',c:'#efc25e'},{n:'愉快',c:'#f0953f'},{n:'非常愉快',c:'#e8553a'}];
-const COLORS=['#0f4c55','#e8553a','#3b6fd8','#d19a12','#6f8a2e','#b04878','#5d6370','#8a5a2b'];
+const MOODS=[{n:'非常不愉快',c:'#7b8cff'},{n:'不愉快',c:'#8fb0f0'},{n:'有点不愉快',c:'#a9cbe8'},{n:'平静',c:'#a7b8a6'},{n:'有点愉快',c:'#f3d06b'},{n:'愉快',c:'#f7a25a'},{n:'非常愉快',c:'#ff7a5c'}];
+const COLORS=['#3ddc97','#5aa9ff','#ffb454','#ff7a8a','#b18cff','#4fd1e8','#e6d36b','#9fb3c8'];
+const OLDCOL={'#0f4c55':'#3ddc97','#e8553a':'#ff7a8a','#3b6fd8':'#5aa9ff','#d19a12':'#ffb454','#6f8a2e':'#e6d36b','#b04878':'#b18cff','#5d6370':'#9fb3c8','#8a5a2b':'#4fd1e8'};
 const PROMPTS=['今天有什么小事让你笑了？','此刻你最想感谢的人是谁，为什么？','今天学到的一件新东西是什么？','如果用一种天气形容今天的心情，会是什么？','最近一直在想的一个问题是什么？','这周最想记住的一个瞬间。','你现在最期待的一件事是什么？','今天的自己和一年前有什么不同？','写一封给明年今天的自己的短信。','今天去过的地方里，哪一处最难忘？','最近读到、听到或看到的、打动你的一句话。','今天有没有一件事你希望能重来？'];
 const IC={
  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>',
@@ -308,8 +356,9 @@ const Sys={accounts:null,mkData:null,legacy:null};
 /* ---------- state ---------- */
 const S={mode:'memory',notebooks:[],entries:[],photos:new Map(),settings:{id:'settings'},account:null,view:'journal',nb:'all',q:'',day:null,f:{fav:false,photo:false,mood:''},cal:new Date(),year:new Date().getFullYear(),ed:null,dirty:false,prompt:Math.floor(Math.random()*PROMPTS.length),banner:''};
 const caps={sample:null,dl:null,dict:null};
+S.reports=new Map();S.rep={type:'week',at:null};S.repBusy=false;
 const nbById=id=>S.notebooks.find(n=>n.id===id);
-const nbColor=id=>nbById(id)?.color||'#5d6370';
+const nbColor=id=>nbById(id)?.color||'#9fb3c8';
 
 /* ---------- init ---------- */
 async function init(){
@@ -341,8 +390,21 @@ async function init(){
   }
   if(!window.crypto||!crypto.subtle){$('#auMsg').textContent='这个浏览器不支持加密（需要 https 打开），无法登录。';}
   setupDictation();
-  showAuth();
+  if(!(await autoLogin()))showAuth();
 }
+/* ---------- remember this device (non-extractable key kept in this browser's IndexedDB) ---------- */
+const Device={db:null,
+  async open(){if(this.db)return this.db;try{this.db=await makeLocal('ego-device',['keys']).open()}catch(e){this.db=null}return this.db},
+  async save(acc,key){const d=await this.open();if(d)try{await d.put('keys',{id:S.mode,accId:acc.id,key})}catch(e){}},
+  async load(){const d=await this.open();if(!d)return null;try{return await d.get('keys',S.mode)}catch(e){return null}},
+  async clear(){const d=await this.open();if(d)try{await d.del('keys',S.mode)}catch(e){}}};
+async function autoLogin(){
+  const rem=await Device.load();if(!rem||!rem.key)return false;
+  try{
+    if(S.mode==='supa'){const {data}=await sb.auth.getSession();if(!data||!data.session){await Device.clear();return false}}
+    const acc=(await listAccounts()).find(a=>a.id===rem.accId);if(!acc){await Device.clear();return false}
+    await enterAccount(acc,rem.key,false);return true;
+  }catch(e){return false}}
 /* ---------- accounts ---------- */
 let authMode='login';
 async function listAccounts(){try{return await Sys.accounts.all('accounts')}catch(e){return[]}}
@@ -383,11 +445,11 @@ $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go
       const kek=await deriveKek(pw,salt,ITER);
       const a={id:uid(),name:name.slice(0,30),salt:b64(salt),iter:ITER,wk:await seal(kek,raw),created:Date.now()};
       await Sys.accounts.put('accounts',a);
-      await enterAccount(a,await importDataKey(raw),true);
+      const k=await importDataKey(raw);await enterAccount(a,k,true);if($('#auRemember').checked)Device.save(a,k);
     }else{
       if(!acc)throw new Error('没有这个用户名。第一次用请点「创建账号」');
       let raw;try{raw=await open_(await deriveKek(pw,ub64(acc.salt),acc.iter||ITER),acc.wk)}catch(e){throw new Error('密码不对')}
-      await enterAccount(acc,await importDataKey(raw),false);
+      const k=await importDataKey(raw);await enterAccount(acc,k,false);if($('#auRemember').checked)Device.save(acc,k);
     }
     $('#auPw').value='';$('#auPw2').value='';msg.textContent='';$('#auth').hidden=true;
   }catch(e){msg.textContent=e.message||'出错了，请再试一次'}
@@ -395,13 +457,14 @@ $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go
 });
 async function enterAccount(acc,key,isNew){
   S.account=acc;Store=makeEncrypted(await Sys.mkData(acc),key);
-  S.notebooks=[];S.entries=[];S.photos=new Map();S.settings={id:'settings'};S.nb='all';S.q='';S.day=null;S.view='journal';
+  S.notebooks=[];S.entries=[];S.photos=new Map();S.settings={id:'settings'};S.reports=new Map();S.rep={type:'week',at:null};S.nb='all';S.q='';S.day=null;S.view='journal';
   try{
     const timer=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000));
     const [nbs,ens,meta]=await Promise.race([Promise.all([Store.all('notebooks'),Store.all('entries'),Store.all('meta')]),timer]);
-    S.notebooks=nbs.sort((a,b)=>(a.order??0)-(b.order??0)||a.created-b.created);
+    nbs.forEach(n=>{if(OLDCOL[n.color])n.color=OLDCOL[n.color]});S.notebooks=nbs.sort((a,b)=>(a.order??0)-(b.order??0)||a.created-b.created);
     S.entries=ens.map(fixEntry);
     S.settings=meta.find(m=>m.id==='settings')||{id:'settings'};
+    meta.forEach(m=>{if(typeof m.id==='string'&&m.id.startsWith('rep:')&&typeof m.text==='string')S.reports.set(m.id,m)});
   }catch(e){S.banner='暂时连不上日记存储，显示的内容可能不完整。请检查网络后重新登录。'}
   let moved=0;if(isNew)moved=await migrateLegacy();
   if(!S.notebooks.length){const nb={id:uid(),name:'我的日记',color:COLORS[0],created:Date.now(),order:0};S.notebooks.push(nb);Store.put('notebooks',nb).catch(()=>{})}
@@ -414,7 +477,7 @@ async function migrateLegacy(){const L=Sys.legacy;if(!L)return 0;
     for(const e of ens){for(const p of e.photos||[]){const ph=await L.get('photos',p);if(ph){await Store.put('photos',ph);await L.del('photos',p)}}await Store.put('entries',e);S.entries.push(fixEntry(e));await L.del('entries',e.id)}
     for(const nb of nbs)await L.del('notebooks',nb.id);for(const m of meta)await L.del('meta',m.id);
     S.notebooks.sort((a,b)=>(a.order??0)-(b.order??0));return ens.length}catch(e){return 0}}
-function logout(){if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
+function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
 async function changePassword(){
   modal(`<h3>修改密码</h3><div class="field"><label for="cp0">当前密码</label><input type="password" id="cp0" autocomplete="current-password"></div><div class="field"><label for="cp1">新密码（至少 6 位）</label><input type="password" id="cp1" autocomplete="new-password"></div><div class="field"><label for="cp2">再输入一次</label><input type="password" id="cp2" autocomplete="new-password"></div><p class="muted" id="cpMsg"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
@@ -458,16 +521,99 @@ function daySet(list=S.entries){return new Set(list.map(e=>e.date.slice(0,10)))}
 function streaks(){const ds=daySet();let cur=0;const d=new Date();if(!ds.has(dayKey(d)))d.setDate(d.getDate()-1);while(ds.has(dayKey(d))){cur++;d.setDate(d.getDate()-1)}const sorted=[...ds].sort();let best=0,run=0,prev=null;for(const k of sorted){const t=parseDate(k);if(prev&&(t-prev)/864e5<1.5)run++;else run=1;best=Math.max(best,run);prev=t}return{cur,best}}
 function onThisDay(){const t=new Date();const md=`-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;return S.entries.filter(e=>e.date.slice(4,10)===md&&e.date.slice(0,4)!==String(t.getFullYear())).sort((a,b)=>b.date.localeCompare(a.date))}
 
+/* ---------- AI: reports ---------- */
+function mdHtml(t){const out=[];let ul=false;const inl=x=>esc(x).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  for(const ln of String(t).split('\n')){const l=ln.trim();
+    if(/^#{1,6}\s/.test(l)){if(ul){out.push('</ul>');ul=false}out.push('<h4>'+inl(l.replace(/^#+\s*/,''))+'</h4>')}
+    else if(/^([-*•]|\d+[.、)])\s+/.test(l)){if(!ul){out.push('<ul>');ul=true}out.push('<li>'+inl(l.replace(/^([-*•]|\d+[.、)])\s+/,''))+'</li>')}
+    else if(l){if(ul){out.push('</ul>');ul=false}out.push('<p>'+inl(l)+'</p>')}}
+  if(ul)out.push('</ul>');return out.join('')}
+function repRange(){
+  if(!S.rep.at){const last=[...S.entries].sort((a,b)=>b.date.localeCompare(a.date))[0];S.rep.at=last?parseDate(last.date):new Date()}
+  const t=S.rep.type,a=new Date(S.rep.at);a.setHours(0,0,0,0);let s,e;
+  if(t==='day'){s=new Date(a);e=new Date(a);e.setDate(e.getDate()+1)}
+  else if(t==='week'){s=new Date(a);s.setDate(s.getDate()-((s.getDay()+6)%7));e=new Date(s);e.setDate(e.getDate()+7)}
+  else{s=new Date(a.getFullYear(),a.getMonth(),1);e=new Date(a.getFullYear(),a.getMonth()+1,1)}
+  const l=new Date(e-864e5);
+  const label=t==='day'?`${s.getFullYear()}年${s.getMonth()+1}月${s.getDate()}日 周${WD[s.getDay()]}`:t==='week'?`${s.getFullYear()}年 ${s.getMonth()+1}/${s.getDate()} – ${l.getMonth()+1}/${l.getDate()}`:`${s.getFullYear()}年${s.getMonth()+1}月`;
+  return{s,e,key:`rep:${t}:${dayKey(s)}`,label}}
+function repEntries(r){const a=dayKey(r.s),b=dayKey(r.e);return S.entries.filter(x=>{const k=x.date.slice(0,10);return k>=a&&k<b}).sort((x,y)=>x.date.localeCompare(y.date))}
+function repShift(n){const r=repRange(),d=new Date(r.s);if(S.rep.type==='day')d.setDate(d.getDate()+n);else if(S.rep.type==='week')d.setDate(d.getDate()+7*n);else d.setMonth(d.getMonth()+n);S.rep.at=d;render()}
+function renderReportPanel(){
+  const r=repRange(),list=repEntries(r),saved=S.reports.get(r.key);
+  let inner;
+  if(saved)inner=mdHtml(saved.text)+`<div class="src">根据 ${saved.n} 篇日记生成 · ${esc(new Date(saved.created).toLocaleString('zh-CN',{hour12:false}))}${saved.n!==list.length?' · 之后日记有变动，可以重新生成':''}</div>`;
+  else if(list.length)inner=`<p class="muted">这段时间有 <b style="color:var(--acc)">${list.length}</b> 篇日记。${caps.sample?'让 AI 读一遍，总结你在忙什么、情绪怎么变化、有哪些值得记住的事。':'AI 报告需要在 Claude 里打开这个 App 才能用。'}</p>`;
+  else inner=`<p class="muted">这段时间没有日记。用左右箭头换一段时间看看。</p>`;
+  return `<h3>AI 报告</h3><div class="rep-head"><div class="seg2" role="tablist">${[['day','日'],['week','周'],['month','月']].map(([k,n])=>`<button data-rtype="${k}" aria-pressed="${S.rep.type===k}">${n}</button>`).join('')}</div>
+  <div class="rep-nav"><button class="icon" data-act="repprev" aria-label="上一段">${IC.left}</button><b>${esc(r.label)}</b><button class="icon" data-act="repnext" aria-label="下一段">${IC.right}</button></div></div>
+  <div class="report" id="repBox">${inner}</div>
+  ${caps.sample&&list.length?`<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn pri" data-act="repgen" ${S.repBusy?'disabled':''}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>${S.repBusy?'生成中…':saved?'重新生成':'生成报告'}</button></div>`:''}`}
+async function genReport(){
+  if(S.repBusy||!caps.sample)return;const r=repRange(),list=repEntries(r);if(!list.length)return;
+  S.repBusy=true;render();const box=$('#repBox');if(box)box.innerHTML=`<p class="muted"><span class="spin"></span> 正在阅读 ${list.length} 篇日记…</p>`;
+  const per=Math.max(300,Math.min(3000,Math.floor(60000/list.length)));
+  const docs=list.map(e=>{const nb=nbById(e.nb)?.name||'';return `【${e.date.replace('T',' ')}】${e.title?'《'+e.title+'》':''}${nb?' 分区:'+nb:''}${e.mood?' 心情:'+MOODS[e.mood-1].n:''}${e.place?' 地点:'+e.place:''}${e.tags.length?' 标签:'+e.tags.join('、'):''}\n${e.body.slice(0,per)}`}).join('\n\n');
+  const span={day:'这一天',week:'这一周',month:'这个月'}[S.rep.type];
+  const prompt=`你是一位温和、细心又诚实的日记分析助手。下面是我在 ${r.label}（${span}）写的 ${list.length} 篇日记。请用中文、用"你"称呼我，写一份${span}报告。只根据日记内容，不要编造；提到具体事情时带上日期。用 Markdown，按下面的小标题写：\n### 一句话总结\n### 你在忙什么\n（学习、工作、生活、爱好等，分点）\n### 情绪和状态\n（情绪的起伏和可能的原因）\n### 重要的人和事\n### 值得记住的瞬间\n### 给你的小建议\n（1–3 条，具体、温柔）\n${S.rep.type==='day'?'这是一天的报告，写短一点。':''}\n\n日记：\n${docs}`;
+  let text='';
+  try{const res=await caps.sample(prompt,{modelTier:'default',onText:({text:t})=>{text=t;const b=$('#repBox');if(b&&t)b.innerHTML=mdHtml(t)}});text=(res&&res.text)||text;
+    if(text.trim()){const rec={id:r.key,text,n:list.length,created:Date.now()};S.reports.set(r.key,rec);Store.put('meta',rec).catch(()=>{})}}
+  catch(e){toast(e&&e.code==='rate_limited'?'请求太频繁，稍后再试':e&&e.code==='not_granted'?'没有允许使用 AI':'生成失败，请再试')}
+  finally{S.repBusy=false;if(S.view==='insights')render()}}
+
+/* ---------- AI: organise entries into notebooks, add mood / place / tags ---------- */
+async function askJSON(prompt){
+  if(typeof caps.sample.json==='function'){try{return await caps.sample.json(prompt,{modelTier:'quick'})}catch(e){if(e&&e.code)throw e}}
+  const r=await caps.sample(prompt,{modelTier:'quick'});const t=(r&&r.text)||'';const m=t.match(/[\[{][\s\S]*[\]}]/);return JSON.parse(m?m[0]:t)}
+let orgCancel=false;
+async function offerOrganize(ids){if(!caps.sample||!ids.length)return;
+  if(await ask('让 AI 自动整理？',`刚导入的 ${ids.length} 篇日记，AI 可以帮你分进合适的分区，并补上心情、地点和标签（之后都能改）。`,'开始整理'))aiOrganize(ids)}
+async function aiOrganize(ids){
+  if(!caps.sample)return toast('AI 整理需要在 Claude 里打开这个 App');
+  const set=new Set(ids),list=S.entries.filter(e=>set.has(e.id));if(!list.length)return toast('没有需要整理的日记');
+  orgCancel=false;
+  modal(`<h3>AI 正在整理</h3><p class="muted" id="orgMsg">先看看你的日记大概有哪些类别…</p><div class="progress"><i id="orgBar" style="width:3%"></i></div><p class="muted">可以离开这个窗口去做别的，但请别关掉页面。</p><div class="row"><button class="btn line" data-a="stop">停止</button></div>`);
+  $('#modalBox').onclick=e=>{if(e.target.closest('[data-a=stop]')){orgCancel=true;$('#orgMsg').textContent='正在停下…'}};
+  const msg=t=>{const m=$('#orgMsg');if(m)m.textContent=t};
+  const call=async pr=>{for(let i=0;i<4;i++){try{return await askJSON(pr)}catch(e){if(e&&e.code==='not_granted')throw e;if(e&&e.code==='rate_limited'){msg('AI 有点忙，等一会儿继续…');await new Promise(r=>setTimeout(r,15000*(i+1)));continue}if(i>=1)throw e}}throw new Error('AI 暂时不可用')};
+  let done=0;
+  try{
+    const existing=S.notebooks.map(n=>n.name).filter(n=>n!=='我的日记');
+    const smp=[...list].sort(()=>Math.random()-.5).slice(0,120).map(e=>`- ${e.title||''} ${e.body.replace(/\s+/g,' ').slice(0,50)}`).join('\n');
+    const cats=await call(`下面是一个人的日记标题和开头（共 ${list.length} 篇，这里是抽样）。请为这些日记设计 4 到 8 个"分区"（像文件夹），每个名字 2 到 4 个中文字，能覆盖大部分内容、互相不重叠，例如：学习、梦境、日常、情绪、朋友、恋爱、旅行、追星、灵感。${existing.length?'已有分区（合适就沿用）：'+existing.join('、')+'。':''}不要用"我的日记""其他"这种泛泛的名字。只返回 JSON 数组，例如 ["学习","梦境"]。\n\n${smp}`);
+    const names=(Array.isArray(cats)?cats:[]).filter(x=>typeof x==='string').map(x=>x.trim().slice(0,8)).filter(Boolean).slice(0,8);
+    if(!names.length)throw new Error('AI 没给出分区');
+    for(const nm of names)if(!S.notebooks.find(n=>n.name===nm)){const nb={id:uid(),name:nm,color:COLORS[S.notebooks.length%COLORS.length],created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);await Store.put('notebooks',nb)}
+    const B=8;
+    for(let i=0;i<list.length&&!orgCancel;i+=B){
+      const batch=list.slice(i,i+B);msg(`正在整理第 ${i+1}–${Math.min(i+B,list.length)} 篇，共 ${list.length} 篇`);
+      const items=batch.map((e,j)=>`#${j}\n日期:${e.date.slice(0,10)}\n标题:${e.title}\n${e.body.slice(0,1200)}`).join('\n\n');
+      let res;try{res=await call(`给每篇日记归类并提取信息。分区只能从这些里选一个：${names.join('、')}。\n返回 JSON 数组，每篇一项：{"i":序号,"notebook":"分区名","mood":1到7的整数(1非常不愉快,4平静,7非常愉快;看不出就4),"place":"日记里明确提到的主要地点，没有就空字符串","tags":["2到4个简短标签"]}。只返回 JSON。\n\n${items}`)}catch(e){if(e&&e.code==='not_granted')throw e;continue}
+      for(const r of Array.isArray(res)?res:[]){const e=batch[r&&r.i];if(!e)continue;
+        const nb=S.notebooks.find(n=>n.name===r.notebook);if(nb)e.nb=nb.id;
+        if(!e.mood&&Number.isInteger(r.mood)&&r.mood>=1&&r.mood<=7)e.mood=r.mood;
+        if(!e.place&&typeof r.place==='string'&&r.place.trim())e.place=r.place.trim().slice(0,60);
+        if(Array.isArray(r.tags))for(const t of r.tags)if(typeof t==='string'&&t.trim()&&!e.tags.includes(t.trim())&&e.tags.length<8)e.tags.push(t.trim().slice(0,20));
+        e.ai=1;e.updated=Date.now();try{await Store.put('entries',structuredClone(e));done++}catch(err){}}
+      const bar=$('#orgBar');if(bar)bar.style.width=Math.min(100,Math.round((i+B)/list.length*100))+'%';
+    }
+    const def=S.notebooks.find(n=>n.name==='我的日记');
+    if(def&&S.notebooks.length>1&&!S.entries.some(e=>e.nb===def.id)){S.notebooks=S.notebooks.filter(n=>n!==def);Store.del('notebooks',def.id).catch(()=>{});if(S.nb===def.id)S.nb='all'}
+    closeModal();render();toast(orgCancel?`已停止，整理了 ${done} 篇`:`整理好了 ${done} 篇：分区、心情、地点、标签都加上了`,5000);
+  }catch(e){closeModal();render();toast(e&&e.code==='not_granted'?'没有允许使用 AI':`AI 整理没完成${done?`（已整理 ${done} 篇）`:''}：${e.message||'请稍后再试'}`,5000)}
+}
+
 /* ---------- render shell ---------- */
 const VIEWS=[['journal','日记',IC.book],['calendar','日历',IC.cal],['insights','回顾',IC.chart],['settings','设置',IC.gear]];
 function go(v){S.view=v;render();window.scrollTo(0,0)}
 function render(){
   $('#tabs').innerHTML=VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}">${i}<span>${n}</span></button>`).join('');
   const counts={};S.entries.forEach(e=>counts[e.nb]=(counts[e.nb]||0)+1);
-  $('#rail').innerHTML=`<div class="brand">Ego 日记</div>`+VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}"><span style="width:20px;height:20px;display:inline-flex">${i}</span>${n}</button>`).join('')+
+  $('#rail').innerHTML=`<div class="brand">Ego <i>日记</i></div>`+VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}"><span style="width:20px;height:20px;display:inline-flex">${i}</span>${n}</button>`).join('')+
    `<div class="lab">分区</div><button data-nb="all" aria-current="${S.view==='journal'&&S.nb==='all'}"><span class="dot" style="background:var(--ink)"></span>全部日记<em>${S.entries.length}</em></button>`+
-   S.notebooks.map(n=>`<button data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}"><span class="dot" style="background:${esc(n.color)}"></span>${esc(n.name)}<em>${counts[n.id]||0}</em></button>`).join('')+
-   `<button data-act="newnb" style="color:var(--mut)">+ 新建分区</button><div class="lab">${esc(S.account?.name||'')}</div><button data-act="logout" style="color:var(--mut)">锁定 / 退出</button>`;
+   S.notebooks.map(n=>`<button class="nb" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}">${esc(n.name)}<em>${counts[n.id]||0}</em></button>`).join('')+
+   `<button data-act="newnb" style="color:var(--mut)">+ 新建分区</button><div class="lab">${esc(S.account?.name||'')}</div><button data-act="logout" style="color:var(--mut)">退出登录</button>`;
   $('#fab').hidden=S.view==='settings';
   const m=$('#main');
   if(S.view==='journal')m.innerHTML=renderJournal();
@@ -482,14 +628,15 @@ function renderJournal(){
   const t=new Date(),st=streaks(),otd=onThisDay();
   const toks=tokens(),list=visible();
   const searching=toks.length||S.day||S.f.fav||S.f.photo||S.f.mood;
-  const hero=searching?'':`<section class="hero"><h1 class="serif">${t.getMonth()+1}月${t.getDate()}日 星期${WD[t.getDay()]}</h1>
-    <div class="sub">${esc(S.account?.name||'')} · ${st.cur?`已连续写了 ${st.cur} 天`:'今天还没有写'} · 共 ${S.entries.length} 篇</div>
+  const hero=searching?'':`<section class="hero"><h1 class="disp">${t.getMonth()+1}月${t.getDate()}日 · 星期${WD[t.getDay()]}</h1>
+    <div class="sub">${esc(S.account?.name||'')} · ${st.cur?`已连续写了 <b>${st.cur}</b> 天`:'今天还没有写'} · 共 <b>${S.entries.length}</b> 篇</div>
     <p class="prompt serif">${esc(PROMPTS[S.prompt])}</p>
     <div class="row"><button class="btn pri" data-act="new-prompt">回答这个问题</button><button class="btn ghost" data-act="new">随便写写</button><button class="btn ghost" data-act="shuffle">换一个</button></div>
+    ${caps.sample&&S.entries.filter(e=>!e.ai).length>=5?`<div class="otd">有 ${S.entries.filter(e=>!e.ai).length} 篇日记还没整理：<button data-act="aiorg">让 AI 自动分区、加心情和地点</button></div>`:''}
     ${otd.length?`<div class="otd">那年今日：${otd.slice(0,3).map(e=>`<button data-open="${esc(e.id)}">${e.date.slice(0,4)}年 · ${esc(e.title||snippet(e.body,[]).slice(0,18)||'无标题')}</button>`).join('，')}</div>`:''}
   </section>`;
   const counts={};S.entries.forEach(e=>counts[e.nb]=(counts[e.nb]||0)+1);
-  const nbchips=`<div class="chips nbchips"><button class="chip" data-nb="all" aria-pressed="${S.nb==='all'}">全部 ${S.entries.length}</button>${S.notebooks.map(n=>`<button class="chip" data-nb="${esc(n.id)}" aria-pressed="${S.nb===n.id}"><span class="dot" style="background:${esc(n.color)}"></span>${esc(n.name)} ${counts[n.id]||0}</button>`).join('')}<button class="chip" data-act="newnb">+ 分区</button></div>`;
+  const nbchips=`<div class="nbtabs nbchips"><button class="nbtab" style="--c:#e9eef8" data-nb="all" aria-pressed="${S.nb==='all'}"><b>全部</b><span>${S.entries.length} 篇</span></button>${S.notebooks.map(n=>`<button class="nbtab" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-pressed="${S.nb===n.id}"><b>${esc(n.name)}</b><span>${counts[n.id]||0} 篇</span></button>`).join('')}<button class="nbtab add" data-act="newnb">+ 新分区</button></div>`;
   const filt=`<div class="chips">${S.day?`<button class="chip" aria-pressed="true" data-act="clearday">${esc(S.day)} ✕</button>`:''}
     <button class="chip" data-f="fav" aria-pressed="${S.f.fav}">收藏</button>
     <button class="chip" data-f="photo" aria-pressed="${S.f.photo}">有照片</button>
@@ -498,8 +645,8 @@ function renderJournal(){
     <button class="chip" data-mood="bad" aria-pressed="${S.f.mood==='bad'}"><span class="dot" style="background:${MOODS[1].c}"></span>不愉快</button></div>`;
   const bar=`<div class="bar"><label class="search">${IC.search}<input type="search" id="q" placeholder="搜索文字、#标签、地点…" value="${esc(S.q)}" aria-label="搜索日记"></label>${nbchips}${filt}</div>`;
   let body='';
-  if(!S.entries.length){body=`<div class="empty"><h2 class="serif">日记本还是空的</h2><p>把过去一年的日记搬进来：苹果「日记」导出的 ZIP、手机「文件」里的 .txt / .md、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
-  else if(!list.length){body=`<div class="empty"><h2 class="serif">没有找到</h2><p>换个关键词，或清除筛选。</p><div class="row"><button class="btn line" data-act="clearall">清除筛选</button></div></div>`}
+  if(!S.entries.length){body=`<div class="empty"><h2 class="disp">日记本还是空的</h2><p>把过去一年的日记搬进来：苹果「日记」导出的 ZIP、手机「文件」里的 .txt / .md、整段粘贴，或者拍下手写日记让它识别文字。</p><div class="row"><button class="btn pri" data-act="import">导入过去的日记</button><button class="btn line" data-act="new">写第一篇</button></div></div>`}
+  else if(!list.length){body=`<div class="empty"><h2 class="disp">没有找到</h2><p>换个关键词，或清除筛选。</p><div class="row"><button class="btn line" data-act="clearall">清除筛选</button></div></div>`}
   else{
     let cur='';const parts=[];
     if(searching)parts.push(`<div class="month">找到 ${list.length} 篇</div>`);
@@ -508,11 +655,11 @@ function renderJournal(){
       if(mk!==cur){cur=mk;const n=list.filter(x=>x.date.slice(0,7)===e.date.slice(0,7)).length;parts.push(`<div class="month">${mk} · ${n} 篇</div>`)}
       const nb=nbById(e.nb);
       const th=e.photos.slice(0,5).map(p=>e.thumbs[p]?`<img src="${esc(e.thumbs[p])}" alt="">`:'').join('');
-      parts.push(`<button class="card" data-open="${esc(e.id)}"><div class="d"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span></div><div>
+      parts.push(`<button class="card" style="--c:${esc(nbColor(e.nb))}" data-open="${esc(e.id)}"><div class="d"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span></div><div>
         ${e.title?`<h3>${hl(e.title,toks)}</h3>`:''}<p>${hl(snippet(e.body,toks),toks)||'<i>（只有照片）</i>'}</p>
-        <div class="meta">${S.nb==='all'&&nb?`<span><i class="dot" style="background:${esc(nb.color)}"></i>${esc(nb.name)}</span>`:''}
+        <div class="meta">${nb?`<span class="pill">${esc(nb.name)}</span>`:''}
         ${e.mood?`<span><i class="dot" style="background:${MOODS[e.mood-1].c}"></i>${MOODS[e.mood-1].n}</span>`:''}
-        ${e.place?`<span>${hl(e.place,toks)}</span>`:''}${e.tags.slice(0,4).map(t=>`<span>#${hl(t,toks)}</span>`).join('')}
+        ${e.place?`<span><i style="width:13px;height:13px;display:inline-flex">${IC.pin}</i>${hl(e.place,toks)}</span>`:''}${e.tags.slice(0,4).map(t=>`<span>#${hl(t,toks)}</span>`).join('')}
         ${e.fav?`<span style="width:15px;height:15px">${IC.starF}</span>`:''}<span>${pad(d.getHours())}:${pad(d.getMinutes())}</span></div>
         ${th?`<div class="thumbs">${th}</div>`:''}</div></button>`);
     }
@@ -548,7 +695,7 @@ function renderInsights(){
   const months=Array(12).fill(0);ys.forEach(e=>months[+e.date.slice(5,7)-1]++);const mx=Math.max(1,...months);
   const tags={};ys.forEach(e=>e.tags.forEach(t=>tags[t]=(tags[t]||0)+1));const top=Object.entries(tags).sort((a,b)=>b[1]-a[1]).slice(0,20);
   const nbc=S.notebooks.map(n=>[n,ys.filter(e=>e.nb===n.id).length]);const nmax=Math.max(1,...nbc.map(x=>x[1]));
-  return banner()+`<section class="section"><h2>${S.year} 年回顾</h2>
+  return banner()+`<section class="section"><h2 class="disp">回顾</h2>${renderReportPanel()}<h3>${S.year} 年数据</h3>
   <div class="chips">${years.map(y=>`<button class="chip" data-year="${y}" aria-pressed="${y===S.year}">${y}</button>`).join('')}</div>
   <div class="stats" style="margin-top:10px"><div class="stat"><b>${ys.length}</b><span>篇日记</span></div><div class="stat"><b>${days}</b><span>天有记录</span></div><div class="stat"><b>${w.toLocaleString()}</b><span>字</span></div><div class="stat"><b>${st.cur}<small style="font-size:15px"> / 最长 ${st.best}</small></b><span>连续天数</span></div></div>
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
@@ -561,7 +708,10 @@ function renderInsights(){
 /* ---------- settings ---------- */
 function renderSettings(){
   const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
-  return banner()+`<section class="section"><h2>设置</h2>
+  const todo=S.entries.filter(e=>!e.ai).length;
+  return banner()+`<section class="section"><h2 class="disp">设置</h2>
+  <h3>AI 自动整理</h3><p class="muted">${caps.sample?`AI 会读你的日记，自动建好分区（比如学习、梦境、朋友），把每篇放进去，并补上心情、地点和标签。已有的心情和地点不会被覆盖。还有 <b style="color:var(--acc)">${todo}</b> 篇没整理过。`:'这个功能需要在 Claude 里打开这个 App。'}</p>
+  ${caps.sample?`<button class="btn pri" data-act="aiorg" ${todo?'':'disabled'}><span style="width:18px;height:18px;display:inline-flex">${IC.spark}</span>整理 ${todo} 篇</button>`:''}
   <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
   <h3>导入过去的日记</h3>
   <p class="muted"><b>苹果「日记」：</b>在 iPhone 打开 设置 › App › 日记 › 导出，存到「文件」，然后在这里选那个 ZIP（或解压后 Entries 里的 .html），照片、地点、心情词都会一起导入。<br>也支持一次选很多文件：.txt / .md（文件里有“2025-11-24”或“2025年11月24日”这类日期行会自动拆成多篇）、本应用导出的 .json 备份、照片（每张一篇，可识别照片里的文字）。</p>
@@ -728,7 +878,7 @@ async function importBackup(obj){let n=0;
     if(!nbById(e.nb))e.nb=S.notebooks[0].id;const i=S.entries.findIndex(x=>x.id===e.id);if(i<0)S.entries.push(e);else S.entries[i]=e;await Store.put('entries',e);n++}
   return n}
 async function importFiles(files){
-  const nb=$('#impNb')?.value||S.notebooks[0].id,useOcr=$('#impOcr')?.checked;let total=0,fail=0;
+  const nb=$('#impNb')?.value||S.notebooks[0].id,useOcr=$('#impOcr')?.checked;let total=0,fail=0;const before=new Set(S.entries.map(e=>e.id));
   modal(`<h3>正在导入</h3><p class="muted" id="impProg">0 / ${files.length}</p>`);
   for(let i=0;i<files.length;i++){const f=files[i];$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${f.name}`);
     try{
@@ -739,6 +889,7 @@ async function importFiles(files){
       else{const txt=await f.text();const fd=new Date(f.lastModified||Date.now());const items=splitText(txt,fd.getFullYear(),fd,f.name.replace(/\.[^.]+$/,''));total+=await addImported(items,nb)}
     }catch(err){fail++}}
   closeModal();render();toast(`导入了 ${total} 篇${fail?`，${fail} 个文件/识别失败`:''}`,4000);
+  const fresh=S.entries.filter(e=>!before.has(e.id)&&!e.ai).map(e=>e.id);if(fresh.length)setTimeout(()=>offerOrganize(fresh),600);
 }
 function pasteImport(){
   const y=new Date().getFullYear();
@@ -749,7 +900,7 @@ function pasteImport(){
   const prev=()=>{const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');$('#pPrev').textContent=it.length?`会拆成 ${it.length} 篇：${it.slice(0,3).map(x=>x.date.slice(0,10)).join('、')}${it.length>3?'…':''}`:''};
   $('#pTxt').oninput=prev;$('#pYear').oninput=prev;
   $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('#modalBox').onclick=null;
-    if(a==='ok'){const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');const nb=$('#pNb').value;closeModal();try{const n=await addImported(it,nb);toast(`导入了 ${n} 篇`)}catch(err){toast('导入失败')}render()}else closeModal()};
+    if(a==='ok'){const it=splitText($('#pTxt').value,+$('#pYear').value||y,new Date(),'');const nb=$('#pNb').value;closeModal();const before=new Set(S.entries.map(e=>e.id));try{const n=await addImported(it,nb);toast(`导入了 ${n} 篇`);const fresh=S.entries.filter(e=>!before.has(e.id)).map(e=>e.id);if(fresh.length)setTimeout(()=>offerOrganize(fresh),600)}catch(err){toast('导入失败')}render()}else closeModal()};
 }
 
 /* ---------- Apple Journal export (ZIP or HTML files from 设置 › App › 日记 › 导出) ---------- */
@@ -836,7 +987,10 @@ document.addEventListener('click',async ev=>{
   else if(d.tag){S.q='#'+d.tag;S.view='journal';S.day=null;render()}
   else if(d.nbcolor){const nb=nbById(d.nbcolor);nb.color=d.c;saveNb(nb);render()}
   else if(d.nbdel){delNotebook(d.nbdel)}
+  else if(d.rtype){S.rep.type=d.rtype;render()}
   else if(d.act){const a=d.act;
+    if(a==='repprev')return repShift(-1);if(a==='repnext')return repShift(1);if(a==='repgen')return genReport();
+    if(a==='aiorg')return aiOrganize(S.entries.filter(e=>!e.ai).map(e=>e.id));
     if(a==='new')newEntry(false);else if(a==='new-prompt')newEntry(true);
     else if(a==='shuffle'){S.prompt=(S.prompt+1)%PROMPTS.length;render()}
     else if(a==='newnb')newNotebook();
