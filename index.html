@@ -184,7 +184,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 
 <main class="wrap">
   <section class="s" id="sites-s">
-    <div class="sh"><h2 class="disp">我的网站</h2><div style="display:flex;gap:8px"><button class="btn line" data-act="editsites" id="editBtn">编辑</button><button class="btn pri" data-act="addsite">+ 添加</button></div></div>
+    <div class="sh"><h2 class="disp">我的</h2><div style="display:flex;gap:8px"><button class="btn line" data-act="editsites" id="editBtn">编辑</button><button class="btn pri" data-act="addsite">+ 添加</button></div></div>
     <div class="sites" id="sites"></div>
   </section>
   <div class="cols">
@@ -194,7 +194,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       <div id="plans"></div>
     </section>
     <section class="s" id="work-s">
-      <div class="sh"><h2 class="disp">作业 · 考试<small id="workCount"></small></h2><button class="btn pri" data-act="addwork">+ 新作业</button></div>
+      <div class="sh"><h2 class="disp">DDL<small id="workCount"></small></h2><button class="btn pri" data-act="addwork">+ 新作业</button></div>
       <div class="chips" id="workChips"></div>
       <div id="work"></div>
     </section>
@@ -258,7 +258,9 @@ const SEED_WORK=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
 const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
-const SUPABASE_ANON_KEY=''; // the project's "anon public" key (safe to publish; rows are protected by RLS)
+const SUPABASE_ANON_KEY='';
+const OWNER='Lyra';        // only this username may log in or be created
+const OWNER_EMAIL='';      // with Supabase: the owner's email (also turn off sign-ups in Supabase) // the project's "anon public" key (safe to publish; rows are protected by RLS)
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('无法加载 '+src));document.head.appendChild(s)})}
 /* ---------- storage adapters ---------- */
 const KINDS=['notebooks','entries','photos','meta'];
@@ -337,8 +339,8 @@ async function showAuth(){
   $('#app').hidden=true;$('#auth').hidden=false;
   const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
   $('#auWhere').textContent={supa:'云端账号：任何浏览器、任何设备都能登录；和 Ego 日记是同一个账号。内容在你的设备上加密后才上传。',cloud:'账号和加密后的内容保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的内容保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
-  const accs=supa?[]:await listAccounts();setAuthMode(supa||accs.length?'login':'register');
-  if(accs.length===1)$('#auName').value=accs[0].name;
+  const accs=supa?[]:await listAccounts();const owned=supa||accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length?'login':'register');
+  
   setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
 }
 function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
@@ -347,6 +349,8 @@ function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forE
 document.querySelector('.seg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setAuthMode(b.dataset.mode)});
 $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go=$('#auGo'),msg=$('#auMsg');
   const name=$('#auName').value.trim(),pw=$('#auPw').value;if(!name||!pw)return;
+  const ownerId=S.mode==='supa'?OWNER_EMAIL:OWNER;
+  if(ownerId&&name.toLowerCase()!==ownerId.toLowerCase()){$('#auMsg').textContent='这是私人网站，不开放注册和登录。';return}
   go.disabled=true;msg.innerHTML='<span class="spin"></span> '+(authMode==='register'?'正在创建…':'正在解锁…');
   try{
     if(S.mode==='supa'){
@@ -415,6 +419,7 @@ async function enterAccount(acc,key,isNew){
     for(const r of SEED_WORK){const it={id:uid(),date:r[0],time:r[1],course:r[2],task:r[3],weight:r[4],status:r[5],note:r[6]};S.work.push(it);await DB.put('work',it)}
     const m={id:'seed',v:1,at:Date.now()};S.meta.push(m);await DB.put('meta',m);
   }
+  if(!S.sites.some(x=>/timetable\.ucl\.ac\.uk/.test(x.url||''))){const it={id:uid(),order:-1,name:'UCL 课表',url:'https://timetable.ucl.ac.uk/tt/homePage.do',desc:'官方个人课表',color:'#8fb8f0',icon:'calendar'};S.sites.push(it);await DB.put('sites',it)}
   if(!S.meta.find(x=>x.id==='timetable')&&SEED_TT.length){const m={id:'timetable',items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
   if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
   const tt=S.meta.find(x=>x.id==='timetable'),tr=S.meta.find(x=>x.id==='trip');
@@ -590,11 +595,11 @@ function ttModal(){
   const md=s=>`${+s.slice(5,7)}/${+s.slice(8)}`;
   const days=[1,2,3,4,5].map(wd=>{const l=inTerm.filter(c=>c.wd===wd).sort((a,b)=>a.s.localeCompare(b.s));return l.length?`<div class="tt-day">星期${WD[wd]}</div>`+l.map(c=>`<div class="cls"><span class="t mono">${c.s}–${c.e}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}</b><small>${esc(c.room)} · ${md(c.from)}–${md(c.to)}${c.except&&c.except.length?` · ${c.except.map(md).join('、')} 不上`:''}</small></div>`).join(''):''}).join('');
   const up=once.filter(c=>c.date>=today).sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s));
-  const sheet=S.sites.find(x=>/DDL|课表/.test(x.name));
+  const OFFICIAL='https://timetable.ucl.ac.uk/tt/homePage.do';
   modal(`<h3>全部课表</h3><div class="chips">${terms.map(t=>`<button class="chip" data-tt="${t}" aria-pressed="${t===ttTerm}">${t}</button>`).join('')}</div>
    ${days||'<p class="empty">这个学期没有每周课程。</p>'}
    ${up.length?`<div class="tt-day" style="color:var(--acc2)">实验、测试等单次安排</div>`+up.map(c=>{const d=pd(c.date);return `<div class="cls"><span class="t mono">${md(c.date)} 周${WD[d.getDay()]}</span><b><span class="dot" style="background:${cColor(c.course)}"></span> ${esc(c.course)} · ${esc(c.type)}</b><small>${c.s}–${c.e} · ${esc(c.room)}</small></div>`}).join(''):''}
-   <div class="row">${sheet&&safeUrl(sheet.url)?`<a class="btn line sp" href="${esc(sheet.url)}">在课程表格里看 →</a>`:''}<button class="btn pri" data-a="no">关闭</button></div>`);
+   <div class="row"><a class="btn line sp" href="${OFFICIAL}">UCL 官方课表 →</a><button class="btn pri" data-a="no">关闭</button></div>`);
   $('#box').classList.add('wide');
   $('#box').onclick=e=>{const t=e.target.closest('[data-tt]');if(t){ttTerm=t.dataset.tt;ttModal();return}if(e.target.closest('[data-a=no]'))closeModal()};
 }

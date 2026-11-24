@@ -289,7 +289,9 @@ main{max-width:760px}
 {
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
 const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
-const SUPABASE_ANON_KEY=''; // the project's "anon public" key (safe to publish; rows are protected by RLS)
+const SUPABASE_ANON_KEY='';
+const OWNER='Lyra';        // only this username may log in or be created
+const OWNER_EMAIL='';      // with Supabase: the owner's email (also turn off sign-ups in Supabase) // the project's "anon public" key (safe to publish; rows are protected by RLS)
 const HOME_URL='../'; // Lyra 的终端
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -443,8 +445,8 @@ async function showAuth(){
   $('#main').innerHTML='';$('#auth').hidden=false;
   const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
   $('#auWhere').textContent={supa:'账号在云端：任何浏览器、任何设备都能登录。日记在你的设备上加密以后才上传，云端只存加密后的内容。',cloud:'账号和加密后的日记保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的日记保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
-  const accs=supa?[]:await listAccounts();setAuthMode(supa||accs.length?'login':'register');
-  if(accs.length===1)$('#auName').value=accs[0].name;
+  const accs=supa?[]:await listAccounts();const owned=supa||accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length?'login':'register');
+  
   setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
 }
 function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
@@ -453,6 +455,8 @@ function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forE
 document.querySelector('.seg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setAuthMode(b.dataset.mode)});
 $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go=$('#auGo'),msg=$('#auMsg');
   const name=$('#auName').value.trim(),pw=$('#auPw').value;if(!name||!pw)return;
+  const ownerId=S.mode==='supa'?OWNER_EMAIL:OWNER;
+  if(ownerId&&name.toLowerCase()!==ownerId.toLowerCase()){$('#auMsg').textContent='这是私人网站，不开放注册和登录。';return}
   go.disabled=true;msg.innerHTML='<span class="spin"></span> '+(authMode==='register'?'正在创建…':'正在解锁…');
   try{
     if(S.mode==='supa'){
