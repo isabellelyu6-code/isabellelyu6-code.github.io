@@ -382,7 +382,7 @@ async function showAuth(){
   $('#app').hidden=true;$('#auth').hidden=false;
   const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
   $('#auWhere').textContent={supa:'云端账号：任何浏览器、任何设备都能登录；和 Ego 日记是同一个账号。内容在你的设备上加密后才上传。',cloud:'账号和加密后的内容保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的内容保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
-  const accs=supa?[]:await listAccounts();const owned=supa||accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length?'login':'register');
+  const accs=supa?[]:await listAccounts();const owned=supa?!!OWNER_EMAIL:accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length||supa?'login':'register');
   
   setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
 }
