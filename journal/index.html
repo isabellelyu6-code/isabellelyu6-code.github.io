@@ -635,7 +635,7 @@ function snippet(body,toks){const b=body.replace(/\s+/g,' ').trim();if(!toks.len
 
 /* ---------- streak / stats ---------- */
 function daySet(list=S.entries){return new Set(list.map(e=>e.date.slice(0,10)))}
-function streaks(){const ds=daySet();let cur=0;const d=new Date();if(!ds.has(dayKey(d)))d.setDate(d.getDate()-1);while(ds.has(dayKey(d))){cur++;d.setDate(d.getDate()-1)}const sorted=[...ds].sort();let best=0,run=0,prev=null;for(const k of sorted){const t=parseDate(k);if(prev&&(t-prev)/864e5<1.5)run++;else run=1;best=Math.max(best,run);prev=t}return{cur,best}}
+function streaks(){const ds=new Set(daySet());const sf=S.settings&&S.settings.streakFill;if(sf&&/^\d{4}-\d\d-\d\d$/.test(sf.from||'')&&/^\d{4}-\d\d-\d\d$/.test(sf.to||'')){const d=parseDate(sf.from),e=parseDate(sf.to);for(let i=0;d<=e&&i<4000;i++){ds.add(dayKey(d));d.setDate(d.getDate()+1)}}let cur=0;const d=new Date();if(!ds.has(dayKey(d)))d.setDate(d.getDate()-1);while(ds.has(dayKey(d))){cur++;d.setDate(d.getDate()-1)}const sorted=[...ds].sort();let best=0,run=0,prev=null;for(const k of sorted){const t=parseDate(k);if(prev&&(t-prev)/864e5<1.5)run++;else run=1;best=Math.max(best,run);prev=t}return{cur,best}}
 function onThisDay(){const t=new Date();const md=`-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;return S.entries.filter(e=>e.date.slice(4,10)===md&&e.date.slice(0,4)!==String(t.getFullYear())).sort((a,b)=>b.date.localeCompare(a.date))}
 
 /* ---------- AI: reports ---------- */
@@ -843,6 +843,8 @@ function renderSettings(){
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
+  <h3>连续记录</h3><p class="muted">如果有些天写在别处没导进来，可以设一个开始日期：从那天到今天都算写过，之后照常计算。</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="date" id="sfFrom" value="${esc((S.settings.streakFill||{}).from||'')}" style="max-width:200px"><button class="btn line" data-act="sfsave">保存</button>${S.settings.streakFill?'<button class="btn line" data-act="sfclear">清除</button>':''}</div>
   <h3>关于</h3><p class="muted">Lyra 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
 }
 
@@ -1119,7 +1121,7 @@ document.addEventListener('click',async ev=>{
     else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
     else if(a==='pickimport')$('#fileImport').click();
     else if(a==='paste')pasteImport();
-    else if(a==='autosplit')autoSplit();else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='sfsave'){const v=$('#sfFrom').value;if(!v)return toast('先选一个日期');S.settings.streakFill={from:v,to:dayKey(new Date())};Store.put('meta',S.settings).then(()=>{render();toast(`已连续写了 ${streaks().cur} 天`)},()=>toast('保存失败'))}else if(a==='sfclear'){delete S.settings.streakFill;Store.put('meta',S.settings).catch(()=>{});render()}else if(a==='autosplit')autoSplit();else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
     else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
     else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
     else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
