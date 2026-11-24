@@ -291,7 +291,10 @@ main{max-width:760px}
 const SUPABASE_URL='https://naedsprhisphrqmduaap.supabase.co';      // e.g. https://abcd1234.supabase.co
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZWRzcHJoaXNwaHJxbWR1YWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MzgwMTYsImV4cCI6MjExMTExNDAxNn0.BrNZN9tHjJNo58ppGJoTaxKv_sqzEzA2wu4sxJ6iJ5o';
 const OWNER='Lyra';        // only this username may log in or be created
-const OWNER_EMAIL='';      // with Supabase: the owner's email (also turn off sign-ups in Supabase) // the project's "anon public" key (safe to publish; rows are protected by RLS)
+const OWNER_EMAIL='';      // unused: cloud accounts use a username
+const ACCOUNT_DOMAIN='isabellelyu6-code.github.io'; // a username like Lyra becomes lyra@<this> for Supabase
+const REGISTRATION_CLOSED=false; // set true once the owner's cloud account exists
+const toEmail=n=>n.includes('@')?n:n.toLowerCase().replace(/[^a-z0-9._-]/g,'')+'@'+ACCOUNT_DOMAIN; // the project's "anon public" key (safe to publish; rows are protected by RLS)
 const HOME_URL='../'; // Lyra 的终端
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -443,9 +446,9 @@ let authMode='login';
 async function listAccounts(){try{return await Sys.accounts.all('accounts')}catch(e){return[]}}
 async function showAuth(){
   $('#main').innerHTML='';$('#auth').hidden=false;
-  const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
+  const supa=S.mode==='supa';$('label[for=auName]').textContent='用户名';$('#auName').type='text';$('#auName').autocomplete='username';$('#auName').maxLength=30;
   $('#auWhere').textContent={supa:'账号在云端：任何浏览器、任何设备都能登录。日记在你的设备上加密以后才上传，云端只存加密后的内容。',cloud:'账号和加密后的日记保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的日记保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
-  const accs=supa?[]:await listAccounts();const owned=supa?!!OWNER_EMAIL:accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length||supa?'login':'register');
+  const accs=supa?[]:await listAccounts();const owned=supa?REGISTRATION_CLOSED:accs.some(a=>a.name.toLowerCase()===OWNER.toLowerCase());$('.seg [data-mode=register]').hidden=owned;$('.seg').style.gridTemplateColumns=owned?'1fr':'';setAuthMode(owned||accs.length||supa?'login':'register');
   
   setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
 }
@@ -455,19 +458,19 @@ function setAuthMode(m){authMode=m;document.querySelectorAll('.seg button').forE
 document.querySelector('.seg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setAuthMode(b.dataset.mode)});
 $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go=$('#auGo'),msg=$('#auMsg');
   const name=$('#auName').value.trim(),pw=$('#auPw').value;if(!name||!pw)return;
-  const ownerId=S.mode==='supa'?OWNER_EMAIL:OWNER;
+  const ownerId=OWNER;
   if(ownerId&&name.toLowerCase()!==ownerId.toLowerCase()){$('#auMsg').textContent='这是私人网站，不开放注册和登录。';return}
   go.disabled=true;msg.innerHTML='<span class="spin"></span> '+(authMode==='register'?'正在创建…':'正在解锁…');
   try{
     if(S.mode==='supa'){
       if(authMode==='register'){
         if(pw.length<6)throw new Error('密码至少 6 位');if(pw!==$('#auPw2').value)throw new Error('两次密码不一样');
-        const r=await sb.auth.signUp({email:name,password:pw});
-        if(r.error)throw new Error(/registered|exists/i.test(r.error.message)?'这个邮箱已经注册过了，请直接登录':'注册失败：'+r.error.message);
+        const r=await sb.auth.signUp({email:toEmail(name),password:pw});
+        if(r.error)throw new Error(/registered|exists/i.test(r.error.message)?'这个账号已经注册过了，请直接登录':/seconds/i.test(r.error.message)?'操作太频繁，请过一分钟再试':/signups? not allowed|disabled/i.test(r.error.message)?'这是私人网站，不开放注册':'注册失败：'+r.error.message);
         if(!r.data.session)throw new Error('请先去邮箱点确认链接，然后回来登录');
       }else{
-        const r=await sb.auth.signInWithPassword({email:name,password:pw});
-        if(r.error)throw new Error(/invalid/i.test(r.error.message)?'邮箱或密码不对':/confirm/i.test(r.error.message)?'请先去邮箱点确认链接':'登录失败：'+r.error.message);
+        const r=await sb.auth.signInWithPassword({email:toEmail(name),password:pw});
+        if(r.error)throw new Error(/invalid/i.test(r.error.message)?'用户名或密码不对':/confirm/i.test(r.error.message)?'请先去邮箱点确认链接':'登录失败：'+r.error.message);
       }
     }
     const accs=await listAccounts();let acc=accs.find(a=>a.name.toLowerCase()===name.toLowerCase())||(S.mode==='supa'?accs[0]:null);
