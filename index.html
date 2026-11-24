@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f1b2d">
-<title>Lyra 的终端</title>
+<title>Lyra</title>
+<meta name="description" content="Lyra — 我的终端">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lyra">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
 <style>
@@ -13,14 +21,14 @@
    PICTURE: the top band is the terminal itself beside today's schedule and the trip countdown, under faint snow
    COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent (also all dates), twilight rose, sun gold; Noto Serif SC titles, JetBrains Mono for the prompt, Noto Sans SC elsewhere
    LAYOUT: phone — terminal, today, sites, plans, work stacked; desktop — terminal + today side by side, plans and work in two columns */
-:root{color-scheme:dark;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--warn:#f0b47c;--bad:#f0a0a8}
+:root{color-scheme:dark;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--warn:#f0b47c;--bad:#f0a0a8}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.disp{font-family:"Noto Serif SC","Songti SC",serif;font-weight:900;letter-spacing:0;text-wrap:balance}
+.disp{font-family:var(--hf);font-weight:900;letter-spacing:0;text-wrap:balance}
 .mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
 .wrap{max-width:1180px;margin:0 auto;padding:0 max(4vw,16px)}
 .band{padding:clamp(24px,4vw,44px) 0;position:relative;overflow:hidden;border-bottom:1px solid var(--line);background-color:var(--bg)}
@@ -31,34 +39,35 @@ a{color:inherit}
 .top{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .hello{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:18px;align-items:end}
 .hl{display:flex;flex-direction:column;gap:2px;min-width:0}
-.hl-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.hello h1{font-size:clamp(22px,4.6vw,30px);line-height:1.15;margin:0;font-weight:700;color:var(--mut)}
+.hl-top{display:flex;justify-content:space-between;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.hello h1{white-space:nowrap;font-size:clamp(22px,4.6vw,30px);line-height:1.15;margin:0;font-weight:700;color:var(--mut)}
 .hello h1 i{font-style:normal;color:var(--acc)}
 .clock{display:flex;align-items:baseline;gap:4px;line-height:1;margin-top:6px}
-.clock b{font-family:"Noto Serif SC",serif;font-weight:900;font-size:clamp(64px,15vw,104px);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.clock b{font-family:var(--hf);font-weight:900;font-size:clamp(40px,9vw,58px);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .clock .colon{color:var(--acc);animation:blink 2s steps(1) infinite}
 @keyframes blink{50%{opacity:.35}}
-.clock .sec{font-size:clamp(18px,3.6vw,24px);color:var(--mut);font-variant-numeric:tabular-nums;font-weight:600;margin-left:4px}
+.clock .sec{font-size:clamp(14px,2.6vw,17px);color:var(--mut);font-variant-numeric:tabular-nums;font-weight:600;margin-left:4px}
 .dateline{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:15px;color:var(--mut);margin-top:8px}
 .dateline b{color:var(--ink);font-weight:600}
-.sky{background:rgba(21,36,57,.82);border:1px solid var(--line);border-radius:20px;padding:14px 16px;display:grid;gap:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.sky{background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--line);border-radius:18px;padding:12px 14px;display:grid;gap:9px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:"Inter","Noto Sans SC",system-ui,sans-serif}
+.skyh{display:flex;justify-content:space-between;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .wx{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
-.wx .wi{width:52px;height:52px;color:var(--sun)}
+.wx .wi{width:40px;height:40px;color:var(--sun)}
 .wx .wt{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.wx .wt b{font-family:"Noto Serif SC",serif;font-size:34px;font-weight:900;line-height:1}
-.wx .wt span{font-size:15px;color:var(--ink)}
-.wx small{display:block;font-size:12.5px;color:var(--mut);margin-top:3px}
-.sun{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;color:var(--mut)}
-.sun b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;display:block;font-size:14px}
-.sun .arc{position:relative;height:34px}
-.sun .arc svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.sun .len{grid-column:1/-1;text-align:center;font-size:12px;margin-top:-4px}
-.moonrow{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:10px}
+.wx .wt b{font-family:var(--hf);font-size:28px;font-weight:900;line-height:1}
+.wx .wt span{font-size:14.5px;color:var(--ink)}
+.wx small{display:block;font-size:12px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums}
+.sun{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px;color:var(--mut)}
+.sun b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;display:block;font-size:13.5px}
+.sun .arc{width:100%;height:26px;overflow:visible}
+.skys{font-size:12px;color:var(--mut);text-align:center;margin-top:-4px}
+.moonrow{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:8px}
 .moonrow b{color:var(--ink);font-weight:600}
-@media(min-width:900px){.hello{grid-template-columns:minmax(0,1fr) minmax(340px,420px)}}
+.moonrow svg{flex:none}
+@media(min-width:900px){.hello{grid-template-columns:minmax(0,1fr) minmax(320px,380px)}.hello.nosky{grid-template-columns:1fr}}
 @media(max-width:600px){.sky{padding:12px 14px;gap:10px}.wx .wi{width:44px;height:44px}.wx .wt b{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.clock .colon{animation:none}}
-.term{background:rgba(11,21,36,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.term{background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .term .bar{display:flex;gap:7px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
 .term .bar i{width:11px;height:11px;border-radius:50%;display:block}
 .term .bar span{margin-left:8px;font-size:12.5px;color:var(--mut)}
@@ -86,7 +95,7 @@ a{color:inherit}
 .cls.past{opacity:.45}
 .trip{background:linear-gradient(135deg,#1a3350,#152439 60%,#1a2c45);position:relative;overflow:hidden}
 .trip::after{content:"";position:absolute;inset:auto -30px -50px auto;width:170px;height:120px;background:radial-gradient(closest-side,rgba(134,217,195,.32),transparent);filter:blur(4px)}
-.trip .big{font-size:clamp(40px,9vw,54px);line-height:1;font-family:"Noto Serif SC",serif;color:var(--acc)}
+.trip .big{font-size:clamp(40px,9vw,54px);line-height:1;font-family:var(--hf);color:var(--acc)}
 .trip .big small{font-size:16px;color:var(--ink);font-family:"Noto Sans SC",sans-serif;margin-left:6px}
 .trip p{margin:6px 0 0;font-size:13.5px;color:#c6d3ea;position:relative}
 .trip a{color:var(--acc)}
@@ -110,7 +119,48 @@ section.s{padding:30px 0 6px}
 .site span{font-size:12.5px;color:var(--mut);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .site .ed{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:var(--card2);display:none;place-items:center;font-size:13px}
 .editing .site .ed{display:grid}
-.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
+.lower{display:grid;grid-template-columns:minmax(0,1fr);column-gap:26px}
+.modoff{display:none!important}
+.top.noterm{grid-template-columns:1fr!important}.top.noside .side{display:none}
+.hl-r{display:flex;gap:6px;align-items:center;flex:none}
+.gear{width:36px;height:36px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent);display:grid;place-items:center;color:var(--mut)}
+.gear svg{width:18px;height:18px}
+.sync{font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:6px;padding:0 4px;height:36px;white-space:nowrap}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none}
+.sync.busy::before{background:var(--sun);animation:blink 1s steps(1) infinite}.sync.warn::before{background:var(--warn)}.sync.bad{color:var(--bad)}.sync.bad::before{background:var(--bad)}
+@media(max-width:600px){.sync{font-size:11px;max-width:96px;overflow:hidden;text-overflow:ellipsis;padding:0}.hl-r{gap:4px}.acct{padding:0 10px}}
+.setg{border-top:1px solid var(--line);padding:14px 0 6px}.setg h4{margin:0 0 8px;font-size:14px}
+.sethint{color:var(--mut);font-size:13px;margin:0 0 10px}
+.two2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips.wrapc{flex-wrap:wrap;overflow:visible}
+.chip[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}
+.chip .dot{width:12px;height:12px;border-radius:50%}
+.sw2{display:flex;flex-wrap:wrap;gap:10px}
+.sw2 button,.sw2 .cust{display:grid;justify-items:center;gap:4px;font-size:11.5px;color:var(--mut);cursor:pointer}
+.sw2 i{width:34px;height:34px;border-radius:50%;background:var(--c);display:block;border:2px solid transparent;box-shadow:0 0 0 1px var(--line)}
+.sw2 button[aria-pressed=true] i{border-color:var(--ink)}
+.sw2 input[type=color]{width:34px;height:34px;border:0;padding:0;border-radius:50%;background:none;cursor:pointer}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;font-size:14.5px}
+.mrow label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.mrow input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
+.msep{border-top:1px dashed var(--line);margin:6px 0}
+.ib2{width:32px;height:32px;border-radius:16px;border:1px solid var(--line);color:var(--mut);font-size:13px;display:inline-grid;place-items:center;margin-left:4px}
+.ib2:disabled{opacity:.3;cursor:default}
+.locr{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;background:var(--bg2);margin-bottom:6px;font-size:14.5px}.locr span{color:var(--mut);font-size:13px}
+#locR{margin:8px 0}
+.grades{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.gcard{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:16px;padding:12px 14px}
+.gh{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.gcode{font-family:var(--hf);font-weight:900;font-size:19px!important;border:0!important;background:none!important;padding:0!important;min-height:32px!important;color:var(--c)!important}
+.gp{display:grid;grid-template-columns:minmax(0,1fr) 72px 78px 32px;gap:6px;align-items:center;margin-bottom:6px}
+.gp input{min-height:36px!important;padding:5px 8px!important;font-size:14px!important;border-radius:9px!important}
+.gp input[type=number]{border:1px solid var(--line);background:var(--bg2);color:var(--ink);width:100%;text-align:right;-moz-appearance:textfield}
+.gp input[type=number]::-webkit-inner-spin-button{display:none}
+.gp .pc{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--mut)}
+.gph{font-size:11.5px;color:var(--mut);margin-bottom:2px}
+.gp .ib2{margin:0}
+.gf{font-size:13px;color:var(--mut);display:grid;gap:4px;margin-top:8px}.gf b{color:var(--acc)}.gf .ok{color:var(--acc)}.gf .bad{color:var(--bad)}
+.gbar{height:6px;border-radius:3px;background:var(--bg2);display:flex;overflow:hidden}.gbar i{display:block;background:var(--c)}.gbar i.u{background:repeating-linear-gradient(90deg,var(--line) 0 4px,transparent 4px 7px)}
 .addrow{display:flex;gap:8px;margin-bottom:12px}
 .addrow input{flex:1}
 input[type=text],input[type=email],input[type=password],input[type=url],input[type=date],input[type=time],select,textarea{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:16px;min-height:44px;width:100%;color:var(--ink)}
@@ -135,7 +185,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .wk{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;position:relative;overflow:hidden;text-align:left;width:100%}
 .wk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
 .wk .dd{text-align:center;line-height:1.15}
-.wk .dd b{display:block;font-size:20px;font-family:"Noto Serif SC",serif;font-weight:400}
+.wk .dd b{display:block;font-size:20px;font-family:var(--hf);font-weight:400}
 .wk .dd span{font-size:11.5px;color:var(--mut)}
 .wk .dd b{color:var(--acc)}
 .wk .m{font-size:12.5px;color:var(--mut);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px}
@@ -174,7 +224,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .warn{font-size:13px;background:rgba(240,180,124,.12);border:1px solid rgba(240,180,124,.35);border-radius:10px;padding:10px 12px;margin:14px 0 0}
 .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.acct{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:rgba(21,36,57,.8);font-size:13.5px;color:var(--mut);flex:none}
+.acct{height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent);font-size:13.5px;color:var(--mut);flex:none}
 .acct:hover{color:var(--acc);border-color:var(--acc)}
 [hidden]{display:none!important}
 .site{min-height:64px;padding:12px 14px}
@@ -185,11 +235,11 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .next .nt{font-size:18px;font-weight:700;line-height:1.35;margin:2px 0 6px}
 .next .nn{font-size:13px;color:var(--mut);margin-top:6px}
 .next .nr{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.next .nr b{font-family:"Noto Serif SC",serif;font-size:clamp(26px,6vw,34px);font-weight:900;color:var(--acc);line-height:1;white-space:nowrap}
+.next .nr b{font-family:var(--hf);font-size:clamp(26px,6vw,34px);font-weight:900;color:var(--acc);line-height:1;white-space:nowrap}
 .next .nr span{font-size:12px;color:var(--mut)}
 .next .nr .btn{margin-top:8px;height:36px}
 .mon{display:grid;grid-template-columns:auto auto minmax(40px,1fr);gap:10px;align-items:center;margin:20px 0 8px}
-.mon b{font-family:"Noto Serif SC",serif;font-size:18px;font-weight:900}
+.mon b{font-family:var(--hf);font-size:18px;font-weight:900}
 .mon span{font-size:12.5px;color:var(--mut);white-space:nowrap}
 .mon i{height:4px;border-radius:2px;background:var(--card2);overflow:hidden;display:block}.mon i em{display:block;height:100%;background:var(--acc)}
 .wk{grid-template-columns:44px minmax(0,1fr);gap:2px;padding:6px 10px 6px 4px}
@@ -200,7 +250,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .wmain{text-align:left;padding:6px 0;min-width:0}
 .wl{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;color:var(--mut)}
 .wk .when b{color:var(--acc);font-weight:700}
-.crs{font-family:"Noto Serif SC",serif;font-weight:900;font-size:17px;color:var(--c);letter-spacing:.01em}
+.crs{font-family:var(--hf);font-weight:900;font-size:17px;color:var(--c);letter-spacing:.01em}
 .wk .m{align-items:baseline}.wk .wt{color:var(--ink);font-weight:600}
 .cd{font-weight:600;white-space:nowrap}.cd.soon{color:var(--warn)}.cd.late{color:var(--bad)}.cd.now{color:var(--acc)}
 .wk .tt{margin:1px 0 4px;font-size:15px;font-weight:600}
@@ -220,7 +270,10 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 @media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
 @media(min-width:900px){
   .top{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start}
-  .cols{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+  .lower{grid-template-columns:repeat(12,minmax(0,1fr))}
+  .lower>section{grid-column:1/-1}
+  .lower[data-plans-work=pair]>#plans-s{grid-column:span 5}
+  .lower[data-plans-work=pair]>#work-s{grid-column:span 7}
 }
 @media(prefers-reduced-motion:reduce){.site{transition:none}.site:hover{transform:none}}
 </style>
@@ -231,33 +284,32 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
   <div class="wrap">
     <div class="hello">
       <div class="hl">
-        <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><button class="acct" data-act="acct" id="acctBtn">账号</button></div>
+        <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><span class="hl-r"><button class="sync" id="sync" data-act="sync"></button><button class="gear" data-act="settings" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="acct" data-act="acct" id="acctBtn">账号</button></span></div>
         <div class="clock" aria-live="off"><b id="clockH">--</b><b class="colon">:</b><b id="clockM">--</b><span class="sec" id="clockS"></span></div>
         <div class="dateline" id="clockD"></div>
       </div>
-      <div class="sky" id="sky" aria-label="今天的天气、日出日落和月相"></div>
+      <div class="sky" id="sky" aria-label="Weather, sunrise, sunset and moon"></div>
     </div>
     <div class="top">
-      <div class="term" role="region" aria-label="终端">
+      <div class="term" role="region" aria-label="终端" id="mod-terminal">
         <div class="bar"><i style="background:#e9b0c2"></i><i style="background:#e8c98e"></i><i style="background:#86d9c3"></i><span class="mono">lyra@ego: ~</span></div>
         <div class="out mono" id="out" aria-live="polite"></div>
         <form class="prompt mono" id="cmdForm"><label for="cmd">❯</label><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="输入命令，比如 todo 买雪地靴 明天"></form>
         <div class="hint"><button data-run="help">help</button><button data-run="today">today</button><button data-run="ddl">ddl</button><button data-run="北欧">北欧</button><button data-run="日记">日记</button></div>
       </div>
       <div class="side">
-        <div class="tile"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
+        <div class="tile" id="mod-today"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
         <div class="tile trip" id="trip"></div>
       </div>
     </div>
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap lower" id="lower">
   <section class="s" id="sites-s">
     <div class="sh"><h2 class="disp">我的</h2><div style="display:flex;gap:8px"><button class="btn line" data-act="editsites" id="editBtn">编辑</button><button class="btn pri" data-act="addsite">+ 添加</button></div></div>
     <div class="sites" id="sites"></div>
   </section>
-  <div class="cols">
     <section class="s" id="plans-s">
       <div class="sh"><h2 class="disp">计划<small id="planCount"></small></h2></div>
       <form class="addrow" id="planForm"><input type="text" id="planIn" placeholder="添加计划，比如：收拾北欧行李 周六" aria-label="新计划"><button class="btn pri" type="submit">添加</button></form>
@@ -269,13 +321,16 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
       <div class="chips" id="workChips"></div>
       <div id="work"></div>
     </section>
-  </div>
+    <section class="s" id="grades-s">
+      <div class="sh"><h2 class="disp">成绩</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="chips wrapc" id="gradeTargets" style="padding:0"></div><button class="btn pri" data-gadd="1">+ 课程</button></div></div>
+      <div class="grades" id="grades"></div>
+    </section>
 </main>
 </div>
 
 <div class="lock snow" id="auth" hidden>
   <form class="auth" id="authForm" autocomplete="on">
-    <div class="disp" style="font-size:44px;line-height:1.1">Lyra 的<span style="color:var(--acc)">终端</span></div>
+    <div class="disp" style="font-size:44px;line-height:1.1"><span style="color:var(--acc)">Lyra</span></div>
     <p style="margin:6px 0 18px;opacity:.85" id="authSub">你的主页：网站、计划、作业，都用你的密码加密保存。</p>
     <div class="seg" role="tablist"><button type="button" data-mode="login" aria-pressed="true">登录</button><button type="button" data-mode="register" aria-pressed="false">创建账号</button></div>
     <label for="auName">用户名</label><input type="text" id="auName" autocomplete="username" required maxlength="30">
@@ -320,7 +375,7 @@ const SEED_TRIP=null;
 
 /* ---------- starter data ---------- */
 const SEED_SITES=[
- {name:'Ego 日记',url:'https://isabellelyu6-code.github.io/Journal/journal/',desc:'加密日记本',color:'#86d9c3',icon:'记'},
+ {name:'Lyra 日记',url:'https://isabellelyu6-code.github.io/journal/',desc:'',color:'#86d9c3',icon:'book'},
  {name:'奶蛋桌宠',url:'https://github.com/isabellelyu6-code/naidan-updates',desc:'GitHub · naidan-updates',color:'#d9d28e',icon:'蛋'},
  {name:'UCL Moodle',url:'https://moodle.ucl.ac.uk/',desc:'课程与作业提交',color:'#a9b8cc',icon:'M'}
 ];
@@ -330,6 +385,8 @@ const SEED_WORK_V=4;
 const SEED_DROP=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
+const JOURNAL_URL='https://isabellelyu6-code.github.io/journal/';
+const SEED_GRADES=null;
 const SUPABASE_URL='https://naedsprhisphrqmduaap.supabase.co';      // e.g. https://abcd1234.supabase.co
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hZWRzcHJoaXNwaHJxbWR1YWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1MzgwMTYsImV4cCI6MjExMTExNDAxNn0.BrNZN9tHjJNo58ppGJoTaxKv_sqzEzA2wu4sxJ6iJ5o';
 const OWNER='Lyra';        // only this username may log in or be created
@@ -366,10 +423,17 @@ function makeRemote(base){return{
   put(k,o){const body=JSON.parse(JSON.stringify(o));return this.q(k+'/'+o.id,()=>this.col(k).doc(o.id).set(body))},
   del(k,id){return this.q(k+'/'+id,()=>this.col(k).doc(id).delete())}
 }}
+/* encrypted rows are cached in this browser so the app still opens offline */
+const RowCache={db:null,async open(){if(this.db)return this.db;this.db=await new Promise((res,rej)=>{const r=indexedDB.open('lyra-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('kinds');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return this.db},
+  async get(k){try{const d=await this.open();return await new Promise(res=>{const q=d.transaction('kinds').objectStore('kinds').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)})}catch(e){return null}},
+  async set(k,v){try{const d=await this.open();d.transaction('kinds','readwrite').objectStore('kinds').put(v,k)}catch(e){}}};
+let OFFLINE=false;
 function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
   async open(){return this},
-  async all(k){const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}return out},
-  async get(k,id){return chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle())},
+  async all(k){try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
+    catch(e){const c=await RowCache.get('all:'+k);if(c){OFFLINE=true;return c}throw e}},
+  async get(k,id){try{const r=chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle());RowCache.set('one:'+k+'/'+id,r);return r}
+    catch(e){const c=await RowCache.get('one:'+k+'/'+id);if(c!==null){OFFLINE=true;return c}throw e}},
   async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
   async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
   async clear(k){chk(await T().delete().eq('kind',k))}
@@ -465,8 +529,8 @@ $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go
 const HK={sites:'hubSites',plans:'hubPlans',work:'hubWork',meta:'hubMeta'};
 const DB={
   all:k=>Store.all(HK[k]),
-  put(k,o){return Store.put(HK[k],JSON.parse(JSON.stringify(o))).catch(()=>toast('保存失败，请检查网络'))},
-  del(k,id){return Store.del(HK[k],id).catch(()=>toast('删除失败'))}
+  put(k,o){const c=JSON.parse(JSON.stringify(o));return track(()=>Store.put(HK[k],c)).catch(()=>{})},
+  del(k,id){return track(()=>Store.del(HK[k],id)).catch(()=>{})}
 };
 const S={mode:'memory',account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],editing:false,wf:'todo',wc:'all',showDone:false,ready:false};
 async function boot(){
@@ -482,11 +546,11 @@ async function boot(){
     catch(e){S.mode='memory';Sys.accounts=makeMem();const mems={};Sys.mkData=acc=>Promise.resolve(mems[acc.id]||(mems[acc.id]=makeMem()))}}
   if(!(await autoLogin()))showAuth();
 }
-async function enterAccount(acc,key,isNew){
+async function enterAccount(acc,key,isNew,quiet){
   S.account=acc;S.key=key;Store=makeEncrypted(await Sys.mkData(acc),key);
   Object.assign(S,{tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});
   $('#auth').hidden=true;$('#app').hidden=false;$('#acctBtn').textContent=acc.name+' · 账号';
-  $('#sites').innerHTML='<div class="empty"><span class="spin"></span> 正在打开…</div>';
+  if(!quiet)$('#sites').innerHTML='<div class="empty"><span class="spin"></span> 正在打开…</div>';
   try{for(const k of ['sites','plans','work','meta'])S[k]=await DB.all(k)}
   catch(e){$('#sites').innerHTML='<div class="empty">内容暂时没加载出来（数据还在）。 <button class="btn line" data-act="retry">再试一次</button></div>';return}
   S.sites.forEach(x=>{if(MAPC[x.color])x.color=MAPC[x.color];if(!ICONS[x.icon])x.icon=iconKey(x)});
@@ -505,20 +569,24 @@ async function enterAccount(acc,key,isNew){
   if(!S.sites.some(x=>/timetable\.ucl\.ac\.uk/.test(x.url||''))){const it={id:uid(),order:-1,name:'UCL 课表',url:'https://timetable.ucl.ac.uk/tt/homePage.do',desc:'官方个人课表',color:'#8fb8f0',icon:'calendar'};S.sites.push(it);await DB.put('sites',it)}
   if(SEED_TT.length&&(S.meta.find(x=>x.id==='timetable')||{}).v!==SEED_TT_V){S.meta=S.meta.filter(x=>x.id!=='timetable');const m={id:'timetable',v:SEED_TT_V,items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
   if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
-  const tt=S.meta.find(x=>x.id==='timetable'),tr=S.meta.find(x=>x.id==='trip');
-  S.tt=Array.isArray(tt&&tt.items)?tt.items:[];S.trip=tr&&tr.start&&tr.end?{name:tr.name||'',start:tr.start,end:tr.end,plan:Array.isArray(tr.plan)?tr.plan:[],url:tr.url||''}:null;
-  S.ready=true;renderAll();loadInbox();
+  if(SEED_GRADES&&!S.meta.find(x=>x.id==='grades')){const m={id:'grades',...structuredClone(SEED_GRADES)};S.meta.push(m);await DB.put('meta',m)}
+  if(S.mode==='supa')for(const x of S.sites)if(/BKgxjQtWc5MejurTYd2K9x|github\.io\/Journal\/journal/.test(x.url||'')){x.url=JOURNAL_URL;if(x.name==='Ego 日记')x.name='Lyra 日记';await DB.put('sites',x)}
+  deriveMeta();applySettings();S.ready=true;SY.last=Date.now();renderAll();renderSync();loadInbox();startRealtime();setTimeout(autoBackup,4000);
+  if(!quiet&&OFFLINE)toast('离线模式：显示的是这台设备上次同步的内容');
 }
-function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});Store=makeMem();Object.assign(S,{account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});closeModal();showAuth()}
+function deriveMeta(){const tt=S.meta.find(x=>x.id==='timetable'),tr=S.meta.find(x=>x.id==='trip'),st=S.meta.find(x=>x.id==='settings');
+  S.tt=Array.isArray(tt&&tt.items)?tt.items:[];S.trip=tr&&tr.start&&tr.end?{name:tr.name||'',start:tr.start,end:tr.end,plan:Array.isArray(tr.plan)?tr.plan:[],url:tr.url||''}:null;
+  SET={...structuredClone(DEF_SET),...(st||{}),loc:{...DEF_SET.loc,...((st&&st.loc)||{})}};if(!Array.isArray(SET.order))SET.order=LOWER.slice();if(!Array.isArray(SET.hidden))SET.hidden=[]}
+function logout(){Device.clear();if(RT){try{sb.removeChannel(RT)}catch(e){}RT=null}if(sb)sb.auth.signOut().catch(()=>{});Store=makeMem();Object.assign(S,{account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});closeModal();showAuth()}
 async function saveFileOut(name,txt){
   try{const d=window.claude&&typeof window.claude.use==='function'?await window.claude.use('downloads').catch(()=>null):null;if(d){await d.save({filename:name,data:new Blob([txt],{type:'application/json'})});return toast('已导出')}}catch(err){if(err&&err.code)return}
   try{const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));l.download=name;document.body.appendChild(l);l.click();l.remove();toast('已导出')}catch(err){toast('导出失败')}}
 function acctModal(){
-  modal(`<h3>${esc(S.account?.name||'')}</h3><p style="color:var(--mut);font-size:14px;margin:0 0 12px">${S.mode==='supa'?'云端账号（和 Ego 日记共用），内容加密':S.mode==='cloud'?'保存在你的 Claude 账户里，内容加密':'保存在这个浏览器里，内容加密'}</p>
-  <div style="display:grid;gap:8px"><button class="btn line" data-a="export">导出备份（JSON）</button><button class="btn line" data-a="import">导入备份</button><button class="btn line" data-a="pw">修改密码</button><button class="btn danger" data-a="out">退出登录</button></div>
+  modal(`<h3>${esc(S.account?.name||'')}</h3><p style="color:var(--mut);font-size:14px;margin:0 0 12px">${S.mode==='supa'?'云端账号（和 Lyra 日记共用），内容加密':S.mode==='cloud'?'保存在你的 Claude 账户里，内容加密':'保存在这个浏览器里，内容加密'}</p>
+  <div style="display:grid;gap:8px"><button class="btn line" data-a="backups">自动备份（每周）</button><button class="btn line" data-a="export">导出备份（JSON）</button><button class="btn line" data-a="import">导入备份</button><button class="btn line" data-a="pw">修改密码</button><button class="btn danger" data-a="out">退出登录</button></div>
   <input type="file" id="impF" accept=".json,application/json" hidden><div class="row"><button class="btn line" data-a="no">关闭</button></div>`);
   $('#box').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;
-    if(a==='no')return closeModal();if(a==='out')return logout();
+    if(a==='no')return closeModal();if(a==='out')return logout();if(a==='backups')return backupsModal();
     if(a==='export')return saveFileOut('lyra-hub-backup.json',JSON.stringify({app:'lyra-hub',v:1,at:new Date().toISOString(),sites:S.sites,plans:S.plans,work:S.work,timetable:S.tt,trip:S.meta.find(x=>x.id==='trip')||null}));
     if(a==='import'){const f=$('#impF');f.onchange=async()=>{const file=f.files[0];if(!file)return;try{const o=JSON.parse(await file.text());let n=0;
         for(const k of ['sites','plans','work'])for(const it of (Array.isArray(o[k])?o[k]:[]))if(it&&typeof it.id==='string'){const i=S[k].findIndex(x=>x.id===it.id);if(i<0)S[k].push(it);else S[k][i]=it;await DB.put(k,it);n++}
@@ -534,19 +602,163 @@ function acctModal(){
   };
 }
 /* ---------- time / greeting ---------- */
-/* ---------- clock, weather, sun, moon ---------- */
-const LAT=51.5246,LNG=-0.134; // UCL, London
-function tick(){const n=new Date();$('#clockH').textContent=pad(n.getHours());$('#clockM').textContent=pad(n.getMinutes());$('#clockS').textContent=pad(n.getSeconds());
-  const h=n.getHours();$('#greet').innerHTML=`${h<5?'夜深了':h<11?'早上好':h<14?'中午好':h<18?'下午好':'晚上好'}，<i>Lyra</i>`;
-  const dl=`<span><b>${n.getMonth()+1}月${n.getDate()}日</b> 星期${WD[n.getDay()]}</span><span>${n.getFullYear()}</span><span>伦敦</span>`;if($('#clockD').innerHTML!==dl)$('#clockD').innerHTML=dl}
-function sunTimes(day){const rad=Math.PI/180;const d=Date.UTC(day.getFullYear(),day.getMonth(),day.getDate(),12);const J=d/864e5+2440587.5;const nn=Math.round(J-2451545+0.0008);const Js=nn-LNG/360;
+/* ---------- settings (saved in the encrypted account, synced) ---------- */
+const ACCENTS=[['极光绿','#86d9c3'],['玫瑰','#e9b0c2'],['暖金','#e8c98e'],['冰蓝','#8fb8f0'],['薰衣草','#b9a4f0'],['珊瑚','#f0a08a']];
+const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439','--card2':'#1a2c45','--line':'#263b58'}],
+ deep:['深夜',{'--bg':'#0a0f1a','--bg2':'#070b14','--card':'#111827','--card2':'#162033','--line':'#22304a'}],
+ slate:['石板',{'--bg':'#151a22','--bg2':'#10141b','--card':'#1d232d','--card2':'#242b37','--line':'#323b4a'}],
+ ocean:['海洋',{'--bg':'#0c2230','--bg2':'#081a25','--card':'#112d3d','--card2':'#163a4d','--line':'#22506a'}],
+ forest:['森林',{'--bg':'#0f1f1c','--bg2':'#0a1715','--card':'#16302a','--card2':'#1b3a33','--line':'#28524a'}],
+ plum:['夜紫',{'--bg':'#1a1428','--bg2':'#130e1f','--card':'#231b36','--card2':'#2c2242','--line':'#3d3159'}]};
+const MODS=[['sky','天气 · 日出日落'],['terminal','终端'],['today','课表'],['trip','旅行倒计时'],['sites','我的'],['plans','计划'],['work','DDL'],['grades','成绩']];
+const LOWER=['sites','plans','work','grades'];
+const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
+let SET=structuredClone(DEF_SET);
+function inkFor(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#08261b';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1a24':'#ffffff'}
+function applySettings(){
+  const st=document.documentElement.style;const a=/^#[0-9a-f]{6}$/i.test(SET.accent)?SET.accent:DEF_SET.accent;st.setProperty('--acc',a);st.setProperty('--accInk',inkFor(a));
+  const B=(BGS[SET.bg]||BGS.night)[1];for(const k in B)st.setProperty(k,B[k]);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content',B['--bg']);
+  st.setProperty('--hf',SET.headFont==='sans'?'"Noto Sans SC","PingFang SC",sans-serif':'"Noto Serif SC","Songti SC",serif');
+  document.body.style.zoom={s:.92,m:1,l:1.1}[SET.size]||1;
+  const hid=new Set(SET.hidden||[]);
+  const el={sky:$('#sky'),terminal:$('#mod-terminal'),today:$('#mod-today'),trip:$('#trip'),sites:$('#sites-s'),plans:$('#plans-s'),work:$('#work-s'),grades:$('#grades-s')};
+  for(const [k,e] of Object.entries(el))if(e)e.classList.toggle('modoff',hid.has(k));
+  $('.hello')?.classList.toggle('nosky',hid.has('sky'));
+  $('.top')?.classList.toggle('noterm',hid.has('terminal'));$('.top')?.classList.toggle('noside',hid.has('today')&&hid.has('trip'));
+  const order=(SET.order||LOWER).filter(k=>LOWER.includes(k));for(const k of LOWER)if(!order.includes(k))order.push(k);
+  order.forEach((k,i)=>{if(el[k])el[k].style.order=i});
+  $('#lower')?.setAttribute('data-plans-work',order.indexOf('work')===order.indexOf('plans')+1&&!hid.has('plans')&&!hid.has('work')?'pair':'');
+}
+let setT=null;
+function saveSettings(){saveSettings.at=Date.now();applySettings();clearTimeout(setT);setT=setTimeout(()=>{const i=S.meta.findIndex(m=>m.id==='settings');if(i<0)S.meta.push(SET);else S.meta[i]=SET;DB.put('meta',SET)},500)}
+function settingsModal(){
+  const hid=new Set(SET.hidden||[]),order=(SET.order||LOWER);
+  const lowerRows=order.map((k,i)=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${MODS.find(m=>m[0]===k)[1]}</label><span><button class="ib2" data-up="${k}" ${i?'':'disabled'} aria-label="上移">↑</button><button class="ib2" data-down="${k}" ${i<order.length-1?'':'disabled'} aria-label="下移">↓</button></span></div>`).join('');
+  const topRows=MODS.filter(m=>!LOWER.includes(m[0])).map(([k,n])=>`<div class="mrow"><label><input type="checkbox" data-mod="${k}" ${hid.has(k)?'':'checked'}> ${n}</label></div>`).join('');
+  modal(`<h3>设置</h3><p class="sethint">所有设置都存在你的账号里，换设备也一样。</p>
+  <div class="setg"><h4>主题色</h4><div class="sw2">${ACCENTS.map(([n,c])=>`<button data-acc="${c}" style="--c:${c}" aria-pressed="${SET.accent===c}" title="${n}"><i></i><span>${n}</span></button>`).join('')}<label class="cust"><input type="color" id="accC" value="${esc(SET.accent)}"><span>自定义</span></label></div></div>
+  <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}</div></div>
+  <div class="setg two2"><div><h4>标题字体</h4><div class="chips wrapc"><button class="chip" data-hf="serif" aria-pressed="${SET.headFont!=='sans'}" style="font-family:'Noto Serif SC',serif">宋体</button><button class="chip" data-hf="sans" aria-pressed="${SET.headFont==='sans'}">黑体</button></div></div>
+    <div><h4>大小</h4><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-size="${k}" aria-pressed="${SET.size===k}">${n}</button>`).join('')}</div></div></div>
+  <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
+    <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
+    <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
+  <div class="setg"><h4>模块</h4><p class="sethint">勾选显示；下面四块可以调顺序。</p>${topRows}<div class="msep"></div>${lowerRows}</div>
+  <div class="setg two2"><div><h4>时间</h4><div class="chips wrapc"><button class="chip" data-c24="1" aria-pressed="${SET.clock24}">24 小时</button><button class="chip" data-c24="0" aria-pressed="${!SET.clock24}">12 小时</button></div></div>
+    <div><h4>温度</h4><div class="chips wrapc"><button class="chip" data-unit="C" aria-pressed="${SET.unit!=='F'}">°C</button><button class="chip" data-unit="F" aria-pressed="${SET.unit==='F'}">°F</button></div></div></div>
+  <div class="setg"><h4>问候里的名字</h4><input type="text" id="setName" value="${esc(SET.name||'')}" maxlength="20"></div>
+  <div class="row"><button class="btn line sp" data-a="reset">恢复默认</button><button class="btn pri" data-a="no">完成</button></div>`);
+  $('#box').classList.add('wide');
+  const re=()=>{const y=$('#box').scrollTop;settingsModal();$('#box').scrollTop=y};
+  $('#box').onclick=async e=>{const t=e.target.closest('button,input[type=checkbox]');if(!t)return;const d=t.dataset;
+    if(d.a==='no')return closeModal();
+    if(d.a==='reset'){SET={...structuredClone(DEF_SET)};saveSettings();renderAll();loadWeather(true);return re()}
+    if(d.acc){SET.accent=d.acc;saveSettings();return re()}
+    if(d.bg){SET.bg=d.bg;saveSettings();return re()}
+    if(d.hf){SET.headFont=d.hf;saveSettings();return re()}
+    if(d.size){SET.size=d.size;saveSettings();return re()}
+    if(d.c24){SET.clock24=d.c24==='1';saveSettings();tick();renderSky();return re()}
+    if(d.unit){SET.unit=d.unit;saveSettings();renderSky();return re()}
+    if(d.mod){const h=new Set(SET.hidden||[]);t.checked?h.delete(d.mod):h.add(d.mod);SET.hidden=[...h];saveSettings();return}
+    if(d.up||d.down){const k=d.up||d.down,o=(SET.order||LOWER).slice(),i=o.indexOf(k),j=d.up?i-1:i+1;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];SET.order=o;saveSettings();return re()}
+    if(d.pick){const r=JSON.parse(d.pick);SET.loc=r;WX=null;saveSettings();tick();renderSky();loadWeather(true);toast('地点已改为 '+r.name);return re()}
+    if(d.act==='geo'){if(!navigator.geolocation)return toast('这个浏览器不能定位');navigator.geolocation.getCurrentPosition(p=>{SET.loc={name:'当前位置',lat:+p.coords.latitude.toFixed(4),lng:+p.coords.longitude.toFixed(4),tz:Intl.DateTimeFormat().resolvedOptions().timeZone};WX=null;saveSettings();tick();renderSky();loadWeather(true);re()},()=>toast('没有拿到位置（可能没给定位权限）'));return}
+  };
+  $('#accC').oninput=e=>{SET.accent=e.target.value;saveSettings()};
+  $('#setName').oninput=e=>{SET.name=e.target.value.trim().slice(0,20);saveSettings();tick()};
+  $('#locF').onsubmit=async e=>{e.preventDefault();const q=$('#locQ').value.trim();if(!q)return;$('#locR').innerHTML='<div class="empty"><span class="spin"></span> 搜索中…</div>';
+    try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`);const j=await r.json();const L=(j.results||[]).filter(x=>x.timezone);
+      $('#locR').innerHTML=L.length?L.map(x=>`<button class="locr" data-pick="${esc(JSON.stringify({name:x.name,lat:+x.latitude.toFixed(4),lng:+x.longitude.toFixed(4),tz:x.timezone}))}"><b>${esc(x.name)}</b> <span>${esc([x.admin1,x.country].filter(Boolean).join(', '))}</span></button>`).join(''):'<div class="empty">没找到，换个写法试试（英文城市名最稳）。</div>'}
+    catch(err){$('#locR').innerHTML='<div class="empty">现在搜不了（可能没网，或者在 Claude 里打开时不能联网）。</div>'}};
+}
+
+/* ---------- sync status + realtime ---------- */
+const SY={pending:0,last:null,err:false,retry:[]};
+function track(fn){SY.pending++;renderSync();return fn().then(r=>{SY.last=Date.now();SY.err=false;return r},e=>{SY.err=true;SY.retry.push(fn);throw e}).finally(()=>{SY.pending--;renderSync()})}
+async function retrySync(){const q=SY.retry.splice(0);SY.err=false;renderSync();for(const fn of q){try{await track(fn)}catch(e){}}}
+function renderSync(){const el=$('#sync');if(!el)return;const local=S.mode==='local'||S.mode==='memory';
+  let t,c='';if(!navigator.onLine||OFFLINE){t='离线 · 联网后自动同步';c='warn'}else if(SY.err){t='同步失败 · 点这里重试';c='bad'}else if(SY.pending){t='同步中…';c='busy'}
+  else t=local?'只存在这台设备':`已同步${SY.last?' · '+new Date(SY.last).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}`;
+  el.className='sync '+c;el.textContent=t;el.title=S.mode==='supa'?'云端（Supabase），内容加密':S.mode==='cloud'?'Claude 账户里的私人数据库，内容加密':'只保存在这个浏览器'}
+addEventListener('online',()=>{OFFLINE=false;renderSync();retrySync();if(S.account)enterAccount(S.account,S.key,false,true)});addEventListener('offline',renderSync);
+let RT=null;
+async function startRealtime(){if(S.mode!=='supa'||!sb||RT)return;let uid=null;try{uid=(await sb.auth.getUser()).data.user.id}catch(e){}if(!uid)return;S.uid=uid;
+  const kinds=Object.fromEntries(Object.entries(HK).map(([k,v])=>[v,k]));
+  RT=sb.channel('lyra-'+uid).on('postgres_changes',{event:'*',schema:'public',table:'records',filter:'user_id=eq.'+uid},async p=>{
+      const row=p.eventType==='DELETE'?p.old:p.new;const k=kinds[row&&row.kind];if(!k)return;
+      if(k==='meta'&&row.id==='settings'&&Date.now()-(saveSettings.at||0)<4000)return;
+      if(p.eventType==='DELETE')S[k]=S[k].filter(x=>x.id!==row.id);
+      else{const o=await Store.dec(p.new);if(!o)return;const i=S[k].findIndex(x=>x.id===o.id);if(i<0)S[k].push(o);else if(JSON.stringify(S[k][i])===JSON.stringify(o))return;else S[k][i]=o}
+      SY.last=Date.now();deriveMeta();applySettings();renderAll();renderSync()})
+    .on('postgres_changes',{event:'*',schema:'public',table:'inbox',filter:'user_id=eq.'+uid},()=>loadInbox())
+    .subscribe()}
+
+/* ---------- grades ---------- */
+const TARGETS=[['First',70],['2:1',60],['2:2',50],['Pass',40]];
+function gradesDoc(){return S.meta.find(m=>m.id==='grades')||null}
+let grT=null;function saveGrades(g){clearTimeout(grT);grT=setTimeout(()=>DB.put('meta',g),600)}
+function calc(parts){let wk=0,got=0,wu=0;for(const p of parts){const w=+p.w||0;if(p.s!==''&&p.s!=null&&!isNaN(+p.s)){wk+=w;got+=w*(+p.s)/100}else wu+=w}return{wk,got,wu,avg:wk?got/wk*100:null}}
+function renderGrades(){const sec=$('#grades');if(!sec)return;const g=gradesDoc();
+  if(!g||!g.mods.length){sec.innerHTML=`<div class="empty">还没有课程。点「+ 课程」加一门，填上各部分占比和已出的分数，就能算出期末要考多少。</div>`;$('#gradeTargets').innerHTML='';return}
+  const T=g.target||70;
+  $('#gradeTargets').innerHTML=TARGETS.map(([n,v])=>`<button class="chip" data-gt="${v}" aria-pressed="${T===v}">${n} ${v}%</button>`).join('');
+  sec.innerHTML=g.mods.map((m,mi)=>{const c=calc(m.parts),tot=m.parts.reduce((a,p)=>a+(+p.w||0),0);
+    const need=c.wu?(T-c.got)/c.wu*100:null;
+    const verdict=c.wu===0?`总评 <b>${c.got.toFixed(1)}%</b>`:need<=0?`<span class="ok">已经稳拿 ${T}%</span>`:need>100?`<span class="bad">剩下全满分也到不了 ${T}%</span>`:`剩下 ${c.wu}% 要平均 <b>${need.toFixed(0)}%</b> 才能拿 ${T}%`;
+    return `<div class="gcard" style="--c:${cColor(m.code)}"><div class="gh"><input type="text" class="gcode" data-gm="${mi}" data-f="code" value="${esc(m.code)}" aria-label="课程代码"><button class="ib2" data-gdel="${mi}" aria-label="删除这门课">✕</button></div>
+      <div class="gp gph"><span>部分</span><span>占比</span><span>得分</span><span></span></div>
+      ${m.parts.map((p,pi)=>`<div class="gp"><input type="text" data-gm="${mi}" data-gp="${pi}" data-f="n" value="${esc(p.n)}" aria-label="部分名称"><span class="pc"><input type="number" inputmode="decimal" data-gm="${mi}" data-gp="${pi}" data-f="w" value="${esc(p.w)}" aria-label="占比">%</span><span class="pc"><input type="number" inputmode="decimal" data-gm="${mi}" data-gp="${pi}" data-f="s" value="${esc(p.s??'')}" placeholder="—" aria-label="得分">%</span><button class="ib2" data-gpdel="${mi}:${pi}" aria-label="删除这一项">✕</button></div>`).join('')}
+      <button class="tilebtn" data-gpadd="${mi}">+ 加一项</button>
+      <div class="gf"><div class="gbar"><i style="width:${Math.min(100,c.got)}%"></i><i class="u" style="width:${Math.min(100,c.wu)}%"></i></div>
+      <div>已出分 ${c.wk}% · 这部分平均 ${c.avg==null?'—':c.avg.toFixed(1)+'%'} · 目前累计 ${c.got.toFixed(1)} 分${tot!==100?` · <span class="bad">占比加起来是 ${tot}%</span>`:''}</div><div>${verdict}</div></div></div>`}).join('');
+}
+function gradesEvent(e){const g=gradesDoc();const t=e.target;const d=t.dataset;
+  if(e.type==='input'&&d.gm!=null){const m=g.mods[+d.gm];if(d.gp!=null){const p=m.parts[+d.gp];p[d.f]=d.f==='n'?t.value.slice(0,40):(t.value===''?'':+t.value)}else m.code=t.value.slice(0,20);saveGrades(g);
+    clearTimeout(gradesEvent.t);gradesEvent.t=setTimeout(()=>{const a=document.activeElement,k=a&&[a.dataset.gm,a.dataset.gp,a.dataset.f].join('|'),pos=a&&a.selectionStart;renderGrades();if(k){const n=[...document.querySelectorAll('#grades input')].find(x=>[x.dataset.gm,x.dataset.gp,x.dataset.f].join('|')===k);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}},700);return}
+}
+async function gradesClick(d){let g=gradesDoc();
+  if(d.gadd!=null){if(!g){g={id:'grades',target:70,mods:[]};S.meta.push(g)}g.mods.push({code:'NEW0000',parts:[{n:'Exam',w:80,s:''},{n:'Coursework',w:20,s:''}]});DB.put('meta',g);renderGrades();return true}
+  if(!g)return false;
+  if(d.gt){g.target=+d.gt;DB.put('meta',g);renderGrades();return true}
+  if(d.gpadd!=null){g.mods[+d.gpadd].parts.push({n:'',w:0,s:''});DB.put('meta',g);renderGrades();return true}
+  if(d.gpdel){const [a,b]=d.gpdel.split(':').map(Number);g.mods[a].parts.splice(b,1);DB.put('meta',g);renderGrades();return true}
+  if(d.gdel!=null){if(!(await askConfirm(`删除 ${g.mods[+d.gdel].code}？`)))return true;g.mods.splice(+d.gdel,1);DB.put('meta',g);renderGrades();return true}
+  return false}
+function askConfirm(msg){return new Promise(res=>{modal(`<h3>${esc(msg)}</h3><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn danger" data-a="yes">删除</button></div>`);$('#box').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;closeModal();res(a==='yes')}})}
+
+/* ---------- weekly encrypted backup in the cloud ---------- */
+async function autoBackup(){if(S.mode==='local'||S.mode==='memory')return;
+  const idx=S.meta.find(m=>m.id==='backups')||{id:'backups',list:[]};const last=idx.list[0];if(last&&Date.now()-last.at<7*864e5)return;
+  const snap={id:'b-'+dk(new Date()),at:Date.now(),sites:S.sites,plans:S.plans,work:S.work,meta:S.meta.filter(m=>m.id!=='backups')};
+  try{await Store.put('hubBackup',JSON.parse(JSON.stringify(snap)))}catch(e){return}
+  const list=[{id:snap.id,at:snap.at},...idx.list.filter(x=>x.id!==snap.id)];for(const old of list.slice(6))Store.del('hubBackup',old.id).catch(()=>{});
+  idx.list=list.slice(0,6);if(!S.meta.includes(idx))S.meta.push(idx);DB.put('meta',idx)}
+async function backupsModal(){const idx=S.meta.find(m=>m.id==='backups');const list=idx?idx.list:[];
+  modal(`<h3>自动备份</h3><p class="sethint">每周自动在云端存一份加密备份，保留最近 6 份。恢复会用那一份替换现在的网站、计划、DDL、成绩和设置。</p>
+   ${list.length?list.map(b=>`<div class="mrow"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})}</span><button class="btn line" data-restore="${esc(b.id)}">恢复这一份</button></div>`).join(''):'<div class="empty">还没有备份（第一次会在今天自动生成）。</div>'}
+   <div class="row"><button class="btn pri" data-a="no">关闭</button></div>`);
+  $('#box').onclick=async e=>{if(e.target.closest('[data-a=no]'))return closeModal();const r=e.target.closest('[data-restore]');if(!r)return;
+    if(!(await askConfirm('用这份备份替换现在的内容？')))return;const snap=await Store.get('hubBackup',r.dataset.restore);if(!snap)return toast('这份备份读不出来');
+    for(const k of ['sites','plans','work']){for(const x of S[k])if(!snap[k].some(y=>y.id===x.id))await DB.del(k,x.id);for(const x of snap[k])await DB.put(k,x);S[k]=snap[k]}
+    for(const m of snap.meta){await DB.put('meta',m)}S.meta=[...snap.meta,...S.meta.filter(m=>m.id==='backups')];deriveMeta();applySettings();renderAll();toast('已恢复')}}
+
+/* ---------- clock, weather, sun, moon (location from settings) ---------- */
+const loc=()=>SET.loc||DEF_SET.loc;
+function partsIn(d){const L=loc();try{const f=new Intl.DateTimeFormat('en-GB',{timeZone:L.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',weekday:'short',year:'numeric',month:'numeric',day:'numeric',hourCycle:'h23'}).formatToParts(d);const o={};f.forEach(p=>o[p.type]=p.value);return{h:+o.hour,m:+o.minute,s:+o.second,y:+o.year,mo:+o.month,d:+o.day,wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(o.weekday)}}catch(e){return{h:d.getHours(),m:d.getMinutes(),s:d.getSeconds(),y:d.getFullYear(),mo:d.getMonth()+1,d:d.getDate(),wd:d.getDay()}}}
+const tm=d=>{try{return new Intl.DateTimeFormat('en-GB',{timeZone:loc().tz,hour:'2-digit',minute:'2-digit',hour12:!SET.clock24}).format(d)}catch(e){return `${pad(d.getHours())}:${pad(d.getMinutes())}`}};
+function tick(){const p=partsIn(new Date());let H=p.h,ap='';if(!SET.clock24){ap=H<12?'AM':'PM';H=H%12||12}
+  $('#clockH').textContent=SET.clock24?pad(H):String(H);$('#clockM').textContent=pad(p.m);$('#clockS').textContent=ap?` ${ap}`:pad(p.s);
+  const g=`${p.h<5?'夜深了':p.h<11?'早上好':p.h<14?'中午好':p.h<18?'下午好':'晚上好'}，<i>${esc(SET.name||'Lyra')}</i>`;if($('#greet').innerHTML!==g)$('#greet').innerHTML=g;
+  const dl=`<span><b>${p.mo}月${p.d}日</b> 星期${WD[p.wd]}</span><span>${esc(loc().name)}</span>`;if($('#clockD').innerHTML!==dl)$('#clockD').innerHTML=dl}
+function sunTimes(day,lat,lng){const rad=Math.PI/180;const d=Date.UTC(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate(),12);const J=d/864e5+2440587.5;const nn=Math.round(J-2451545+0.0008);const Js=nn-lng/360;
   const M=(357.5291+0.98560028*Js)%360,C=1.9148*Math.sin(M*rad)+0.02*Math.sin(2*M*rad)+0.0003*Math.sin(3*M*rad),L=(M+C+180+102.9372)%360;
   const Jt=2451545+Js+0.0053*Math.sin(M*rad)-0.0069*Math.sin(2*L*rad),dec=Math.asin(Math.sin(L*rad)*Math.sin(23.4397*rad));
-  const cw=(Math.sin(-0.833*rad)-Math.sin(LAT*rad)*Math.sin(dec))/(Math.cos(LAT*rad)*Math.cos(dec));if(Math.abs(cw)>1)return null;
+  const cw=(Math.sin(-0.833*rad)-Math.sin(lat*rad)*Math.sin(dec))/(Math.cos(lat*rad)*Math.cos(dec));if(cw>1)return{polar:'night'};if(cw<-1)return{polar:'day'};
   const w=Math.acos(cw)/rad,T=j=>new Date((j-2440587.5)*864e5);return{rise:T(Jt-w/360),set:T(Jt+w/360)}}
 function moonInfo(now){const syn=29.530588853,age=(((now-Date.UTC(2000,0,6,18,14))/864e5)%syn+syn)%syn,p=age/syn,illum=(1-Math.cos(2*Math.PI*p))/2;
-  const name=p<.03||p>.97?'新月':p<.22?'蛾眉月':p<.28?'上弦月':p<.47?'盈凸月':p<.53?'满月':p<.72?'亏凸月':p<.78?'下弦月':'残月';
-  const next=p<.5?Math.round((.5-p)*syn):Math.round((1-p)*syn);return{p,illum,name,nextFull:p<.5?next:null,nextNew:p>=.5?next:null}}
+  const name=p<.03||p>.97?'New Moon':p<.22?'Waxing Crescent':p<.28?'First Quarter':p<.47?'Waxing Gibbous':p<.53?'Full Moon':p<.72?'Waning Gibbous':p<.78?'Last Quarter':'Waning Crescent';
+  const toFull=Math.round(((.5-p+1)%1)*syn),toNew=Math.round(((1-p)%1)*syn);return{p,illum,name,toFull,toNew}}
 function moonSvg(p,size){const r=size/2-1,c=size/2,x=Math.cos(2*Math.PI*p)*r,wax=p<.5,rx=Math.abs(x).toFixed(2);
   const s1=wax?1:0,s2=wax?(x>0?0:1):(x>0?1:0);
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="#22324d" stroke="#3a4f73"/><path d="M${c} ${c-r}A${r} ${r} 0 0 ${s1} ${c} ${c+r}A${rx} ${r} 0 0 ${s2} ${c} ${c-r}Z" fill="#f2ead0"/></svg>`}
@@ -560,31 +772,34 @@ const WX_ICON={
  snow:'<path d="M7 14h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="M8.5 17.5v.01M12 19.5v.01M15.5 17.5v.01M10 21v.01M14 21v.01"/>',
  storm:'<path d="M7 14h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="m12.5 15.5-2 3.5h3l-2 3.5"/>'
 };
-function wxDesc(c,day){if(c===0)return[day?'sun':'moon','晴'];if(c<=2)return[day?'partly':'cloud',c===1?'大致晴朗':'多云'];if(c===3)return['cloud','阴'];if(c<=48)return['fog','雾'];
-  if(c<=57)return['rain','毛毛雨'];if(c<=67)return['rain',c>=65?'大雨':c>=63?'中雨':'小雨'];if(c<=77)return['snow','下雪'];if(c<=82)return['rain','阵雨'];if(c<=86)return['snow','阵雪'];return['storm','雷雨']}
+function wxDesc(c,day){if(c===0)return[day?'sun':'moon','Clear'];if(c===1)return[day?'partly':'moon','Mainly clear'];if(c===2)return[day?'partly':'cloud','Partly cloudy'];if(c===3)return['cloud','Overcast'];if(c<=48)return['fog','Fog'];
+  if(c<=57)return['rain','Drizzle'];if(c<=67)return['rain',c>=65?'Heavy rain':c>=63?'Rain':'Light rain'];if(c<=77)return['snow','Snow'];if(c<=82)return['rain','Showers'];if(c<=86)return['snow','Snow showers'];return['storm','Thunderstorm']}
 const wxSvg=k=>`<svg class="wi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${WX_ICON[k]||WX_ICON.cloud}</svg>`;
+const deg=c=>SET.unit==='F'?`${Math.round(c*9/5+32)}°`:`${Math.round(c)}°`;
 let WX=null;
-async function loadWeather(){
-  try{const c=JSON.parse(localStorage.getItem('lyra-wx')||'null');if(c&&Date.now()-c.at<30*6e4){WX=c.d;renderSky();return}}catch(e){}
+async function loadWeather(force){
+  const L=loc(),key='lyra-wx:'+L.lat.toFixed(2)+','+L.lng.toFixed(2);
+  if(!force){try{const c=JSON.parse(localStorage.getItem(key)||'null');if(c&&Date.now()-c.at<30*6e4){WX=c.d;renderSky();return}}catch(e){}}
   try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),6000);
-    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LNG}&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe%2FLondon&forecast_days=1`,{signal:ctl.signal});
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${L.lat}&longitude=${L.lng}&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1`,{signal:ctl.signal});
     if(!r.ok)return;const j=await r.json();if(!j||!j.current)return;
-    WX={t:Math.round(j.current.temperature_2m),f:Math.round(j.current.apparent_temperature),c:+j.current.weather_code,day:!!j.current.is_day,wind:Math.round(j.current.wind_speed_10m),hi:Math.round(j.daily.temperature_2m_max[0]),lo:Math.round(j.daily.temperature_2m_min[0]),rain:j.daily.precipitation_probability_max[0]};
-    try{localStorage.setItem('lyra-wx',JSON.stringify({at:Date.now(),d:WX}))}catch(e){}renderSky()}catch(e){}
+    WX={t:j.current.temperature_2m,f:j.current.apparent_temperature,c:+j.current.weather_code,day:!!j.current.is_day,wind:Math.round(j.current.wind_speed_10m),hi:j.daily.temperature_2m_max[0],lo:j.daily.temperature_2m_min[0],rain:j.daily.precipitation_probability_max[0],tz:j.timezone};
+    try{localStorage.setItem(key,JSON.stringify({at:Date.now(),d:WX}))}catch(e){}renderSky()}catch(e){}
 }
-const hm=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
 function renderSky(){
-  const n=new Date(),st=sunTimes(n),mo=moonInfo(n);let h='';
-  if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div><div class="wt"><b>${WX.t}°</b><span>${de} · 体感 ${WX.f}°</span></div><small>最高 ${WX.hi}° · 最低 ${WX.lo}°${WX.rain!=null?` · 降雨概率 ${WX.rain}%`:''} · 风 ${WX.wind} km/h</small></div></div>`}
-  if(st){const day=st.set-st.rise,f=Math.min(1,Math.max(0,(n-st.rise)/day)),up=n>=st.rise&&n<=st.set;
-    const x=(f*100).toFixed(1),y=(34-Math.sin(f*Math.PI)*28).toFixed(1);
-    h+=`<div class="sun"><div><span>日出</span><b>${hm(st.rise)}</b></div><div class="arc"><svg viewBox="0 0 100 36" preserveAspectRatio="none"><path d="M2 34 Q50 -22 98 34" fill="none" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3.2" fill="var(--sun)"/>`:''}</svg></div><div style="text-align:right"><span>日落</span><b>${hm(st.set)}</b></div>
-      <div class="len">白天 ${Math.floor(day/36e5)} 小时 ${Math.round(day%36e5/6e4)} 分${up?` · 还有 ${fmtLeft(st.set-n)} 日落`:n<st.rise?` · ${fmtLeft(st.rise-n)} 后日出`:''}</div></div>`}
-  h+=`<div class="moonrow">${moonSvg(mo.p,30)}<span><b>${mo.name}</b> · 亮面 ${Math.round(mo.illum*100)}%${mo.nextFull!=null?` · ${mo.nextFull?mo.nextFull+' 天后满月':'今晚满月'}`:` · ${mo.nextNew?mo.nextNew+' 天后新月':'今天新月'}`}</span></div>`;
+  const L=loc(),n=new Date(),st=sunTimes(n,L.lat,L.lng),mo=moonInfo(n);let h=`<div class="skyh"><span>${esc(L.name)}</span><span>${tm(n)}</span></div>`;
+  if(WX){const [ic,de]=wxDesc(WX.c,WX.day);h+=`<div class="wx">${wxSvg(ic)}<div style="min-width:0"><div class="wt"><b>${deg(WX.t)}</b><span>${de}</span></div><small>Feels ${deg(WX.f)} · H ${deg(WX.hi)} L ${deg(WX.lo)} · Rain ${WX.rain??0}% · Wind ${WX.wind} km/h</small></div></div>`}
+  if(st.rise){const day=st.set-st.rise,f=Math.min(1,Math.max(0,(n-st.rise)/day)),up=n>=st.rise&&n<=st.set;const x=(f*100).toFixed(1),y=(26-Math.sin(f*Math.PI)*22).toFixed(1);
+    h+=`<div class="sun"><span>Sunrise <b>${tm(st.rise)}</b></span><svg class="arc" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="M2 26 Q50 -18 98 26" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>${up?`<circle cx="${x}" cy="${y}" r="3" fill="var(--sun)"/>`:''}</svg><span style="text-align:right">Sunset <b>${tm(st.set)}</b></span></div>
+      <div class="skys">${Math.floor(day/36e5)}h ${Math.round(day%36e5/6e4)}m daylight${up?` · sunset in ${fmtEn(st.set-n)}`:n<st.rise?` · sunrise in ${fmtEn(st.rise-n)}`:''}</div>`}
+  else h+=`<div class="skys">${st.polar==='night'?'Polar night — the sun stays below the horizon today':'Midnight sun — the sun does not set today'}</div>`;
+  h+=`<div class="moonrow">${moonSvg(mo.p,20)}<span><b>${mo.name}</b> · ${Math.round(mo.illum*100)}% lit · ${mo.name==='Full Moon'?`new moon in ${mo.toNew} days`:`full moon in ${mo.toFull} days`}</span></div>`;
   $('#sky').innerHTML=h}
+const fmtEn=ms=>{const h=Math.floor(ms/36e5),m=Math.round(ms%36e5/6e4);return h?`${h}h ${m}m`:`${m}m`};
 setInterval(tick,1000);
 setInterval(()=>{if(S.ready)renderToday();renderSky()},60000);
-setInterval(loadWeather,30*6e4);
+setInterval(()=>loadWeather(),30*6e4);
+
 
 /* ---------- today + trip ---------- */
 function renderToday(){
@@ -680,12 +895,17 @@ function planModal(p){
 
 /* ---------- inbox: new items found by the daily check (Outlook / Moodle e-mails) ---------- */
 let INBOX=null;S.inbox=[];
-async function loadInbox(){if(!INBOX)return;try{const q=await INBOX.limit(100).get();S.inbox=q.docs.filter(d=>d.exists).map(d=>({...structuredClone(d.data()),_id:d.id})).filter(x=>x&&typeof x.task==='string').sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')))}catch(e){S.inbox=[]}renderInbox()}
+const nk=t=>String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+const dupDDL=x=>S.work.some(w=>w.date===x.date&&(nk(w.task)===nk(x.task)||nk(w.task).includes(nk(x.task))||nk(x.task).includes(nk(w.task))));
+async function loadInbox(){if(S.mode==='supa'&&sb){try{const r=await sb.from('inbox').select('id,data,created_at').eq('status','new').order('created_at').limit(200);if(r.error)throw r.error;
+    const L=r.data.map(x=>({...(x.data||{}),_id:x.id})).filter(x=>typeof x.task==='string');S.inbox=[];const dup=[];for(const x of L)(x.date&&dupDDL(x)?dup:S.inbox).push(x);
+    S.inbox.sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')));if(dup.length)sb.from('inbox').update({status:'dup'}).in('id',dup.map(x=>x._id)).then(()=>{},()=>{})}catch(e){S.inbox=[]}return renderInbox()}
+  if(!INBOX)return;try{const q=await INBOX.limit(100).get();S.inbox=q.docs.filter(d=>d.exists).map(d=>({...structuredClone(d.data()),_id:d.id})).filter(x=>x&&typeof x.task==='string').sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')))}catch(e){S.inbox=[]}renderInbox()}
 function renderInbox(){const el=$('#inbox');if(!el)return;if(!S.inbox.length){el.innerHTML='';return}
-  el.innerHTML=`<div class="inbox"><div class="ih"><b>新消息 · ${S.inbox.length}</b><span>每天自动从邮件和 Moodle 通知里找到的</span></div>${S.inbox.map(x=>{const u=safeUrl(x.link);const isD=x.kind!=='notice'&&x.date;return `<div class="ii" style="--c:${cColor(x.course||'')}"><div style="min-width:0">${x.course?`<span class="crs" style="font-size:15px">${esc(x.course)}</span> `:''}<span class="itk">${esc(x.task)}</span><div class="m">${x.date?`<span class="when"><b>${md(String(x.date))}</b>${x.time?' · '+esc(x.time):''}</span>`:''}${x.weight?`<span>${esc(x.weight)}</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}${u?`<a href="${esc(u)}" style="color:var(--acc)">查看 →</a>`:''}</div></div><div class="ib">${isD?`<button class="btn pri" data-inadd="${esc(x._id)}">加入 DDL</button>`:''}<button class="btn line" data-inno="${esc(x._id)}">${isD?'忽略':'知道了'}</button></div></div>`}).join('')}</div>`}
+  el.innerHTML=`<div class="inbox"><div class="ih"><b>新消息 · ${S.inbox.length}</b><span>每天自动从 Moodle 找到的新截止日期</span></div>${S.inbox.map(x=>{const u=safeUrl(x.link);const isD=x.kind!=='notice'&&x.date;return `<div class="ii" style="--c:${cColor(x.course||'')}"><div style="min-width:0">${x.course?`<span class="crs" style="font-size:15px">${esc(x.course)}</span> `:''}<span class="itk">${esc(x.task)}</span><div class="m">${x.date?`<span class="when"><b>${md(String(x.date))}</b>${x.time?' · '+esc(x.time):''}</span>`:''}${x.weight?`<span>${esc(x.weight)}</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}${u?`<a href="${esc(u)}" style="color:var(--acc)">查看 →</a>`:''}</div></div><div class="ib">${isD?`<button class="btn pri" data-inadd="${esc(x._id)}">加入 DDL</button>`:''}<button class="btn line" data-inno="${esc(x._id)}">${isD?'忽略':'知道了'}</button></div></div>`}).join('')}</div>`}
 async function inboxResolve(id,add){const x=S.inbox.find(y=>y._id===id);if(!x)return;
   if(add){const it={id:uid(),status:S0,course:String(x.course||'').slice(0,40),task:String(x.task).slice(0,140),date:/^\d{4}-\d\d-\d\d$/.test(x.date)?x.date:null,time:/^\d\d:\d\d$/.test(x.time||'')?x.time:'',weight:String(x.weight||'').slice(0,40),note:String(x.note||'').slice(0,300)};S.work.push(it);await DB.put('work',it);renderWork();toast('已加入 DDL')}
-  S.inbox=S.inbox.filter(y=>y!==x);renderInbox();try{await INBOX.doc(id).delete()}catch(e){}}
+  S.inbox=S.inbox.filter(y=>y!==x);renderInbox();try{if(S.mode==='supa')await sb.from('inbox').update({status:add?'added':'ignored'}).eq('id',id);else await INBOX.doc(id).delete()}catch(e){}}
 /* ---------- DDL ---------- */
 const STS=[S0,S1,S2,S3];
 const isFin=w=>w.status===S2||w.status===S1;
@@ -826,13 +1046,16 @@ document.addEventListener('click',e=>{
   if(d.editwork){const w=S.work.find(x=>x.id===d.editwork);if(w)workModal(w);return}
   if(d.wf){S.wf=d.wf;renderWork();return}
   if(d.wc){S.wc=d.wc;renderWork();return}
-  const a=d.act;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
+  if(d.gadd!=null||d.gt||d.gpadd!=null||d.gpdel||d.gdel!=null){gradesClick(d);return}
+  const a=d.act;if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
 });
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 
 
-function renderAll(){renderToday();renderSites();renderPlans();renderWork()}
-tick();renderSky();loadWeather();
+function renderAll(){renderToday();renderSites();renderPlans();renderWork();renderGrades();renderInbox()}
+$('#grades').addEventListener('input',gradesEvent);
+applySettings();tick();renderSky();loadWeather();
+if('serviceWorker' in navigator&&location.protocol==='https:'&&/github\.io$/.test(location.hostname))navigator.serviceWorker.register('sw.js').catch(()=>{});
 print('欢迎回来。输入 help 查看命令，按 / 可以随时跳到这里。','ok');
 boot();
 }

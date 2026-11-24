@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f1b2d">
-<title>Ego 日记</title>
+<title>Lyra · 日记</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lyra">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet">
 <!--
@@ -17,15 +23,15 @@
    PICTURE: today's prompt as a pull-quote, then the timeline of entries
    COLOUR and TYPE: slate night ground, snow ink, aurora-teal accent and dates; Noto Serif SC headings and writing, Noto Sans SC UI
    LAYOUT: one centred column up to 760px; tab bar at bottom on phones, left rail on wide screens */
-:root{color-scheme:dark;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#5fb8a4;--rose:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--mark:rgba(134,217,195,.3);--hero:#0f1b2d}
+:root{color-scheme:dark;--hf:"Noto Serif SC","Songti SC",serif;--bg:#0f1b2d;--bg2:#0b1524;--card:#152439;--card2:#1a2c45;--line:#263b58;--ink:#eef3fa;--mut:#9fb1c9;--acc:#86d9c3;--acc2:#5fb8a4;--rose:#e9b0c2;--sun:#e8c98e;--accInk:#08261b;--mark:rgba(134,217,195,.3);--hero:#0f1b2d}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.serif{font-family:"Noto Serif SC","Songti SC",serif}
-.disp{font-family:"Noto Serif SC","Songti SC",serif;font-weight:900;letter-spacing:0;text-wrap:balance}
+.serif{font-family:var(--hf)}
+.disp{font-family:var(--hf);font-weight:900;letter-spacing:0;text-wrap:balance}
 .app{display:grid;grid-template-columns:minmax(0,1fr);min-height:100%;padding-bottom:76px}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
@@ -79,9 +85,9 @@ main{max-width:880px;width:100%;margin:0 auto}
 .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,#3ddc97)}
 .card:hover{border-color:var(--c,#3ddc97)}
 .card .d{text-align:center;padding-top:2px}
-.card .d b{display:block;font-size:26px;line-height:1;font-family:"Noto Serif SC",serif;font-weight:900;color:var(--acc)}
+.card .d b{display:block;font-size:26px;line-height:1;font-family:var(--hf);font-weight:900;color:var(--acc)}
 .card .d span{font-size:12px;color:var(--mut)}
-.card h3{margin:0 0 4px;font-size:17px;font-weight:700;font-family:"Noto Serif SC",serif;line-height:1.4}
+.card h3{margin:0 0 4px;font-size:17px;font-weight:700;font-family:var(--hf);line-height:1.4}
 .card p{margin:0;color:#b9c5dc;font-size:15px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12.5px;color:var(--mut);margin-top:9px;align-items:center}
 .meta span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
@@ -101,7 +107,7 @@ mark{background:var(--mark);color:#fff;border-radius:3px;padding:0 1px}
 .muted{color:var(--mut);font-size:14px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cal-head b{font-size:22px;font-family:"Noto Serif SC",serif;font-weight:700}
+.cal-head b{font-size:22px;font-family:var(--hf);font-weight:700}
 .icon{width:44px;height:44px;border-radius:22px;display:grid;place-items:center}
 .icon:hover{background:var(--card)}
 .icon svg{width:20px;height:20px}
@@ -115,7 +121,7 @@ mark{background:var(--mark);color:#fff;border-radius:3px;padding:0 1px}
 .day.has{font-weight:700;background:var(--card2)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-.stat b{display:block;font-size:clamp(28px,6vw,36px);line-height:1.1;font-family:"Noto Serif SC",serif;font-weight:700;color:var(--acc)}
+.stat b{display:block;font-size:clamp(28px,6vw,36px);line-height:1.1;font-family:var(--hf);font-weight:700;color:var(--acc)}
 .stat span{font-size:13px;color:var(--mut)}
 .hbar{display:grid;grid-template-columns:5.5em minmax(0,1fr) 2.5em;gap:8px;align-items:center;font-size:14px;margin:7px 0}
 .hbar .t{height:12px;background:var(--card2);border-radius:6px;overflow:hidden}
@@ -158,8 +164,8 @@ textarea{resize:vertical}
 .sh-top .st{flex:1;font-size:13px;color:var(--mut);text-align:center}
 .sh-body{flex:1;overflow-y:auto;padding:16px max(5vw,18px) 120px;max-width:760px;width:100%;margin:0 auto}
 .ed-meta{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
-.ed-title{border:0!important;padding:14px 0 4px!important;font-size:26px!important;font-weight:700;font-family:"Noto Serif SC",serif;background:none!important;outline:none}
-.ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.9;font-family:"Noto Serif SC",serif;min-height:40vh;background:none!important;outline:none;resize:none}
+.ed-title{border:0!important;padding:14px 0 4px!important;font-size:26px!important;font-weight:700;font-family:var(--hf);background:none!important;outline:none}
+.ed-text{border:0!important;padding:6px 0!important;font-size:17px!important;line-height:1.9;font-family:var(--hf);min-height:40vh;background:none!important;outline:none;resize:none}
 .tools{position:sticky;bottom:0;display:flex;gap:4px;overflow-x:auto;padding:8px max(4vw,10px);border-top:1px solid var(--line);background:var(--bg2);padding-bottom:max(8px,env(safe-area-inset-bottom))}
 .tools button{flex:none;height:44px;padding:0 12px;border-radius:12px;display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap;color:var(--ink)}
 .tools button:hover{background:var(--card)}
@@ -207,10 +213,10 @@ main{max-width:760px}
 .hero{background:none;border:0;padding:26px max(5vw,18px) 6px;overflow:visible}
 .hero h1{font-size:clamp(28px,6vw,40px);margin:0 0 4px}
 .hero .sub{font-size:14px}
-.hero .prompt{margin:16px 0 14px;padding:14px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 14px 14px 0;font-family:"Noto Serif SC",serif;font-size:17px;max-width:none}
+.hero .prompt{margin:16px 0 14px;padding:14px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 14px 14px 0;font-family:var(--hf);font-size:17px;max-width:none}
 .hero .otd{border-top:0;padding-top:4px}
 .bar{background:rgba(15,27,45,.96)}
-.month{font-family:"Noto Serif SC",serif;font-size:20px;font-weight:900;color:var(--ink);letter-spacing:0;margin:30px 0 12px}
+.month{font-family:var(--hf);font-size:20px;font-weight:900;color:var(--ink);letter-spacing:0;margin:30px 0 12px}
 .month::after{display:none}
 .list{position:relative}
 .card{overflow:visible;background:none;border:0;border-radius:0;margin:0;padding:0 0 22px 26px;grid-template-columns:minmax(0,1fr);gap:6px;border-left:2px solid var(--line);margin-left:7px}
@@ -229,7 +235,7 @@ main{max-width:760px}
   .app{grid-template-columns:250px minmax(0,1fr);padding-bottom:0}
   .tabs{display:none}
   .rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;padding:24px 14px;border-right:1px solid var(--line);overflow-y:auto;background:var(--bg2)}
-  .rail .brand{font-family:"Noto Serif SC",serif;font-size:28px;padding:0 10px 16px;color:var(--ink)}
+  .rail .brand{font-family:var(--hf);font-size:28px;padding:0 10px 16px;color:var(--ink)}
   .rail .brand i{color:var(--acc);font-style:normal}
   .rail button{height:40px;border-radius:10px;padding:0 10px;text-align:left;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink)}
   .rail button:hover{background:var(--card)}
@@ -268,7 +274,7 @@ main{max-width:760px}
 <div class="toast" id="toast" hidden></div>
 <div class="lock snow" id="auth" hidden>
   <form class="auth" id="authForm" autocomplete="on">
-    <div class="disp" style="font-size:44px;line-height:1.1">Ego <span style="color:var(--acc)">日记</span></div>
+    <div class="disp" style="font-size:44px;line-height:1.1">Lyra <span style="color:var(--acc)">日记</span></div>
     <p style="margin:6px 0 18px;opacity:.85" id="authSub">每个账号的日记都用自己的密码加密保存。</p>
     <div class="seg" role="tablist"><button type="button" data-mode="login" aria-pressed="true">登录</button><button type="button" data-mode="register" aria-pressed="false">创建账号</button></div>
     <label for="auName">用户名</label><input type="text" id="auName" autocomplete="username" required maxlength="30">
@@ -360,10 +366,17 @@ function makeRemote(base){return{
   put(k,o){const body=JSON.parse(JSON.stringify(o));return this.q(k+'/'+o.id,()=>this.col(k).doc(o.id).set(body))},
   del(k,id){return this.q(k+'/'+id,()=>this.col(k).doc(id).delete())}
 }}
+/* encrypted rows are cached in this browser so the app still opens offline */
+const RowCache={db:null,async open(){if(this.db)return this.db;this.db=await new Promise((res,rej)=>{const r=indexedDB.open('lyra-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('kinds');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return this.db},
+  async get(k){try{const d=await this.open();return await new Promise(res=>{const q=d.transaction('kinds').objectStore('kinds').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)})}catch(e){return null}},
+  async set(k,v){try{const d=await this.open();d.transaction('kinds','readwrite').objectStore('kinds').put(v,k)}catch(e){}}};
+let OFFLINE=false;
 function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
   async open(){return this},
-  async all(k){const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}return out},
-  async get(k,id){return chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle())},
+  async all(k){try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
+    catch(e){const c=await RowCache.get('all:'+k);if(c){OFFLINE=true;return c}throw e}},
+  async get(k,id){try{const r=chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle());RowCache.set('one:'+k+'/'+id,r);return r}
+    catch(e){const c=await RowCache.get('one:'+k+'/'+id);if(c!==null){OFFLINE=true;return c}throw e}},
   async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
   async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
   async clear(k){chk(await T().delete().eq('kind',k))}
@@ -519,7 +532,38 @@ async function enterAccount(acc,key,isNew){
   let moved=0;if(isNew)moved=await migrateLegacy();
   if(!S.notebooks.length){const nb={id:uid(),name:'我的日记',color:COLORS[0],created:Date.now(),order:0};S.notebooks.push(nb);Store.put('notebooks',nb).catch(()=>{})}
   render();if(moved)toast(`之前保存的 ${moved} 篇日记已加密放进这个账号`,5000);
+  if(OFFLINE)toast('离线模式：显示的是这台设备上次同步的内容',4000);
+  applyHubTheme();startRealtime();setTimeout(autoBackup,5000);
 }
+/* theme chosen in Lyra settings (shared account) */
+const JBGS={night:['#0f1b2d','#0b1524','#152439','#1a2c45','#263b58'],deep:['#0a0f1a','#070b14','#111827','#162033','#22304a'],slate:['#151a22','#10141b','#1d232d','#242b37','#323b4a'],ocean:['#0c2230','#081a25','#112d3d','#163a4d','#22506a'],forest:['#0f1f1c','#0a1715','#16302a','#1b3a33','#28524a'],plum:['#1a1428','#130e1f','#231b36','#2c2242','#3d3159']};
+async function applyHubTheme(){let st=null;try{st=await Store.get('hubMeta','settings')}catch(e){}if(!st)return;const r=document.documentElement.style;
+  if(/^#[0-9a-f]{6}$/i.test(st.accent||'')){const n=parseInt(st.accent.slice(1),16);r.setProperty('--acc',st.accent);r.setProperty('--acc2',st.accent);r.setProperty('--mark',`rgba(${n>>16&255},${n>>8&255},${n&255},.3)`);r.setProperty('--accInk',(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))>150?'#0b1a24':'#ffffff')}
+  const B=JBGS[st.bg];if(B){['--bg','--bg2','--card','--card2','--line'].forEach((k,i)=>r.setProperty(k,B[i]));r.setProperty('--hero',B[0]);document.querySelector('meta[name=theme-color]')?.setAttribute('content',B[0])}
+  r.setProperty('--hf',st.headFont==='sans'?'"Noto Sans SC","PingFang SC",sans-serif':'"Noto Serif SC","Songti SC",serif')}
+/* live updates from other devices */
+let RT=null;
+async function startRealtime(){if(S.mode!=='supa'||!sb||RT)return;let id=null;try{id=(await sb.auth.getUser()).data.user.id}catch(e){}if(!id)return;
+  RT=sb.channel('lyra-j-'+id).on('postgres_changes',{event:'*',schema:'public',table:'records',filter:'user_id=eq.'+id},async p=>{
+    const row=p.eventType==='DELETE'?p.old:p.new;if(!row)return;
+    if(row.kind==='hubMeta'&&row.id==='settings')return applyHubTheme();
+    if(row.kind!=='entries'&&row.kind!=='notebooks')return;if(S.ed&&S.ed.id===row.id)return;
+    const L=row.kind==='entries'?'entries':'notebooks';
+    if(p.eventType==='DELETE'){S[L]=S[L].filter(x=>x.id!==row.id)}
+    else{const o=await Store.dec(p.new);if(!o)return;const v=L==='entries'?fixEntry(o):o;const i=S[L].findIndex(x=>x.id===v.id);if(i>=0&&JSON.stringify(S[L][i])===JSON.stringify(v))return;if(i<0)S[L].push(v);else S[L][i]=v}
+    clearTimeout(startRealtime.t);startRealtime.t=setTimeout(()=>{if($('#editor').hidden&&$('#modal').hidden)render()},400)}).subscribe()}
+/* weekly text-only backup (photos excluded) kept in the cloud, last 4 */
+async function autoBackup(){if(S.mode==='local'||S.mode==='memory')return;let idx=null;try{idx=await Store.get('meta','backups')}catch(e){return}idx=idx||{id:'backups',list:[]};
+  if(idx.list[0]&&Date.now()-idx.list[0].at<7*864e5)return;const d=new Date(),id='jb-'+d.toISOString().slice(0,10);
+  try{await Store.put('journalBackup',{id,at:Date.now(),notebooks:S.notebooks,entries:S.entries.map(e=>({...e,photos:[]}))})}catch(e){return}
+  const list=[{id,at:Date.now(),n:S.entries.length},...idx.list.filter(x=>x.id!==id)];for(const o of list.slice(4))Store.del('journalBackup',o.id).catch(()=>{});idx.list=list.slice(0,4);Store.put('meta',idx).catch(()=>{})}
+async function restoreJournal(){let idx=null;try{idx=await Store.get('meta','backups')}catch(e){}const list=idx?idx.list:[];
+  modal(`<h3>自动备份</h3><p class="muted">每周在云端自动存一份加密的文字备份（不含照片），保留最近 4 份。恢复只会把备份里有、现在缺的日记加回来，不会删除任何东西。</p>${list.length?list.map(b=>`<div class="row" style="justify-content:space-between"><span>${new Date(b.at).toLocaleString('zh-CN',{hour12:false})} · ${b.n} 篇</span><button class="btn line" data-rb="${esc(b.id)}">恢复</button></div>`).join(''):'<p class="muted">还没有备份。</p>'}<div class="row"><button class="btn pri" data-a="no">关闭</button></div>`);
+  $('#modalBox').onclick=async e=>{if(e.target.closest('[data-a=no]')){$('#modalBox').onclick=null;return closeModal()}const b=e.target.closest('[data-rb]');if(!b)return;
+    const snap=await Store.get('journalBackup',b.dataset.rb);if(!snap)return toast('这份备份读不出来');let n=0;
+    for(const nb of snap.notebooks)if(!S.notebooks.some(x=>x.id===nb.id)){S.notebooks.push(nb);await Store.put('notebooks',nb)}
+    for(const en of snap.entries)if(!S.entries.some(x=>x.id===en.id)){S.entries.push(fixEntry(en));await Store.put('entries',en);n++}
+    $('#modalBox').onclick=null;closeModal();render();toast(n?`加回了 ${n} 篇`:'没有缺少的日记')}}
 /* data saved by the first version (no accounts, not encrypted) moves into the first new account */
 async function migrateLegacy(){const L=Sys.legacy;if(!L)return 0;
   try{const [nbs,ens,meta]=await Promise.all([L.all('notebooks'),L.all('entries'),L.all('meta')]);if(!ens.length&&!nbs.length)return 0;
@@ -527,7 +571,7 @@ async function migrateLegacy(){const L=Sys.legacy;if(!L)return 0;
     for(const e of ens){for(const p of e.photos||[]){const ph=await L.get('photos',p);if(ph){await Store.put('photos',ph);await L.del('photos',p)}}await Store.put('entries',e);S.entries.push(fixEntry(e));await L.del('entries',e.id)}
     for(const nb of nbs)await L.del('notebooks',nb.id);for(const m of meta)await L.del('meta',m.id);
     S.notebooks.sort((a,b)=>(a.order??0)-(b.order??0));return ens.length}catch(e){return 0}}
-function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
+function logout(){Device.clear();if(RT){try{sb.removeChannel(RT)}catch(e){}RT=null}if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
 async function changePassword(){
   modal(`<h3>修改密码</h3><div class="field"><label for="cp0">当前密码</label><input type="password" id="cp0" autocomplete="current-password"></div><div class="field"><label for="cp1">新密码（至少 6 位）</label><input type="password" id="cp1" autocomplete="new-password"></div><div class="field"><label for="cp2">再输入一次</label><input type="password" id="cp2" autocomplete="new-password"></div><p class="muted" id="cpMsg"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
@@ -661,7 +705,7 @@ function go(v){S.view=v;render();window.scrollTo(0,0)}
 function render(){
   $('#tabs').innerHTML=VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}">${i}<span>${n}</span></button>`).join('');
   const counts={};S.entries.forEach(e=>counts[e.nb]=(counts[e.nb]||0)+1);
-  $('#rail').innerHTML=`<a href="${esc(HOME_URL)}" style="color:var(--mut);font-size:13px;padding:0 10px 10px;text-decoration:none">← Lyra 的终端</a><div class="brand">Ego <i>日记</i></div>`+VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}"><span style="width:20px;height:20px;display:inline-flex">${i}</span>${n}</button>`).join('')+
+  $('#rail').innerHTML=`<a href="${esc(HOME_URL)}" style="color:var(--mut);font-size:13px;padding:0 10px 10px;text-decoration:none">← Lyra</a><div class="brand">Lyra <i>日记</i></div>`+VIEWS.map(([k,n,i])=>`<button data-go="${k}" aria-current="${S.view===k}"><span style="width:20px;height:20px;display:inline-flex">${i}</span>${n}</button>`).join('')+
    `<div class="lab">分区</div><button data-nb="all" aria-current="${S.view==='journal'&&S.nb==='all'}"><span class="dot" style="background:var(--ink)"></span>全部日记<em>${S.entries.length}</em></button>`+
    S.notebooks.map(n=>`<button class="nb" style="--c:${esc(n.color)}" data-nb="${esc(n.id)}" aria-current="${S.view==='journal'&&S.nb===n.id}">${esc(n.name)}<em>${counts[n.id]||0}</em></button>`).join('')+
    `<button data-act="newnb" style="color:var(--mut)">+ 新建分区</button><div class="lab">${esc(S.account?.name||'')}</div><button data-act="logout" style="color:var(--mut)">退出登录</button>`;
@@ -770,13 +814,13 @@ function renderSettings(){
   <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
   <h3>导出与备份</h3><p class="muted">JSON 是完整备份（含照片），可以在任何地方用本应用再导入到某个账号；导出的文件<b>不加密</b>，请妥善保存。Markdown 方便阅读或放进其他笔记软件。</p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button></div>
   <h3>分区</h3>${S.notebooks.map(n=>`<div class="nbrow"><div><input type="text" value="${esc(n.name)}" data-nbname="${esc(n.id)}" aria-label="分区名称"><div class="swatches">${COLORS.map(c=>`<button class="sw" style="background:${c}" data-nbcolor="${esc(n.id)}" data-c="${c}" aria-pressed="${n.color===c}" aria-label="颜色"></button>`).join('')}</div></div><button class="btn danger" data-nbdel="${esc(n.id)}" ${S.notebooks.length<2?'disabled':''}>删除</button></div>`).join('')}
   <button class="btn line" data-act="newnb" style="margin-top:12px">+ 新建分区</button>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
-  <h3>关于</h3><p class="muted">Ego 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
+  <h3>关于</h3><p class="muted">Lyra 日记 · 开源（MIT 许可）· 单个 HTML 文件，没有服务器。可以把源码放到 GitHub Pages 或任何静态网站上自己托管，数据会存在浏览器里。</p></section>`;
 }
 
 /* ---------- editor ---------- */
@@ -1019,7 +1063,7 @@ async function exportJson(){toast('正在打包照片…',10000);const photos=[]
   const obj={app:'ego-journal',version:1,exported:new Date().toISOString(),notebooks:S.notebooks,entries:S.entries,photos,reports:[...S.reports.values()]};
   await saveFile(`ego-journal-${dayKey(new Date())}.json`,JSON.stringify(obj),'application/json')}
 function exportMd(){const list=[...S.entries].sort((a,b)=>a.date.localeCompare(b.date));
-  const md='# Ego 日记\n\n'+list.map(e=>`## ${e.date.replace('T',' ')}${e.title?' · '+e.title:''}\n\n`+`*${nbById(e.nb)?.name||''}${e.mood?' · '+MOODS[e.mood-1].n:''}${e.place?' · '+e.place:''}${e.tags.length?' · '+e.tags.map(t=>'#'+t).join(' '):''}*\n\n${e.body}\n`).join('\n');
+  const md='# Lyra 日记\n\n'+list.map(e=>`## ${e.date.replace('T',' ')}${e.title?' · '+e.title:''}\n\n`+`*${nbById(e.nb)?.name||''}${e.mood?' · '+MOODS[e.mood-1].n:''}${e.place?' · '+e.place:''}${e.tags.length?' · '+e.tags.map(t=>'#'+t).join(' '):''}*\n\n${e.body}\n`).join('\n');
   saveFile(`ego-journal-${dayKey(new Date())}.md`,md,'text/markdown')}
 
 
@@ -1052,7 +1096,7 @@ document.addEventListener('click',async ev=>{
     else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
     else if(a==='pickimport')$('#fileImport').click();
     else if(a==='paste')pasteImport();
-    else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
     else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
     else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
     else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
@@ -1072,6 +1116,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 init();
 }
+if('serviceWorker' in navigator&&location.protocol==='https:'&&/github\.io$/.test(location.hostname))navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(()=>{});
 </script>
 </body>
 </html>
