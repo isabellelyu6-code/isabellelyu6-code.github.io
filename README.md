@@ -23,6 +23,18 @@ An open-source, single-file journal app inspired by Apple Journal. MIT licensed.
 - Changing the password only re-wraps the data key. **Forgetting the password means the data cannot be recovered.**
 - JSON exports are *not* encrypted, so keep them safe.
 
+## 云端同步（任何浏览器都能登录）Cloud sync with Supabase
+Without this, accounts live only in the browser where they were created.
+1. Create a free project at https://supabase.com.
+2. Open **SQL Editor**, paste [`supabase.sql`](supabase.sql), and click Run.
+3. Go to **Authentication → Sign In / Providers → Email** and turn off **Confirm email**, or keep it on and confirm by email.
+4. In **Project Settings → API**, copy the **Project URL** and the **anon public** key into the two constants at the top of the `<script>` in `index.html` (`SUPABASE_URL`, `SUPABASE_ANON_KEY`).
+
+Notes:
+- The anon key is meant to be public. Row Level Security limits each user to their own rows.
+- Everything is encrypted in the browser before upload, so Supabase only stores ciphertext.
+- The login password is also the encryption password. Resetting it through Supabase's "forgot password" makes old entries unreadable. Change the password inside the app instead.
+
 ## 数据存储 Storage
 - **As a Claude artifact**: encrypted records are kept in the artifact's private per-user database (`data/users/<id>/acc-<account>/...`) and sync across your devices.
 - **Self-hosted** (open `index.html`, or host it on GitHub Pages or any static host): encrypted records are kept in the browser's IndexedDB on that device (`ego-accounts`, `ego-acc-<account>`). Export backups regularly.

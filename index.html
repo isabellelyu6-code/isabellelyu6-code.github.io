@@ -216,6 +216,9 @@ textarea{resize:vertical}
 
 <script>
 {
+/* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
+const SUPABASE_URL='';      // e.g. https://abcd1234.supabase.co
+const SUPABASE_ANON_KEY=''; // the project's "anon public" key (safe to publish; rows are protected by RLS)
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -273,6 +276,15 @@ function makeRemote(base){return{
   put(k,o){const body=JSON.parse(JSON.stringify(o));return this.q(k+'/'+o.id,()=>this.col(k).doc(o.id).set(body))},
   del(k,id){return this.q(k+'/'+id,()=>this.col(k).doc(id).delete())}
 }}
+function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
+  async open(){return this},
+  async all(k){const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}return out},
+  async get(k,id){return chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle())},
+  async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
+  async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
+  async clear(k){chk(await T().delete().eq('kind',k))}
+}}
+let sb=null;
 /* ---------- encryption (AES-GCM 256, key wrapped by PBKDF2-SHA256 of the password) ---------- */
 const TE=new TextEncoder(),TD=new TextDecoder();
 const b64=buf=>{const a=new Uint8Array(buf);let s='';for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s)};
@@ -308,7 +320,15 @@ async function init(){
   }
   let id=null;
   if(db&&user){try{id=await user.id()}catch(e){}}
-  if(db&&id){
+  if(!(db&&id)&&SUPABASE_URL&&SUPABASE_ANON_KEY){
+    try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){sb=null;S.banner='连不上云端，暂时只能用这台设备上的本地账号。'}
+  }
+  if(sb){
+    S.mode='supa';const raw=makeSupa(sb);
+    Sys.accounts={async all(){try{const r=await raw.get('sys','account');return r?[JSON.parse(r.ct)]:[]}catch(e){return[]}},put:(k,a)=>raw.put('sys',{id:'account',iv:'',ct:JSON.stringify(a)}),del:()=>raw.del('sys','account')};
+    Sys.mkData=()=>Promise.resolve(raw);
+    Sys.legacy=null;
+  }else if(db&&id){
     const root='data/users/'+id;S.mode='cloud';
     Sys.accounts=makeRemote(db.doc(root+'/system'));
     Sys.mkData=acc=>makeRemote(db.doc(root+'/acc-'+acc.id)).open();
@@ -328,8 +348,9 @@ let authMode='login';
 async function listAccounts(){try{return await Sys.accounts.all('accounts')}catch(e){return[]}}
 async function showAuth(){
   $('#main').innerHTML='';$('#auth').hidden=false;
-  $('#auWhere').textContent={cloud:'账号和加密后的日记保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的日记保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
-  const accs=await listAccounts();setAuthMode(accs.length?'login':'register');
+  const supa=S.mode==='supa';$('label[for=auName]').textContent=supa?'邮箱':'用户名';$('#auName').type=supa?'email':'text';$('#auName').autocomplete=supa?'email':'username';$('#auName').maxLength=supa?120:30;
+  $('#auWhere').textContent={supa:'账号在云端：任何浏览器、任何设备都能登录。日记在你的设备上加密以后才上传，云端只存加密后的内容。',cloud:'账号和加密后的日记保存在你 Claude 账户里这个页面的私人数据库中，换设备也能登录。',local:'账号和加密后的日记保存在这个浏览器里，只能在这台设备上登录。',memory:'这个浏览器不能保存数据。'}[S.mode];
+  const accs=supa?[]:await listAccounts();setAuthMode(supa||accs.length?'login':'register');
   if(accs.length===1)$('#auName').value=accs[0].name;
   setTimeout(()=>($('#auName').value?$('#auPw'):$('#auName')).focus(),60);
 }
@@ -341,7 +362,19 @@ $('#authForm').addEventListener('submit',async ev=>{ev.preventDefault();const go
   const name=$('#auName').value.trim(),pw=$('#auPw').value;if(!name||!pw)return;
   go.disabled=true;msg.innerHTML='<span class="spin"></span> '+(authMode==='register'?'正在创建…':'正在解锁…');
   try{
-    const accs=await listAccounts();const acc=accs.find(a=>a.name.toLowerCase()===name.toLowerCase());
+    if(S.mode==='supa'){
+      if(authMode==='register'){
+        if(pw.length<6)throw new Error('密码至少 6 位');if(pw!==$('#auPw2').value)throw new Error('两次密码不一样');
+        const r=await sb.auth.signUp({email:name,password:pw});
+        if(r.error)throw new Error(/registered|exists/i.test(r.error.message)?'这个邮箱已经注册过了，请直接登录':'注册失败：'+r.error.message);
+        if(!r.data.session)throw new Error('请先去邮箱点确认链接，然后回来登录');
+      }else{
+        const r=await sb.auth.signInWithPassword({email:name,password:pw});
+        if(r.error)throw new Error(/invalid/i.test(r.error.message)?'邮箱或密码不对':/confirm/i.test(r.error.message)?'请先去邮箱点确认链接':'登录失败：'+r.error.message);
+      }
+    }
+    const accs=await listAccounts();let acc=accs.find(a=>a.name.toLowerCase()===name.toLowerCase())||(S.mode==='supa'?accs[0]:null);
+    if(S.mode==='supa'&&authMode==='login'&&!acc){authMode='register';$('#auPw2').value=pw}
     if(authMode==='register'){
       if(acc)throw new Error('这个用户名已经有了，请直接登录');
       if(pw.length<6)throw new Error('密码至少 6 位');
@@ -381,7 +414,7 @@ async function migrateLegacy(){const L=Sys.legacy;if(!L)return 0;
     for(const e of ens){for(const p of e.photos||[]){const ph=await L.get('photos',p);if(ph){await Store.put('photos',ph);await L.del('photos',p)}}await Store.put('entries',e);S.entries.push(fixEntry(e));await L.del('entries',e.id)}
     for(const nb of nbs)await L.del('notebooks',nb.id);for(const m of meta)await L.del('meta',m.id);
     S.notebooks.sort((a,b)=>(a.order??0)-(b.order??0));return ens.length}catch(e){return 0}}
-function logout(){persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
+function logout(){if(sb)sb.auth.signOut().catch(()=>{});persist();stopMic();Store=makeMem();S.account=null;S.entries=[];S.notebooks=[];S.photos=new Map();$('#editor').hidden=true;closeModal();showAuth()}
 async function changePassword(){
   modal(`<h3>修改密码</h3><div class="field"><label for="cp0">当前密码</label><input type="password" id="cp0" autocomplete="current-password"></div><div class="field"><label for="cp1">新密码（至少 6 位）</label><input type="password" id="cp1" autocomplete="new-password"></div><div class="field"><label for="cp2">再输入一次</label><input type="password" id="cp2" autocomplete="new-password"></div><p class="muted" id="cpMsg"></p><div class="row"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">保存</button></div>`);
   $('#modalBox').onclick=async e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=null;return closeModal()}
@@ -390,11 +423,11 @@ async function changePassword(){
     m.innerHTML='<span class="spin"></span> 正在处理…';
     let raw;try{raw=await open_(await deriveKek(p0,ub64(acc.salt),acc.iter||ITER),acc.wk)}catch(err){return m.textContent='当前密码不对'}
     const salt=crypto.getRandomValues(new Uint8Array(16));const na={...acc,salt:b64(salt),iter:ITER,wk:await seal(await deriveKek(p1,salt,ITER),raw)};
-    try{await Sys.accounts.put('accounts',na);S.account=na;$('#modalBox').onclick=null;closeModal();toast('密码已修改')}catch(err){m.textContent='保存失败，请再试'}}}
+    try{if(S.mode==='supa'){const r=await sb.auth.updateUser({password:p1});if(r.error)throw r.error}await Sys.accounts.put('accounts',na);S.account=na;$('#modalBox').onclick=null;closeModal();toast('密码已修改')}catch(err){m.textContent='保存失败，请再试'}}}
 async function deleteAccount(){
   if(!(await ask(`删除账号「${S.account.name}」？`,`这会永久删除这个账号和里面全部 ${S.entries.length} 篇日记、照片。建议先导出备份。`,'永久删除',true)))return;
   toast('正在删除…',20000);
-  try{for(const k of KINDS){const rows=await Store.raw.all(k);for(const r of rows)await Store.raw.del(k,r.id)}await Sys.accounts.del('accounts',S.account.id);toast('账号已删除')}catch(e){toast('删除没有完成，请再试')}
+  try{for(const k of KINDS){if(Store.raw.clear){await Store.raw.clear(k);continue}const rows=await Store.raw.all(k);for(const r of rows)await Store.raw.del(k,r.id)}await Sys.accounts.del('accounts',S.account.id);toast('账号已删除')}catch(e){toast('删除没有完成，请再试')}
   logout()}
 function fixEntry(e){return Object.assign({title:'',body:'',mood:null,tags:[],place:'',photos:[],thumbs:{},fav:false},e,{tags:[...(e.tags||[])],photos:[...(e.photos||[])],thumbs:{...(e.thumbs||{})}})}
 
@@ -527,7 +560,7 @@ function renderInsights(){
 
 /* ---------- settings ---------- */
 function renderSettings(){
-  const where={cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
+  const where={supa:'加密后保存在云端（Supabase）：任何浏览器、任何设备登录这个账号都能看到。云端只存加密后的内容。',cloud:'加密后保存在你 Claude 账户里这个页面的私人数据库中：换手机、换电脑打开这个页面登录就能看到。',local:'加密后保存在这个浏览器里（IndexedDB），只在这台设备上。清除浏览器数据会丢失，请定期导出备份。',memory:'这个浏览器不能保存，关闭页面就会丢失。请马上导出备份。'}[S.mode];
   return banner()+`<section class="section"><h2>设置</h2>
   <h3>数据存在哪里</h3><p class="muted">${esc(where)}</p>
   <h3>导入过去的日记</h3>
