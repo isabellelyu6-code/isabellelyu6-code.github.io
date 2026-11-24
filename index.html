@@ -186,6 +186,12 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-ca
 .wk.now{border-color:color-mix(in srgb,var(--acc) 60%,var(--line))}
 .tact{margin-left:12px;color:var(--accInk);background:var(--acc);border-radius:8px;padding:3px 10px;font-weight:700;font-size:13px}
 @media(max-width:600px){.next{grid-template-columns:1fr}.next .nr{flex-direction:row;align-items:baseline;justify-content:space-between;text-align:left}.next .nr .btn{margin:0 0 0 auto}}
+.inbox{border:1px solid color-mix(in srgb,var(--acc) 45%,var(--line));border-radius:16px;padding:12px 14px;margin:0 0 14px;background:color-mix(in srgb,var(--acc) 7%,var(--card))}
+.ih{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline;margin-bottom:6px}.ih b{color:var(--acc)}.ih span{font-size:12.5px;color:var(--mut)}
+.ii{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.ii .itk{font-weight:600}.ii .m{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--mut);margin-top:3px}
+.ib{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.ib .btn{height:34px;font-size:13px}
+@media(max-width:600px){.ii{grid-template-columns:1fr}.ib{justify-content:flex-start}}
 footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
 @media(max-width:600px){.sites{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.clock{text-align:left}.site{padding:12px;gap:10px}.site .ic{width:38px;height:38px;font-size:18px}}
 @media(min-width:900px){
@@ -228,6 +234,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
     </section>
     <section class="s" id="work-s">
       <div class="sh"><h2 class="disp">DDL<small id="workCount"></small></h2><button class="btn pri" data-act="addwork">+ 新 DDL</button></div>
+      <div id="inbox"></div>
       <div class="chips" id="workChips"></div>
       <div id="work"></div>
     </section>
@@ -274,6 +281,7 @@ const cKey=c=>(String(c).match(/[A-Z]{4}\d{4}/)||[String(c)||'其他'])[0];
 /* ---------- timetable (from the 课表 tab) ---------- */
 const W=(wd,s,e,course,type,room,from,to,except=[])=>({wd,s,e,course,type,room,from,to,except});
 const ONE=(date,s,e,course,type,room)=>({date,s,e,course,type,room});
+const SEED_TT_V=2;
 const SEED_TT=[];
 function classesOn(d){const k=dk(d);return (S.tt||[]).filter(c=>c.date?c.date===k:(c.wd===d.getDay()&&k>=c.from&&k<=c.to&&!c.except.includes(k))).sort((a,b)=>a.s.localeCompare(b.s))}
 
@@ -288,7 +296,7 @@ const SEED_SITES=[
 ];
 const S0='未完成',S1='已提交',S2='已完成',S3='待公布';
 const SEED_WORK=[];
-const SEED_WORK_V=3;
+const SEED_WORK_V=4;
 const SEED_DROP=[];
 
 /* ---------- cloud config (Supabase) — fill in to sync accounts across browsers and devices; see README ---------- */
@@ -436,7 +444,7 @@ async function boot(){
   if(sb){S.mode='supa';const raw=makeSupa(sb);
     Sys.accounts={async all(){try{const r=await raw.get('sys','account');return r?[JSON.parse(r.ct)]:[]}catch(e){return[]}},put:(k,a)=>raw.put('sys',{id:'account',iv:'',ct:JSON.stringify(a)}),del:()=>raw.del('sys','account')};
     Sys.mkData=()=>Promise.resolve(raw)}
-  else if(db&&id){S.mode='cloud';const root='data/users/'+id;Sys.accounts=makeRemote(db.doc(root+'/system'));Sys.mkData=acc=>makeRemote(db.doc(root+'/acc-'+acc.id)).open()}
+  else if(db&&id){S.mode='cloud';const root='data/users/'+id;INBOX=db.doc(root+'/hub').collection('inbox');Sys.accounts=makeRemote(db.doc(root+'/system'));Sys.mkData=acc=>makeRemote(db.doc(root+'/acc-'+acc.id)).open()}
   else{try{Sys.accounts=await makeLocal('ego-accounts',['accounts']).open();S.mode='local';Sys.mkData=acc=>makeLocal('ego-hub-'+acc.id,Object.values(HK)).open()}
     catch(e){S.mode='memory';Sys.accounts=makeMem();const mems={};Sys.mkData=acc=>Promise.resolve(mems[acc.id]||(mems[acc.id]=makeMem()))}}
   if(!(await autoLogin()))showAuth();
@@ -457,15 +465,16 @@ async function enterAccount(acc,key,isNew){
   if(SEED_WORK.length&&!S.meta.find(x=>x.id==='ddl'+SEED_WORK_V)){
     const doneKey=new Set(S.work.filter(isFin).map(w=>(w.date||'')+'|'+cKey(w.course)+'|'+(w.time||'')));
     for(const w of S.work)await DB.del('work',w.id);S.work=[];
-    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};if(doneKey.has((it.date||'')+'|'+cKey(it.course)+'|'+(it.time||'')))it.status=S2;S.work.push(it);await DB.put('work',it)}
+    for(const r of SEED_WORK){const it={id:uid(),status:S0,weight:'',note:'',time:'',...r};if(it.status!==S2&&doneKey.has((it.date||'')+'|'+cKey(it.course)+'|'+(it.time||'')))it.status=S2;S.work.push(it);await DB.put('work',it)}
     const m={id:'ddl'+SEED_WORK_V,at:Date.now()};S.meta.push(m);await DB.put('meta',m)}
   for(const x of [...S.sites])if(SEED_DROP.some(u=>(x.url||'').includes(u))){S.sites=S.sites.filter(y=>y!==x);await DB.del('sites',x.id)}
+  if(!S.sites.some(x=>/outlook\.(office|cloud\.microsoft)/.test(x.url||''))){const it={id:uid(),order:-2,name:'UCL 邮件',url:'https://outlook.office.com/mail/',desc:'',color:'#e9b0c2',icon:'mail'};S.sites.push(it);await DB.put('sites',it)}
   if(!S.sites.some(x=>/timetable\.ucl\.ac\.uk/.test(x.url||''))){const it={id:uid(),order:-1,name:'UCL 课表',url:'https://timetable.ucl.ac.uk/tt/homePage.do',desc:'官方个人课表',color:'#8fb8f0',icon:'calendar'};S.sites.push(it);await DB.put('sites',it)}
-  if(!S.meta.find(x=>x.id==='timetable')&&SEED_TT.length){const m={id:'timetable',items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
+  if(SEED_TT.length&&(S.meta.find(x=>x.id==='timetable')||{}).v!==SEED_TT_V){S.meta=S.meta.filter(x=>x.id!=='timetable');const m={id:'timetable',v:SEED_TT_V,items:SEED_TT};S.meta.push(m);await DB.put('meta',m)}
   if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
   const tt=S.meta.find(x=>x.id==='timetable'),tr=S.meta.find(x=>x.id==='trip');
   S.tt=Array.isArray(tt&&tt.items)?tt.items:[];S.trip=tr&&tr.start&&tr.end?{name:tr.name||'',start:tr.start,end:tr.end,plan:Array.isArray(tr.plan)?tr.plan:[],url:tr.url||''}:null;
-  S.ready=true;renderAll();
+  S.ready=true;renderAll();loadInbox();
 }
 function logout(){Device.clear();if(sb)sb.auth.signOut().catch(()=>{});Store=makeMem();Object.assign(S,{account:null,key:null,tt:[],trip:null,sites:[],plans:[],work:[],meta:[],ready:false});closeModal();showAuth()}
 async function saveFileOut(name,txt){
@@ -527,6 +536,7 @@ const ICONS={
  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
  game:'<rect x="3" y="8" width="18" height="10" rx="4"/><path d="M8 11v4M6 13h4M15.5 12.5h.01M18 14.5h.01"/>',
  home:'<path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
  star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
 };
@@ -586,6 +596,15 @@ function planModal(p){
     closeModal();renderPlans()};
 }
 
+
+/* ---------- inbox: new items found by the daily check (Outlook / Moodle e-mails) ---------- */
+let INBOX=null;S.inbox=[];
+async function loadInbox(){if(!INBOX)return;try{const q=await INBOX.limit(100).get();S.inbox=q.docs.filter(d=>d.exists).map(d=>({...structuredClone(d.data()),_id:d.id})).filter(x=>x&&typeof x.task==='string').sort((a,b)=>String(a.date||'9').localeCompare(String(b.date||'9')))}catch(e){S.inbox=[]}renderInbox()}
+function renderInbox(){const el=$('#inbox');if(!el)return;if(!S.inbox.length){el.innerHTML='';return}
+  el.innerHTML=`<div class="inbox"><div class="ih"><b>新消息 · ${S.inbox.length}</b><span>每天自动从邮件和 Moodle 通知里找到的</span></div>${S.inbox.map(x=>{const u=safeUrl(x.link);const isD=x.kind!=='notice'&&x.date;return `<div class="ii" style="--c:${cColor(x.course||'')}"><div style="min-width:0">${x.course?`<span class="crs" style="font-size:15px">${esc(x.course)}</span> `:''}<span class="itk">${esc(x.task)}</span><div class="m">${x.date?`<span class="when"><b>${md(String(x.date))}</b>${x.time?' · '+esc(x.time):''}</span>`:''}${x.weight?`<span>${esc(x.weight)}</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}${u?`<a href="${esc(u)}" style="color:var(--acc)">查看 →</a>`:''}</div></div><div class="ib">${isD?`<button class="btn pri" data-inadd="${esc(x._id)}">加入 DDL</button>`:''}<button class="btn line" data-inno="${esc(x._id)}">${isD?'忽略':'知道了'}</button></div></div>`}).join('')}</div>`}
+async function inboxResolve(id,add){const x=S.inbox.find(y=>y._id===id);if(!x)return;
+  if(add){const it={id:uid(),status:S0,course:String(x.course||'').slice(0,40),task:String(x.task).slice(0,140),date:/^\d{4}-\d\d-\d\d$/.test(x.date)?x.date:null,time:/^\d\d:\d\d$/.test(x.time||'')?x.time:'',weight:String(x.weight||'').slice(0,40),note:String(x.note||'').slice(0,300)};S.work.push(it);await DB.put('work',it);renderWork();toast('已加入 DDL')}
+  S.inbox=S.inbox.filter(y=>y!==x);renderInbox();try{await INBOX.doc(id).delete()}catch(e){}}
 /* ---------- DDL ---------- */
 const STS=[S0,S1,S2,S3];
 const isFin=w=>w.status===S2||w.status===S1;
@@ -721,6 +740,7 @@ document.addEventListener('click',e=>{
   if(d.editsite){e.preventDefault();siteModal(S.sites.find(x=>x.id===d.editsite));return}
   if(d.chk){const p=S.plans.find(x=>x.id===d.chk);if(p){p.done=!p.done;p.doneAt=Date.now();DB.put('plans',p);renderPlans()}return}
   if(d.editplan){const p=S.plans.find(x=>x.id===d.editplan);if(p)planModal(p);return}
+  if(d.inadd){inboxResolve(d.inadd,true);return}if(d.inno){inboxResolve(d.inno,false);return}
   if(d.wdone){const w=S.work.find(x=>x.id===d.wdone);if(w)setDone(w,!isFin(w));return}
   if(d.editwork){const w=S.work.find(x=>x.id===d.editwork);if(w)workModal(w);return}
   if(d.wf){S.wf=d.wf;renderWork();return}
