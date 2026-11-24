@@ -39,7 +39,7 @@ a{color:inherit}
 .top{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .hello{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:18px;align-items:end;position:relative}
 .hello>*{position:relative;z-index:1}
-.hello>.lyra-bg{position:absolute;z-index:0;pointer-events:none;right:4px;top:70px;height:170px;width:auto;opacity:.75}
+.hello>.lyra-bg{position:absolute;z-index:0;pointer-events:none;right:124px;top:96px;height:96px;width:auto;opacity:.5}
 .lyra-bg .ln{stroke:var(--acc);stroke-opacity:.28;stroke-width:3;fill:none}
 .lyra-bg .st circle{fill:#eaf4ff;opacity:.8}
 .lyra-bg .st .vega{fill:#fff;opacity:1;animation:tw 4s ease-in-out infinite}
@@ -107,7 +107,12 @@ a{color:inherit}
 .hint button{border:1px solid var(--line);border-radius:8px;padding:2px 8px;color:var(--mut)}
 .hint button:hover{color:var(--acc);border-color:var(--acc)}
 .side{display:grid;gap:12px}
-@media(min-width:900px){.side{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:stretch}}
+@media(min-width:900px){.side{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);align-items:start}
+  .side{align-items:stretch}
+  #today{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  #today .cls{display:block;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--bg2) 50%,transparent)}
+  #today .cls .t{display:block;font-size:12.5px}#today .cls b{display:block;font-size:13.5px;line-height:1.35;margin:2px 0}#today .cls small{display:block}
+  .trip{padding:14px 18px;display:flex;flex-direction:column}.trip h2{margin-bottom:auto}.trip .big{font-size:46px;margin-top:10px}.trip::after{width:120px;height:80px}}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
 .tile h2{font-size:14px;color:var(--mut);margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .cls{display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
@@ -153,6 +158,17 @@ section.s{padding:30px 0 6px}
 .editing .site .ed{display:grid}
 .lower{display:grid;grid-template-columns:minmax(0,1fr);column-gap:26px}
 .modoff{display:none!important}
+.hl{position:relative}
+.skymini{display:none}
+@media(max-width:899px){
+  .skymini{display:grid;grid-template-columns:auto auto;gap:2px 8px;align-items:center;position:absolute;right:0;top:58px;padding:8px 10px;border-radius:16px;background:color-mix(in srgb,var(--card) 70%,transparent);border:1px solid var(--line);text-align:left;color:var(--ink);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .skymini .wi{width:30px;height:30px;color:var(--sun);grid-row:span 1}
+  .skymini .smt b{font-family:var(--hf);font-size:24px;font-weight:900;line-height:1;display:block}
+  .skymini .smt small{font-size:11px;color:var(--mut);display:block;margin-top:2px}
+  .skymini .sms{grid-column:1/-1;font-size:10.5px;color:var(--mut);line-height:1.45;font-variant-numeric:tabular-nums}
+  .hello>.sky{display:none}.hello>.sky.open{display:grid}
+  .hello.nosky .skymini{display:none}
+}
 .top.noterm{grid-template-columns:1fr!important}.top.noside .side{display:none}
 .hl-r{display:flex;gap:6px;align-items:center;flex:none}
 .gear{width:36px;height:36px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 80%,transparent);display:grid;place-items:center;color:var(--mut)}
@@ -322,6 +338,7 @@ footer{padding:36px 0 40px;color:var(--mut);font-size:13px}
         <div class="hl-top"><h1 class="disp" id="greet">你好，<i>Lyra</i></h1><span class="hl-r"><button class="sync" id="sync" data-act="sync"></button><button class="gear" data-act="settings" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button class="acct" data-act="acct" id="acctBtn">账号</button></span></div>
         <div class="clock" aria-live="off"><b id="clockH">--</b><b class="colon">:</b><b id="clockM">--</b><span class="sec" id="clockS"></span></div>
         <div class="dateline" id="clockD"></div>
+        <button class="skymini" id="skymini" data-act="skytoggle" aria-label="天气，点开看详情"></button>
       </div>
       <div class="sky" id="sky" aria-label="Weather, sunrise, sunset and moon"></div>
     </div>
@@ -610,6 +627,11 @@ async function enterAccount(acc,key,isNew,quiet){
   if(!S.meta.find(x=>x.id==='trip')&&SEED_TRIP){const m={id:'trip',...SEED_TRIP};S.meta.push(m);await DB.put('meta',m)}
   if(SEED_GRADES&&!S.meta.find(x=>x.id==='grades')){const m={id:'grades',...structuredClone(SEED_GRADES)};S.meta.push(m);await DB.put('meta',m)}
   if(S.mode==='supa')for(const x of S.sites)if(/BKgxjQtWc5MejurTYd2K9x|github\.io\/Journal\/journal/.test(x.url||'')){x.url=JOURNAL_URL;if(x.name==='Ego 日记')x.name='Lyra 日记';await DB.put('sites',x)}
+  { /* one-off fixes to data saved earlier */
+    const tr=S.meta.find(x=>x.id==='trip');if(tr&&/^https:\/\/claude\.ai\/artifact\//.test(tr.url||'')&&/北欧/.test(tr.name||'')){tr.url='https://isabellelyu6-code.github.io/christmas-nordic/';await DB.put('meta',tr)}
+    for(const x of S.sites)if(/^https:\/\/claude\.ai\/artifact\//.test(x.url||'')&&/北欧/.test(x.name||'')){x.url='https://isabellelyu6-code.github.io/christmas-nordic/';await DB.put('sites',x)}
+    const g=S.meta.find(x=>x.id==='grades'),c5=g&&g.mods.find(m=>m.code==='CHEM0005'),li=c5?c5.parts.findIndex(p=>p.n==='Lab'&&+p.w===20):-1;
+    if(li>=0){c5.parts.splice(li,1,{n:'Lab · Worksheet D',w:5.5,s:''},{n:'Lab · Worksheet F',w:5.5,s:''},{n:'Lab · Practical E test',w:1,s:''},{n:'Lab · Moodle test',w:8,s:''});await DB.put('meta',g)} }
   deriveMeta();applySettings();S.ready=true;SY.last=Date.now();renderAll();renderSync();loadInbox();startRealtime();setTimeout(autoBackup,4000);
   if(!quiet&&OFFLINE)toast('离线模式：显示的是这台设备上次同步的内容');
 }
@@ -669,6 +691,7 @@ const BGS={night:['夜空',{'--bg':'#0f1b2d','--bg2':'#0b1524','--card':'#152439
  plum:['夜紫',{'--bg':'#1a1428','--bg2':'#130e1f','--card':'#231b36','--card2':'#2c2242','--line':'#3d3159'}]};
 const MODS=[['sky','天气 · 日出日落'],['terminal','指令框'],['today','课表'],['trip','旅行倒计时'],['sites','我的'],['plans','计划'],['work','DDL'],['grades','成绩']];
 const LOWER=['sites','plans','work','grades'];
+const zoomOf=st=>Math.min(130,Math.max(75,+st.zoom||({s:92,m:100,l:110}[st.size]||100)));
 const DEF_SET={id:'settings',accent:'#86d9c3',bg:'night',size:'m',headFont:'serif',bodyFont:'sans',loc:{name:'London',lat:51.5246,lng:-0.134,tz:'Europe/London'},clock24:true,unit:'C',name:'Lyra',order:LOWER.slice(),hidden:[]};
 let SET=structuredClone(DEF_SET);
 function inkFor(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#08261b';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>150?'#0b1a24':'#ffffff'}
@@ -677,7 +700,7 @@ function applySettings(){
   const B=(BGS[SET.bg]||BGS.night)[1];for(const k in B)st.setProperty(k,B[k]);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content',B['--bg']);
   applyFonts(SET);
-  document.body.style.zoom={s:.92,m:1,l:1.1}[SET.size]||1;
+  document.body.style.zoom=zoomOf(SET)/100;
   const hid=new Set(SET.hidden||[]);
   const el={sky:$('#sky'),terminal:$('#mod-terminal'),today:$('#mod-today'),trip:$('#trip'),sites:$('#sites-s'),plans:$('#plans-s'),work:$('#work-s'),grades:$('#grades-s')};
   for(const [k,e] of Object.entries(el))if(e)e.classList.toggle('modoff',hid.has(k));
@@ -698,7 +721,7 @@ function settingsModal(){
   <div class="setg"><h4>主题色</h4><div class="sw2">${ACCENTS.map(([n,c])=>`<button data-acc="${c}" style="--c:${c}" aria-pressed="${SET.accent===c}" title="${n}"><i></i><span>${n}</span></button>`).join('')}<label class="cust"><input type="color" id="accC" value="${esc(SET.accent)}"><span>自定义</span></label></div></div>
   <div class="setg"><h4>背景</h4><div class="chips wrapc">${Object.entries(BGS).map(([k,[n,v]])=>`<button class="chip" data-bg="${k}" aria-pressed="${SET.bg===k}"><span class="dot" style="background:${v['--card2']};outline:1px solid ${v['--line']}"></span>${n}</button>`).join('')}</div></div>
   <div class="setg"><h4>字体</h4><p class="sethint">主页和日记一起改。</p><p class="sethint" style="margin:0 0 4px">正文</p>${fontChips(SET.bodyFont||'sans',BODY_FONTS,'data-bf','今天')}<p class="sethint" style="margin:8px 0 4px">标题</p>${fontChips(SET.headFont||'serif',HEAD_FONTS,'data-hf','你好')}</div>
-  <div class="setg two2"><div><h4>大小</h4><div class="chips wrapc">${[['s','小'],['m','中'],['l','大']].map(([k,n])=>`<button class="chip" data-size="${k}" aria-pressed="${SET.size===k}">${n}</button>`).join('')}</div></div></div>
+  <div class="setg"><h4>缩放 <span class="sethint" id="zoomV" style="font-weight:400">${zoomOf(SET)}%</span></h4><input type="range" id="zoomR" min="75" max="130" step="5" value="${zoomOf(SET)}" style="width:100%;accent-color:var(--acc)" aria-label="缩放"><p class="sethint">整个页面放大缩小，主页和日记一起变。</p></div>
   <div class="setg"><h4>地点</h4><p class="sethint">天气、日出日落和时间跟着这里走。现在：<b>${esc(loc().name)}</b></p>
     <form class="addrow" id="locF"><input type="text" id="locQ" placeholder="搜城市，比如 Tromsø、Oslo、Shanghai"><button class="btn line" type="submit">搜索</button></form>
     <div id="locR"></div><button class="btn line" data-act="geo" type="button">使用当前位置</button></div>
@@ -725,6 +748,7 @@ function settingsModal(){
     if(d.act==='geo'){if(!navigator.geolocation)return toast('这个浏览器不能定位');navigator.geolocation.getCurrentPosition(p=>{SET.loc={name:'当前位置',lat:+p.coords.latitude.toFixed(4),lng:+p.coords.longitude.toFixed(4),tz:Intl.DateTimeFormat().resolvedOptions().timeZone};WX=null;saveSettings();tick();renderSky();loadWeather(true);re()},()=>toast('没有拿到位置（可能没给定位权限）'));return}
   };
   $('#accC').oninput=e=>{SET.accent=e.target.value;saveSettings()};
+  $('#zoomR').oninput=e=>{SET.zoom=+e.target.value;$('#zoomV').textContent=SET.zoom+'%';saveSettings()};
   $('#setName').oninput=e=>{SET.name=e.target.value.trim().slice(0,20);saveSettings();tick()};
   $('#locF').onsubmit=async e=>{e.preventDefault();const q=$('#locQ').value.trim();if(!q)return;$('#locR').innerHTML='<div class="empty"><span class="spin"></span> 搜索中…</div>';
     try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`);const j=await r.json();const L=(j.results||[]).filter(x=>x.timezone);
@@ -853,7 +877,8 @@ function renderSky(){
       <div class="skys">${Math.floor(day/36e5)}h ${Math.round(day%36e5/6e4)}m daylight${up?` · sunset in ${fmtEn(st.set-n)}`:n<st.rise?` · sunrise in ${fmtEn(st.rise-n)}`:''}</div></div>`}
   else h+=`<div class="sunbox"><div class="skys">${st.polar==='night'?'Polar night — the sun stays below the horizon today':'Midnight sun — the sun does not set today'}</div></div>`;
   h+=`<div class="moonrow">${moonSvg(mo.p,20)}<span><b>${mo.name}</b> · ${Math.round(mo.illum*100)}% lit · ${mo.name==='Full Moon'?`new moon in ${mo.toNew} days`:`full moon in ${mo.toFull} days`}</span></div>`;
-  $('#sky').innerHTML=h}
+  $('#sky').innerHTML=h;
+  const sm=$('#skymini');if(sm){if(WX){const [ic,de]=wxDesc(WX.c,WX.day);sm.innerHTML=`${wxSvg(ic)}<span class="smt"><b>${deg(WX.t)}</b><small>${de}</small></span><span class="sms">H ${deg(WX.hi)} L ${deg(WX.lo)}${st.rise?`<br>↑${tm(st.rise)} ↓${tm(st.set)}`:''}</span>`}else sm.innerHTML=`<span class="sms">${mo.name}${st.rise?`<br>↑${tm(st.rise)} ↓${tm(st.set)}`:''}</span>`}}
 const fmtEn=ms=>{const h=Math.floor(ms/36e5),m=Math.round(ms%36e5/6e4);return h?`${h}h ${m}m`:`${m}m`};
 setInterval(tick,1000);
 setInterval(()=>{if(S.ready)renderToday();renderSky()},60000);
@@ -1132,7 +1157,7 @@ document.addEventListener('click',e=>{
   if(d.wf){S.wf=d.wf;renderWork();return}
   if(d.wc){S.wc=d.wc;renderWork();return}
   if(d.gadd!=null||d.gt||d.gpadd!=null||d.gpdel||d.gdel!=null){gradesClick(d);return}
-  const a=d.act;if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
+  const a=d.act;if(a==='skytoggle'){$('#sky').classList.toggle('open');b.setAttribute('aria-expanded',$('#sky').classList.contains('open'));return}if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
 });
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 

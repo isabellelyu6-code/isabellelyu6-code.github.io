@@ -628,7 +628,7 @@ async function autoSplit(){
 /* theme chosen in Lyra settings (shared account) */
 const JBGS={night:['#0f1b2d','#0b1524','#152439','#1a2c45','#263b58'],deep:['#0a0f1a','#070b14','#111827','#162033','#22304a'],slate:['#151a22','#10141b','#1d232d','#242b37','#323b4a'],ocean:['#0c2230','#081a25','#112d3d','#163a4d','#22506a'],forest:['#0f1f1c','#0a1715','#16302a','#1b3a33','#28524a'],plum:['#1a1428','#130e1f','#231b36','#2c2242','#3d3159']};
 let HUBST=null;
-async function applyHubTheme(given){let st=given||null;if(!st){try{st=await Store.get('hubMeta','settings')}catch(e){}}if(!st&&S.settings&&(S.settings.bodyFont||S.settings.headFont))st={id:'settings',bodyFont:S.settings.bodyFont,headFont:S.settings.headFont,size:S.settings.size};if(!st)return;HUBST=st;applyFonts(st);document.body.style.zoom={s:.92,m:1,l:1.1}[st.size]||1;const r=document.documentElement.style;
+async function applyHubTheme(given){let st=given||null;if(!st){try{st=await Store.get('hubMeta','settings')}catch(e){}}if(!st&&S.settings&&(S.settings.bodyFont||S.settings.headFont))st={id:'settings',bodyFont:S.settings.bodyFont,headFont:S.settings.headFont,size:S.settings.size};if(!st)return;HUBST=st;applyFonts(st);document.body.style.zoom=Math.min(130,Math.max(75,+st.zoom||({s:92,m:100,l:110}[st.size]||100)))/100;const r=document.documentElement.style;
   if(/^#[0-9a-f]{6}$/i.test(st.accent||'')){const n=parseInt(st.accent.slice(1),16);r.setProperty('--acc',st.accent);r.setProperty('--acc2',st.accent);r.setProperty('--mark',`rgba(${n>>16&255},${n>>8&255},${n&255},.3)`);r.setProperty('--accInk',(0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))>150?'#0b1a24':'#ffffff')}
   const B=JBGS[st.bg];if(B){['--bg','--bg2','--card','--card2','--line'].forEach((k,i)=>r.setProperty(k,B[i]));r.setProperty('--hero',B[0]);document.querySelector('meta[name=theme-color]')?.setAttribute('content',B[0])}}
 /* live updates from other devices */
@@ -1238,7 +1238,7 @@ document.addEventListener('click',async ev=>{
   else if(d.nbcolor){const nb=nbById(d.nbcolor);nb.color=d.c;saveNb(nb);render()}
   else if(d.nbdel){delNotebook(d.nbdel)}
   else if(d.nbup){const i=S.notebooks.findIndex(n=>n.id===d.nbup);if(i>0){[S.notebooks[i-1],S.notebooks[i]]=[S.notebooks[i],S.notebooks[i-1]];S.notebooks.forEach((n,j)=>{if(n.order!==j){n.order=j;saveNb(n)}});render()}}
-  else if(d.bf||d.hfont||d.fsz){let st=null;try{st=await Store.get('hubMeta','settings')}catch(e){}st=st||{...(HUBST||{}),id:'settings'};if(d.bf)st.bodyFont=d.bf;if(d.hfont)st.headFont=d.hfont;if(d.fsz)st.size=d.fsz;let ok=true;try{await Store.put('hubMeta',st)}catch(e){ok=false}if(!ok){Object.assign(S.settings,{bodyFont:st.bodyFont,headFont:st.headFont,size:st.size});Store.put('meta',S.settings).catch(()=>{})}HUBST=st;applyHubTheme(st);render()}
+  else if(d.bf||d.hfont||d.fsz){let st=null;try{st=await Store.get('hubMeta','settings')}catch(e){}st=st||{...(HUBST||{}),id:'settings'};if(d.bf)st.bodyFont=d.bf;if(d.hfont)st.headFont=d.hfont;if(d.fsz){st.size=d.fsz;st.zoom={s:92,m:100,l:110}[d.fsz]}let ok=true;try{await Store.put('hubMeta',st)}catch(e){ok=false}if(!ok){Object.assign(S.settings,{bodyFont:st.bodyFont,headFont:st.headFont,size:st.size});Store.put('meta',S.settings).catch(()=>{})}HUBST=st;applyHubTheme(st);render()}
   else if(d.rtype){S.rep.type=d.rtype;render()}
   else if(d.act){const a=d.act;
     if(a==='retryload'&&S.account&&S.key)return enterAccount(S.account,S.key,false);
