@@ -370,18 +370,23 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .sheet{padding-top:env(safe-area-inset-top)}
 .bar{top:env(safe-area-inset-top)}
 
-/* desktop: the editor is a calm centred page, not a full-screen phone sheet */
+/* desktop: iPad-style split view — list stays on the left, the entry opens on the right */
 @media (min-width:900px){
-  #editor.sheet{inset:3.5vh 0 auto 0;margin:0 auto;width:min(880px,92vw)!important;max-width:none;height:93vh;border:1px solid var(--line);border-radius:22px;overflow:hidden;padding-top:0;
-    box-shadow:0 0 0 100vmax color-mix(in srgb,var(--bg2) 72%,transparent),0 30px 90px rgba(0,0,0,.45);background:var(--bg)}
-  #editor .sh-top{padding:12px 22px;background:var(--bg)}
-  #editor .sh-body{max-width:none;padding:26px clamp(32px,6vw,72px) 60px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
-  #editor .sh-body::-webkit-scrollbar{width:8px}#editor .sh-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}#editor .sh-body::-webkit-scrollbar-track{background:transparent}
-  #editor .tools{position:static;padding:10px 22px;background:var(--bg2)}
-  #editor .ed-title{font-size:30px!important;padding-top:18px!important}
+  body.editing .app{grid-template-columns:232px clamp(300px,30vw,440px) minmax(0,1fr)}
+  body.editing main{max-width:none!important;margin:0}
+  body.editing .jwrap{display:block!important;max-width:none!important}
+  body.editing .jside,body.editing .as-open,body.editing .fab{display:none!important}
+  body.editing .hero{display:block;padding:22px 18px 6px}body.editing .hero .row,body.editing .hero .prompt,body.editing .hero .otd{display:none}
+  body.editing .hero h1{font-size:24px}
+  body.editing .bar{padding:10px 18px 6px}body.editing #main section,body.editing .list{padding-left:12px;padding-right:12px}
+  body.editing .card{padding:12px 14px}body.editing .card p{-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+  body.editing .card.active{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}
+  #editor.sheet{inset:0 0 0 calc(232px + clamp(300px,30vw,440px));width:auto!important;max-width:none;border-left:1px solid var(--line);padding-top:0;z-index:35}
+  #editor .sh-top{padding:12px 26px}
+  #editor .sh-body{max-width:820px;padding:22px clamp(28px,4vw,56px) 60px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  #editor .tools{position:static;padding:10px 26px}
+  #editor .ed-title{font-size:30px!important;padding-top:16px!important}
   #editor .ed-text{font-size:17px!important;line-height:1.95;min-height:50vh}
-  body.editing{overflow:hidden}
-  body.editing::after{content:"";position:fixed;inset:0;z-index:39;cursor:zoom-out}
 }
 </style>
 <script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);if(t.v['--bg'])r.setProperty('--hero',t.v['--bg']);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
@@ -1019,7 +1024,7 @@ function renderJournal(){
       if(mk!==cur){cur=mk;const n=list.filter(x=>x.date.slice(0,7)===e.date.slice(0,7)).length;parts.push(`<div class="month">${mk} · ${n} 篇</div>`)}
       const nb=nbById(e.nb);
       const th=e.photos.slice(0,5).map(p=>e.thumbs[p]?`<img src="${esc(e.thumbs[p])}" alt="">`:'').join('');
-      parts.push(`<button class="card${S.sel&&S.sel.has(e.id)?' picked':''}" style="--c:${esc(nbColor(e.nb))}" data-open="${esc(e.id)}"><div class="d"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span></div><div>
+      parts.push(`<button class="card${S.sel&&S.sel.has(e.id)?' picked':''}${S.ed&&S.ed.id===e.id&&!$('#editor').hidden?' active':''}" style="--c:${esc(nbColor(e.nb))}" data-open="${esc(e.id)}"><div class="d"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span></div><div>
         ${e.title?`<h3>${hl(e.title,toks)}</h3>`:''}<p>${hl(snippet(e.body,toks),toks)||'<i>（只有照片）</i>'}</p>
         <div class="meta">${nbsOf(e).map(nbById).filter(Boolean).map(n=>`<span class="pill" style="--c:${esc(n.color)}">${nbLabel(n)}</span>`).join('')}
         ${e.mood?`<span><i class="dot" style="background:${MOODS[e.mood-1].c}"></i>${MOODS[e.mood-1].n}</span>`:''}
@@ -1143,6 +1148,7 @@ function newEntry(prompt){
   openEditor({id:uid(),nb,date:localISO(new Date()),title:'',body:prompt?PROMPTS[S.prompt]+'\n\n':'',mood:null,tags:[],place:'',photos:[],thumbs:{},fav:false,created:Date.now(),updated:Date.now()},true);
 }
 function openEditor(e,isNew=false){
+  if(S.ed&&S.dirty)persist();
   S.ed=fixEntry(structuredClone(e));S.edNew=isNew;S.dirty=false;
   $('#edBody').innerHTML=`<div class="ed-meta"><input type="datetime-local" id="edDate" value="${esc(S.ed.date)}" aria-label="日期时间"><button type="button" class="nbtoggle" id="edNbT" aria-expanded="${edNbOpen()}">${edNbSum()}</button></div><div class="ednbs" id="edNbs" role="group" aria-label="分区（可多选）" ${edNbOpen()?'':'hidden'}>${S.notebooks.map(n=>`<button type="button" data-ednb="${esc(n.id)}" style="--c:${esc(n.color)}" aria-pressed="${inNb(S.ed,n.id)}">${nbLabel(n)}</button>`).join('')}</div>
    <input type="text" class="ed-title" id="edTitle" placeholder="标题" value="${esc(S.ed.title)}">
@@ -1154,7 +1160,7 @@ function openEditor(e,isNew=false){
   $('#edTools').innerHTML=`<button data-t="photo">${IC.photo}照片</button><button data-t="ocr">${IC.scan}识别文字</button><button data-t="mic" id="micBtn">${IC.mic}语音</button>${caps.sample?`<button data-t="ai">${IC.spark}智能标签</button>`:''}`;
   renderEdPhotos();renderEdMoods();renderEdTags();renderEdFav();
   $('#edStatus').textContent=isNew?'新日记':'';
-  $('#editor').hidden=false;document.body.style.overflow='hidden';
+  $('#editor').hidden=false;document.body.style.overflow=innerWidth>=900?'':'hidden';document.querySelectorAll('.card.active').forEach(c=>c.classList.remove('active'));document.querySelector(`.card[data-open="${CSS.escape(e.id)}"]`)?.classList.add('active');
   autosize();if(isNew)setTimeout(()=>$('#edText').focus(),60);
 }
 function autosize(){const t=$('#edText');if(!t)return;t.style.height='auto';t.style.height=Math.max(t.scrollHeight,window.innerHeight*.4)+'px'}
@@ -1175,7 +1181,6 @@ async function persist(){
 }
 async function closeEditor(){await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
 $('#edClose').onclick=closeEditor;
-document.addEventListener('click',e=>{if(e.target===document.body&&document.body.classList.contains('editing')&&innerWidth>=900)closeEditor()});
 new MutationObserver(()=>document.body.classList.toggle('editing',!$('#editor').hidden)).observe($('#editor'),{attributes:true,attributeFilter:['hidden']});
 $('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
 $('#edDel').onclick=async()=>{const e=S.ed;clearTimeout(saveT);try{await persist()}catch(err){}const real=S.entries.find(x=>x.id===e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';stopMic();if(real)delEntry(real);else render()};
