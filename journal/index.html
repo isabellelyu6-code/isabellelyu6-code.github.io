@@ -253,7 +253,7 @@ textarea{resize:vertical}
 .sheet textarea,.sheet input{width:100%;box-sizing:border-box;overflow-wrap:anywhere;word-break:break-word}
 .sheet input[type=datetime-local]{-webkit-appearance:none;appearance:none;min-width:0;display:block}
 .sheet .tools{overflow-x:hidden;flex-wrap:wrap}
-body.editing{overflow:hidden;overscroll-behavior:none}
+@media (max-width:899px){body.editing{overflow:hidden;overscroll-behavior:none}}
 @media (max-width:600px){.sheet .ed-title{font-size:22px!important}}
 .sheet[hidden]{display:none}
 .sh-top{display:flex;align-items:center;gap:8px;padding:8px max(4vw,10px);border-bottom:1px solid var(--line);padding-top:max(8px,env(safe-area-inset-top))}
@@ -399,6 +399,19 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   body.editing #rzList{display:block}
   body.resizing,body.resizing *{cursor:col-resize!important;user-select:none!important}
 }
+
+.edfullb{display:none}.edfullb .i-min{display:none}body.edfull .edfullb .i-max{display:none}body.edfull .edfullb .i-min{display:block}
+@media (min-width:900px){
+  .edfullb{display:grid}
+  body.edfull #editor.sheet{inset:0!important;z-index:70;border-left:0}
+  body.edfull #editor .sh-body{max-width:780px;margin:0 auto;padding-top:40px}
+  body.edfull #editor .sh-top,body.edfull #editor .tools{transition:opacity .25s}
+  body.edfull.calm #editor .sh-top,body.edfull.calm #editor .tools{opacity:.08}
+  body.edfull #rzRail,body.edfull #rzList{display:none!important}
+  body.edfull #editor .tools{justify-content:center}
+  #editor.sheet{transition:inset .2s ease}
+}
+@media (prefers-reduced-motion:reduce){#editor.sheet{transition:none}}
 </style>
 <script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);if(t.v['--bg'])r.setProperty('--hero',t.v['--bg']);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
 </head>
@@ -416,6 +429,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   <div class="sh-top">
     <button class="btn line" id="edClose">完成</button>
     <span class="st" id="edStatus"></span>
+    <button class="icon edfullb" id="edFull" aria-label="全屏" title="全屏专注（Ctrl+Shift+F）"><svg class="i-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
     <button class="icon" id="edFav" aria-label="收藏"></button>
     <button class="icon" id="edDel" aria-label="删除这篇"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
   </div>
@@ -1191,7 +1205,7 @@ async function persist(){
   try{await Store.put('entries',copy);if(S.ed&&S.ed.id===copy.id)$('#edStatus').textContent='已保存'}
   catch(err){S.dirty=true;$('#edStatus').textContent='保存失败';toast(err&&err.code==='quota_exceeded'?'存储已满：请导出备份并删除一些照片':'保存失败，稍后会再试');saveT=setTimeout(persist,5000)}
 }
-async function closeEditor(){await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
+async function closeEditor(){if(document.body.classList.contains('edfull'))setFull(false);await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
 $('#edClose').onclick=closeEditor;
 
 /* drag the dividers to resize the sidebar and the list (remembered on this device) */
@@ -1205,7 +1219,15 @@ $('#edClose').onclick=closeEditor;
   drag($('#rzRail'),'--railW',170,()=>Math.min(380,innerWidth*.3),()=>0);
   drag($('#rzList'),'--listW',260,()=>Math.min(760,innerWidth-$('#rail').getBoundingClientRect().width-380),()=>$('#rail').getBoundingClientRect().width);
 })();
-new MutationObserver(()=>document.body.classList.toggle('editing',!$('#editor').hidden)).observe($('#editor'),{attributes:true,attributeFilter:['hidden']});
+
+/* full screen writing: the entry takes the whole window; bars fade while you type */
+function setFull(on){document.body.classList.toggle('edfull',on);document.body.classList.remove('calm');try{localStorage.setItem('lyra-edfull',on?'1':'0')}catch(e){}
+  try{if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement&&innerWidth>=900)document.documentElement.requestFullscreen().catch(()=>{});if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}}
+$('#edFull').onclick=()=>setFull(!document.body.classList.contains('edfull'));
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('edfull'))setFull(false)});
+let calmT=null;document.addEventListener('input',e=>{if(!document.body.classList.contains('edfull')||!e.target.closest('#editor'))return;clearTimeout(calmT);calmT=setTimeout(()=>document.body.classList.add('calm'),900)});
+document.addEventListener('mousemove',()=>{if(document.body.classList.contains('calm'))document.body.classList.remove('calm')});
+new MutationObserver(()=>{const open=!$('#editor').hidden;document.body.classList.toggle('editing',open);if(!open&&document.body.classList.contains('edfull'))setFull(false)}).observe($('#editor'),{attributes:true,attributeFilter:['hidden']});
 $('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
 $('#edDel').onclick=async()=>{const e=S.ed;clearTimeout(saveT);try{await persist()}catch(err){}const real=S.entries.find(x=>x.id===e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';stopMic();if(real)delEntry(real);else render()};
 $('#edBody').addEventListener('input',ev=>{const id=ev.target.id,e=S.ed;if(!e)return;
@@ -1572,13 +1594,14 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('change',ev=>{if(ev.target.dataset.nbname||ev.target.dataset.nbicon)render()});
 document.addEventListener('keydown',ev=>{
+  if(!$('#editor').hidden&&innerWidth>=900&&((ev.key==='f'||ev.key==='F')&&(ev.ctrlKey||ev.metaKey)&&ev.shiftKey)){ev.preventDefault();setFull(!document.body.classList.contains('edfull'));return}
   if(!ev.metaKey&&!ev.ctrlKey&&!ev.altKey&&$('#editor').hidden&&$('#modal').hidden&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&S.account){
     if(ev.key==='/'){ev.preventDefault();if(S.view!=='journal'){S.view='journal';render()}$('#q')?.focus();return}
     if(ev.key==='n'||ev.key==='N'){ev.preventDefault();newEntry(false);return}}
   if(ev.key==='Enter'&&!ev.isComposing){const t=ev.target;
     if(!$('#modal').hidden&&t.tagName==='INPUT'&&!t.closest('form')){const ok=$('#modalBox [data-a=ok]');if(ok){ev.preventDefault();ok.click();return}}
     if((ev.metaKey||ev.ctrlKey)&&!$('#editor').hidden){ev.preventDefault();closeEditor();toast('已保存');return}}
-  if(ev.key==='Escape'){if(!$('#viewer').hidden)$('#viewerX').click();else if(!$('#modal').hidden)closeModal();else if(!$('#editor').hidden)closeEditor()}});
+  if(ev.key==='Escape'){if(!$('#viewer').hidden)$('#viewerX').click();else if(!$('#modal').hidden)closeModal();else if(!$('#editor').hidden){if(document.body.classList.contains('edfull'))setFull(false);else closeEditor()}}});
 $('#modal').addEventListener('click',ev=>{if(ev.target.id==='modal'&&!$('#impProg')){$('#modalBox').onclick=null;closeModal()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist()});
 
