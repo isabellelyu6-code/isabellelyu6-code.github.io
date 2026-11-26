@@ -1273,6 +1273,12 @@ onLongPress(document,'.wk,.todo',(el,x,y)=>ctxFor(el,x,y));
 /* delete right away, offer undo instead of asking first */
 const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()};
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
+
+/* tell me when a newer version of the page has been published */
+const BUILD='1795716654';let lastChk=0;
+async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
+  try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
+addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
 function renderAll(){renderToday();renderSites();renderPlans();renderWork();renderGrades();renderInbox()}
 $('#grades').addEventListener('input',gradesEvent);
 $('#grades').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;e.preventDefault();const L=[...document.querySelectorAll('#grades input')];const n=L[L.indexOf(e.target)+1];if(n){n.focus();n.select&&n.select()}else e.target.blur()});
