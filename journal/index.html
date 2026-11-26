@@ -412,6 +412,14 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
   #editor.sheet{transition:inset .2s ease}
 }
 @media (prefers-reduced-motion:reduce){#editor.sheet{transition:none}}
+
+/* touch screens (iPad, phones): no sticky hover lifts, no text-selection pop-ups on buttons, comfortable tap targets */
+@media (hover:none){
+  .site:hover,.stat[data-stat]:hover,.card:hover{transform:none}
+  button,.site,.card,.nbtab,.chip{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  .rz{width:22px;margin-left:-11px}.rz::after{left:10px}
+  .skyc button,.ib2{min-width:32px;min-height:32px}
+}
 </style>
 <script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);if(t.v['--bg'])r.setProperty('--hero',t.v['--bg']);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
 </head>
@@ -1229,10 +1237,15 @@ let calmT=null;document.addEventListener('input',e=>{if(!document.body.classList
 document.addEventListener('mousemove',()=>{if(document.body.classList.contains('calm'))document.body.classList.remove('calm')});
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795716654';let lastChk=0;
+const BUILD='1795717349';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toastAct('有新版本','刷新',()=>location.reload())}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
+
+/* iPad / phone keyboard: keep the editor inside the visible area so the top bar doesn't slide away */
+if(window.visualViewport){const vv=visualViewport,fit=()=>{const ed=$('#editor');if(!ed||ed.hidden||!matchMedia('(hover:none)').matches){if(ed){ed.style.height='';ed.style.top=''}return}
+  ed.style.top=vv.offsetTop+'px';ed.style.height=vv.height+'px';ed.style.bottom='auto'};vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);
+  new MutationObserver(fit).observe($('#editor'),{attributes:true,attributeFilter:['hidden']})}
 new MutationObserver(()=>{const open=!$('#editor').hidden;document.body.classList.toggle('editing',open);if(!open&&document.body.classList.contains('edfull'))setFull(false)}).observe($('#editor'),{attributes:true,attributeFilter:['hidden']});
 $('#edFav').onclick=()=>{S.ed.fav=!S.ed.fav;renderEdFav();touch()};
 $('#edDel').onclick=async()=>{const e=S.ed;clearTimeout(saveT);try{await persist()}catch(err){}const real=S.entries.find(x=>x.id===e.id);S.ed=null;$('#editor').hidden=true;document.body.style.overflow='';stopMic();if(real)delEntry(real);else render()};

@@ -357,6 +357,14 @@ html{background:var(--bg)}
 body{padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 .lock{padding-top:max(env(safe-area-inset-top),16px)}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:85;pointer-events:none}
+
+/* touch screens (iPad, phones): no sticky hover lifts, no text-selection pop-ups on buttons, comfortable tap targets */
+@media (hover:none){
+  .site:hover,.stat[data-stat]:hover,.card:hover{transform:none}
+  button,.site,.card,.nbtab,.chip{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  .rz{width:22px;margin-left:-11px}.rz::after{left:10px}
+  .skyc button,.ib2{min-width:32px;min-height:32px}
+}
 </style>
 <script>try{var t=JSON.parse(localStorage.getItem('lyra-theme')||'null');if(t){var r=document.documentElement.style;for(var k in t.v)r.setProperty(k,t.v[k]);(t.f||[]).forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});window.__LT=t;var m=document.querySelector('meta[name=theme-color]');if(m&&t.v['--bg'])m.content=t.v['--bg']}}catch(e){}</script>
 </head>
@@ -1275,7 +1283,7 @@ const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()}
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795716654';let lastChk=0;
+const BUILD='1795717349';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
