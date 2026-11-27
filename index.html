@@ -1372,7 +1372,7 @@ const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()}
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795781816';let lastChk=0;
+const BUILD='1795781922';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);

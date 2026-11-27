@@ -1258,7 +1258,7 @@ let calmT=null;document.addEventListener('input',e=>{if(!document.body.classList
 document.addEventListener('mousemove',()=>{if(document.body.classList.contains('calm'))document.body.classList.remove('calm')});
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795781816';let lastChk=0;
+const BUILD='1795781922';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toastAct('有新版本','刷新',()=>location.reload())}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
@@ -1619,7 +1619,59 @@ function exportModal(){const nbOpts=S.notebooks.map(n=>`<option value="${esc(n.i
 async function photoData(p){let d=S.photos.get(p);if(!d){try{const o=await Store.get('photos',p);d=o&&o.data;if(d)S.photos.set(p,d)}catch(e){}}return d||null}
 const metaLine=e=>[nbsOf(e).map(id=>nbById(id)?.name).filter(Boolean).join(' · '),e.mood?MOODS[e.mood-1].n:'',e.place||'',(e.tags||[]).map(t=>'#'+t).join(' ')].filter(Boolean).join('　');
 const longDate=k=>{const d=parseDate(k.slice(0,10));return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${'日一二三四五六'[d.getDay()]}`};
-async function exportPdf(list,title,range,withPhotos){toast(withPhotos?'正在准备照片…':'正在排版…',8000);
+/* PDF as a real file (phones and the Claude app, where the print window can't be used):
+   each A4 page is laid out on a canvas with the journal's fonts and saved as an image page */
+async function exportPdfFile(list,title,range,withPhotos){
+  const PW=595,PH=842,K=2,M=54,CW=PW-2*M;const SERIF='"Noto Serif SC","Songti SC","STSong",serif',SANS='"Noto Sans SC","PingFang SC",sans-serif';
+  try{await document.fonts.load(`16px ${SERIF}`,'日记')}catch(e){}
+  const cv=document.createElement('canvas');cv.width=PW*K;cv.height=PH*K;const c=cv.getContext('2d');
+  const pages=[];let y=M,pn=0;
+  const fresh=()=>{c.setTransform(1,0,0,1,0,0);c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);c.setTransform(K,0,0,K,0,0);c.textBaseline='alphabetic';y=M;pn++};
+  const flush=async()=>{if(pages.length){c.font=`8px ${SANS}`;c.fillStyle='#9aa6b8';c.textAlign='center';c.fillText(String(pages.length+1),PW/2,PH-26);c.textAlign='left'}
+    const b=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.8));pages.push({w:cv.width,h:cv.height,data:new Uint8Array(await b.arrayBuffer())});
+    toast(`正在生成 PDF：第 ${pages.length} 页`,20000);await new Promise(r=>setTimeout(r,0))};
+  const newPage=async()=>{await flush();fresh()};
+  const NOSTART='，。、；：？！）》」』”’,.;:?!)%';
+  const wrap=(t,w)=>{const out=[];let line='';for(const ch of t){if(c.measureText(line+ch).width>w&&line){if(NOSTART.includes(ch)){line+=ch;continue}
+      const m=line.match(/[A-Za-z0-9'’-]+$/);if(m&&/[A-Za-z0-9]/.test(ch)&&m[0].length<line.length&&m[0].length<20){out.push(line.slice(0,-m[0].length));line=m[0]+ch}else{out.push(line);line=ch}}else line+=ch}if(line)out.push(line);return out};
+  const text=async(t,{font,size,lh,color='#1d2533',indent=0,gap=0,keep=0})=>{c.font=`${font.w||400} ${size}px ${font.f}`;const L=wrap(t,CW-indent);
+    if(keep&&y+lh*Math.min(L.length,2)+keep>PH-M)await newPage();c.font=`${font.w||400} ${size}px ${font.f}`;
+    for(const l of L){if(y+lh>PH-M){await newPage();c.font=`${font.w||400} ${size}px ${font.f}`}c.fillStyle=color;c.fillText(l,M+indent,y+size);y+=lh}y+=gap};
+  const img=async src=>{const im=new Image();im.src=src;try{await im.decode()}catch(e){return}let w=Math.min(CW,im.width),h=w*im.height/im.width;if(h>300){h=300;w=h*im.width/im.height}
+    if(y+h>PH-M)await newPage();c.drawImage(im,M,y,w,h);y+=h+10};
+  const strip=s=>s.replace(/\*\*(.+?)\*\*/g,'$1').replace(/==(.+?)==/g,'$1');
+  // cover
+  fresh();y=PH*0.36;await text(title,{font:{f:SERIF,w:900},size:36,lh:48});y+=6;await text(range,{font:{f:SANS},size:12,lh:20,color:'#5b6b82'});
+  c.fillStyle='#5fb8a4';c.fillRect(M,y+14,80,2);y+=34;await text(list.length+' 篇',{font:{f:SANS},size:12,lh:20,color:'#5b6b82'});
+  let month='';
+  for(const e of list){const mk=e.date.slice(0,7);
+    if(mk!==month){month=mk;await newPage();await text(`${+mk.slice(0,4)}年${+mk.slice(5,7)}月`,{font:{f:SERIF,w:900},size:20,lh:28});c.fillStyle='#d5dbe4';c.fillRect(M,y+2,CW,0.8);y+=18}
+    else y+=14;
+    await text(longDate(e.date)+' · '+e.date.slice(11,16),{font:{f:SANS,w:500},size:9.5,lh:15,color:'#3e9c86',keep:60});
+    if(e.title)await text(e.title,{font:{f:SERIF,w:700},size:14,lh:21});
+    const m=metaLine(e);if(m)await text(m,{font:{f:SANS},size:8.5,lh:14,color:'#8592a6',gap:4});
+    for(const raw of String(e.body||'').replace(/\r/g,'').split('\n')){const l=raw.trimEnd();let mm;if(!l.trim())continue;
+      if((mm=l.match(/^#{1,3}\s+(.*)/)))await text(strip(mm[1]),{font:{f:SERIF,w:700},size:12,lh:19,gap:2,keep:30});
+      else if((mm=l.match(/^\s*[-•·]\s+(.*)/))){const y0=y;await text(strip(mm[1]),{font:{f:SERIF},size:11,lh:19,indent:14,gap:3});c.fillStyle='#1d2533';c.font=`11px ${SERIF}`;if(y0<y&&y0>=M)c.fillText('•',M+3,y0+11)}
+      else await text(strip(l),{font:{f:SERIF},size:11,lh:19.5,gap:5})}
+    if(withPhotos)for(const p of e.photos){const d=await photoData(p);if(d)await img(d)}}
+  await flush();
+  // assemble the PDF
+  const enc=new TextEncoder(),parts=[],offs=[];let pos=0;const put=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);pos+=b.length};
+  const obj=(n,body)=>{offs[n]=pos;put(`${n} 0 obj\n`);for(const b of [].concat(body))put(b);put('\nendobj\n')};
+  put('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');const N=pages.length,kids=[];for(let i=0;i<N;i++)kids.push(`${3+i*3} 0 R`);
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,`<< /Type /Pages /Count ${N} /Kids [${kids.join(' ')}] >>`);
+  pages.forEach((p,i)=>{const n=3+i*3,cs=`q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+    obj(n,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 ${n+2} 0 R >> >> /Contents ${n+1} 0 R >>`);
+    obj(n+1,`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+    obj(n+2,[`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.data.length} >>\nstream\n`,p.data,'\nendstream'])});
+  const total=3+N*3,xref=pos;put(`xref\n0 ${total}\n0000000000 65535 f \n`+offs.slice(1,total).map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  const name=title.replace(/[\\/:*?"<>|]/g,'')+'.pdf';const blob=new Blob(parts,{type:'application/pdf'});
+  if(caps.dl){try{await caps.dl.save({filename:name,data:blob});toast(`已导出 ${name}（${N} 页）`);return}catch(e){if(e&&(e.code==='dismissed'||e.code==='cancelled'))return}}
+  const f=new File([blob],name,{type:'application/pdf'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})&&matchMedia('(hover:none)').matches){try{await navigator.share({files:[f],title:name});toast(`已导出 ${N} 页`);return}catch(e){if(e&&e.name==='AbortError')return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(`已导出 ${name}（${N} 页）`)}
+async function exportPdf(list,title,range,withPhotos){if(matchMedia('(hover:none)').matches||caps.dl)return exportPdfFile(list,title,range,withPhotos);toast(withPhotos?'正在准备照片…':'正在排版…',8000);
   let body='',month='';
   for(const e of list){const mk=e.date.slice(0,7);if(mk!==month){month=mk;body+=`<h2 class="mo">${+mk.slice(0,4)}年${+mk.slice(5,7)}月</h2>`}
     let ph='';if(withPhotos&&e.photos.length){const ds=[];for(const p of e.photos){const d=await photoData(p);if(d)ds.push(d)}if(ds.length)ph=`<div class="ph">${ds.map(d=>`<img src="${d}">`).join('')}</div>`}
