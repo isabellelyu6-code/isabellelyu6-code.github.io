@@ -228,7 +228,7 @@ body.bggrad .band{background-color:transparent}
 .gcode{font-family:var(--hf);font-weight:900;font-size:19px!important;border:0!important;background:none!important;padding:0!important;min-height:32px!important;color:var(--c)!important}
 .gp{display:grid;grid-template-columns:minmax(0,1fr) 72px 78px 32px;gap:6px;align-items:center;margin-bottom:6px}
 .gp input{min-height:36px!important;padding:5px 8px!important;font-size:14px!important;border-radius:9px!important}
-.gp input[type=number]{border:1px solid var(--line);background:var(--bg2);color:var(--ink);width:100%;text-align:right;-moz-appearance:textfield}
+.gp input[inputmode=decimal]{border:1px solid var(--line);background:var(--bg2);color:var(--ink);width:100%;text-align:right;-moz-appearance:textfield}
 .gp input[type=number]::-webkit-inner-spin-button{display:none}
 .gp .pc{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--mut)}
 .gph{font-size:11.5px;color:var(--mut);margin-bottom:2px}
@@ -847,23 +847,24 @@ async function startRealtime(){if(S.mode!=='supa'||!sb||RT)return;let uid=null;t
 const TARGETS=[['First',70],['2:1',60],['2:2',50],['Pass',40]];
 function gradesDoc(){return S.meta.find(m=>m.id==='grades')||null}
 let grT=null;function saveGrades(g){clearTimeout(grT);grT=setTimeout(()=>DB.put('meta',g),600)}
-function calc(parts){let wk=0,got=0,wu=0;for(const p of parts){const w=+p.w||0;if(p.s!==''&&p.s!=null&&!isNaN(+p.s)){wk+=w;got+=w*(+p.s)/100}else wu+=w}return{wk,got,wu,avg:wk?got/wk*100:null}}
+const num=v=>{const x=parseFloat(String(v??'').replace(',','.'));return isFinite(x)?x:null};
+function calc(parts){let wk=0,got=0,wu=0;for(const p of parts){const w=num(p.w)||0,sc=num(p.s);if(sc!=null){wk+=w;got+=w*sc/100}else wu+=w}return{wk,got,wu,avg:wk?got/wk*100:null}}
 function renderGrades(){const sec=$('#grades');if(!sec)return;const g=gradesDoc();
   if(!g||!g.mods.length){sec.innerHTML=`<div class="empty">还没有课程</div>`;$('#gradeTargets').innerHTML='';return}
   const T=g.target||70;
   $('#gradeTargets').innerHTML=TARGETS.map(([n,v])=>`<button class="chip" data-gt="${v}" aria-pressed="${T===v}">${n} ${v}%</button>`).join('');
-  sec.innerHTML=g.mods.map((m,mi)=>{const c=calc(m.parts),tot=m.parts.reduce((a,p)=>a+(+p.w||0),0);
+  sec.innerHTML=g.mods.map((m,mi)=>{const c=calc(m.parts),tot=Math.round(m.parts.reduce((a,p)=>a+(num(p.w)||0),0)*100)/100;
     const need=c.wu?(T-c.got)/c.wu*100:null;
     const verdict=c.wu===0?`总评 <b>${c.got.toFixed(1)}%</b>`:need<=0?`<span class="ok">已经稳拿 ${T}%</span>`:need>100?`<span class="bad">剩下全满分也到不了 ${T}%</span>`:`剩下 ${c.wu}% 要平均 <b>${need.toFixed(0)}%</b> 才能拿 ${T}%`;
     return `<div class="gcard" style="--c:${cColor(m.code)}"><div class="gh"><input type="text" class="gcode" data-gm="${mi}" data-f="code" value="${esc(m.code)}" aria-label="课程代码"><button class="ib2" data-gdel="${mi}" aria-label="删除这门课">✕</button></div>
       <div class="gp gph"><span>部分</span><span>占比</span><span>得分</span><span></span></div>
-      ${m.parts.map((p,pi)=>`<div class="gp"><input type="text" data-gm="${mi}" data-gp="${pi}" data-f="n" value="${esc(p.n)}" aria-label="部分名称"><span class="pc"><input type="number" inputmode="decimal" data-gm="${mi}" data-gp="${pi}" data-f="w" value="${esc(p.w)}" aria-label="占比">%</span><span class="pc"><input type="number" inputmode="decimal" data-gm="${mi}" data-gp="${pi}" data-f="s" value="${esc(p.s??'')}" placeholder="—" aria-label="得分">%</span><button class="ib2" data-gpdel="${mi}:${pi}" aria-label="删除这一项">✕</button></div>`).join('')}
+      ${m.parts.map((p,pi)=>`<div class="gp"><input type="text" data-gm="${mi}" data-gp="${pi}" data-f="n" value="${esc(p.n)}" aria-label="部分名称"><span class="pc"><input type="text" inputmode="decimal" autocomplete="off" data-gm="${mi}" data-gp="${pi}" data-f="w" value="${esc(p.w)}" aria-label="占比">%</span><span class="pc"><input type="text" inputmode="decimal" autocomplete="off" data-gm="${mi}" data-gp="${pi}" data-f="s" value="${esc(p.s??'')}" placeholder="—" aria-label="得分">%</span><button class="ib2" data-gpdel="${mi}:${pi}" aria-label="删除这一项">✕</button></div>`).join('')}
       <button class="tilebtn" data-gpadd="${mi}">+ 加一项</button>
       <div class="gf"><div class="gbar"><i style="width:${Math.min(100,c.got)}%"></i><i class="u" style="width:${Math.min(100,c.wu)}%"></i></div>
       <div>已出分 ${c.wk}% · 这部分平均 ${c.avg==null?'—':c.avg.toFixed(1)+'%'} · 目前累计 ${c.got.toFixed(1)} 分${tot!==100?` · <span class="bad">占比加起来是 ${tot}%</span>`:''}</div><div>${verdict}</div></div></div>`}).join('');
 }
 function gradesEvent(e){const g=gradesDoc();const t=e.target;const d=t.dataset;
-  if(e.type==='input'&&d.gm!=null){const m=g.mods[+d.gm];if(d.gp!=null){const p=m.parts[+d.gp];p[d.f]=d.f==='n'?t.value.slice(0,40):(t.value===''?'':+t.value)}else m.code=t.value.slice(0,20);saveGrades(g);
+  if(e.type==='input'&&d.gm!=null){const m=g.mods[+d.gm];if(d.gp!=null){const p=m.parts[+d.gp];p[d.f]=d.f==='n'?t.value.slice(0,40):t.value.replace(/[,，。]/g,'.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1').slice(0,7)}else m.code=t.value.slice(0,20);saveGrades(g);
     clearTimeout(gradesEvent.t);gradesEvent.t=setTimeout(()=>{const a=document.activeElement,k=a&&[a.dataset.gm,a.dataset.gp,a.dataset.f].join('|'),pos=a&&a.selectionStart;renderGrades();if(k){const n=[...document.querySelectorAll('#grades input')].find(x=>[x.dataset.gm,x.dataset.gp,x.dataset.f].join('|')===k);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}},700);return}
 }
 async function gradesClick(d){let g=gradesDoc();
@@ -1283,7 +1284,7 @@ const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()}
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795717349';let lastChk=0;
+const BUILD='1795778936';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
