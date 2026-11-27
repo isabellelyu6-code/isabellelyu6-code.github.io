@@ -525,14 +525,22 @@ const RowCache={db:null,async open(){if(this.db)return this.db;this.db=await new
   async get(k){try{const d=await this.open();return await new Promise(res=>{const q=d.transaction('kinds').objectStore('kinds').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)})}catch(e){return null}},
   async set(k,v){try{const d=await this.open();d.transaction('kinds','readwrite').objectStore('kinds').put(v,k)}catch(e){}}};
 let OFFLINE=false;
+const isNetErr=e=>!navigator.onLine||/fetch|network|load failed|timeout|ECONN/i.test(String((e&&(e.message||e.details))||e));
 function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
   async open(){return this},
-  async all(k){try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
+  async all(k){await this.flush().catch(()=>{});try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
     catch(e){const c=await RowCache.get('all:'+k);if(c){OFFLINE=true;return c}throw e}},
   async get(k,id){try{const r=chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle());RowCache.set('one:'+k+'/'+id,r);return r}
     catch(e){const c=await RowCache.get('one:'+k+'/'+id);if(c!==null){OFFLINE=true;return c}throw e}},
-  async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
-  async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
+  /* writes made without internet wait in this browser and are sent when the connection comes back */
+  async flush(){if(this._fl)return this._fl;this._fl=(async()=>{let q=(await RowCache.get('outbox'))||[];if(!q.length||!navigator.onLine)return;
+      while(q.length){const op=q[0];try{if(op.op==='put')chk(await T().upsert({kind:op.k,id:op.row.id,iv:op.row.iv,ct:op.row.ct,updated_at:op.at},{onConflict:'user_id,kind,id'}));else chk(await T().delete().eq('kind',op.k).eq('id',op.id))}
+        catch(e){if(isNetErr(e))break;}q.shift();await RowCache.set('outbox',q)}
+      if(!q.length){OFFLINE=false;try{window.dispatchEvent(new Event('lyra-synced'))}catch(e){}}})().finally(()=>{this._fl=null});return this._fl},
+  async queue(op){const q=(await RowCache.get('outbox'))||[];const i=q.findIndex(x=>x.k===op.k&&(x.row?x.row.id:x.id)===(op.row?op.row.id:op.id));if(i>=0)q.splice(i,1);q.push(op);await RowCache.set('outbox',q);
+    const c=(await RowCache.get('all:'+op.k))||[];const id=op.row?op.row.id:op.id;const j=c.findIndex(x=>x.id===id);if(op.op==='put'){if(j>=0)c[j]=op.row;else c.push(op.row)}else if(j>=0)c.splice(j,1);await RowCache.set('all:'+op.k,c);OFFLINE=true;try{window.dispatchEvent(new Event('lyra-offline-write'))}catch(e){}},
+  async put(k,o){const row={id:o.id,iv:o.iv||'',ct:o.ct};try{chk(await T().upsert({kind:k,...row,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))}catch(e){if(!isNetErr(e))throw e;await this.queue({op:'put',k,row,at:new Date().toISOString()})}},
+  async del(k,id){try{chk(await T().delete().eq('kind',k).eq('id',id))}catch(e){if(!isNetErr(e))throw e;await this.queue({op:'del',k,id})}},
   async clear(k){chk(await T().delete().eq('kind',k))}
 }}
 let sb=null;
@@ -635,7 +643,7 @@ async function boot(){
   if(window.claude&&typeof window.claude.use==='function'){const u=n=>window.claude.use(n).catch(()=>null);[db,user]=await Promise.all([u('db'),u('user')])}
   let id=null;if(db&&user){try{id=await user.id()}catch(e){}}
   if(!(db&&id)&&SUPABASE_URL&&SUPABASE_ANON_KEY){try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){sb=null}}
-  if(sb){S.mode='supa';const raw=makeSupa(sb);
+  if(sb){S.mode='supa';const raw=makeSupa(sb);addEventListener('online',()=>raw.flush().catch(()=>{}));setInterval(()=>{if(navigator.onLine)raw.flush().catch(()=>{})},60000);
     Sys.accounts={async all(){try{const r=await raw.get('sys','account');return r?[JSON.parse(r.ct)]:[]}catch(e){return[]}},put:(k,a)=>raw.put('sys',{id:'account',iv:'',ct:JSON.stringify(a)}),del:()=>raw.del('sys','account')};
     Sys.mkData=()=>Promise.resolve(raw)}
   else if(db&&id){S.mode='cloud';const root='data/users/'+id;INBOX=db.doc(root+'/hub').collection('inbox');Sys.accounts=makeRemote(db.doc(root+'/system'));Sys.mkData=acc=>makeRemote(db.doc(root+'/acc-'+acc.id)).open()}
@@ -964,10 +972,15 @@ function renderToday(){
   $('#today').closest('.tile').hidden=!S.tt.length;$('#trip').hidden=!S.trip;if(!S.trip)return;
   const s=pd(S.trip.start),e=pd(S.trip.end),t0=pd(dk(n));const d=Math.round((s-t0)/864e5),after=Math.round((t0-e)/864e5);
   const tu=safeUrl(S.trip.url);
-  $('#trip').innerHTML=`${tu?`<a href="${esc(tu)}" style="position:absolute;inset:0;z-index:2" aria-label="打开行程"></a>`:''}<h2 style="color:var(--ink2)">${esc(S.trip.name||'旅行')} · ${+S.trip.start.slice(5,7)}/${+S.trip.start.slice(8)} – ${+S.trip.end.slice(5,7)}/${+S.trip.end.slice(8)}${tu?'<span class="tilebtn">打开 →</span>':''}</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 · 玩得开心</small></div>`:`<div class="big">✓<small>旅行结束啦</small></div>`}`;
+  $('#trip').innerHTML=`${tu?`<a href="${esc(tu)}" style="position:absolute;inset:0;z-index:2" aria-label="打开行程"></a>`:''}<h2 style="color:var(--ink2)">${esc(S.trip.name||'旅行')} · ${+S.trip.start.slice(5,7)}/${+S.trip.start.slice(8)} – ${+S.trip.end.slice(5,7)}/${+S.trip.end.slice(8)}${tu?'<span class="tilebtn">打开 →</span>':''}</h2>${d>0?`<div class="big">${d}<small>天后出发</small></div>`:after<=0?`<div class="big">第 ${Math.round((t0-s)/864e5)+1}<small>天 / 共 ${Math.round((e-s)/864e5)+1} 天</small></div>${tripToday(t0,s,e)}`:`<div class="big">✓<small>旅行结束啦</small></div>`}`;
 }
 
 
+/* during the trip: what's planned for today and tomorrow (labels like 12/24 or 1/2–1/3) */
+function tripDays(lbl,s,e){const ms=String(lbl).match(/\d{1,2}\/\d{1,2}/g);if(!ms)return null;const toD=x=>{const [m,d]=x.split('/').map(Number);for(const y of [s.getFullYear(),e.getFullYear()]){const t=new Date(y,m-1,d);if(t>=s&&t<=e)return t}return null};
+  const a=toD(ms[0]),b=toD(ms[ms.length-1]);return a&&b?[a,b]:null}
+function tripToday(t0,s,e){const tm=new Date(t0);tm.setDate(tm.getDate()+1);const on=d=>S.trip.plan.filter(p=>{const r=tripDays(p[0],s,e);return r&&d>=r[0]&&d<=r[1]}).map(p=>esc(p[1]));
+  const a=on(t0),b=tm<=e?on(tm):[];return (a.length?`<p><b style="color:var(--ink)">今天</b> · ${a.join('；')}</p>`:'')+(b.length?`<p>明天 · ${b.join('；')}</p>`:'')}
 /* ---------- site icons ---------- */
 const ICONS={
  app:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/>',
@@ -1284,7 +1297,7 @@ const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()}
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795778936';let lastChk=0;
+const BUILD='1795781604';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);

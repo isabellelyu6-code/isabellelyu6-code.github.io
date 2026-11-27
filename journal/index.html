@@ -36,6 +36,14 @@ button{cursor:pointer;border:0;background:none}
 .rail{display:none}
 main{max-width:880px;width:100%;margin:0 auto}
 .jside{display:none}
+.mtrend{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;height:140px;align-items:end}.mtrend>div{display:flex;flex-direction:column;height:100%;gap:4px;align-items:center}
+.mstack{flex:1;width:100%;max-width:30px;display:flex;flex-direction:column;border-radius:6px;overflow:hidden;background:var(--card)}.mstack i{display:block;min-height:2px}.mtrend span{font-size:11px;color:var(--mut)}
+.tools .fmt{display:inline-flex;gap:2px;padding-right:8px;margin-right:4px;border-right:1px solid var(--line)}
+.tools .fmt button{min-width:38px;padding:0 9px;font-size:14px}.tools .fmt mark{background:color-mix(in srgb,var(--acc) 35%,transparent);color:inherit;padding:0 3px;border-radius:3px}
+.mdv{cursor:text}.mdv p{margin:0 0 .8em}.mdv h4{font-size:1.15em;margin:1em 0 .3em}.mdv ul{margin:0 0 .8em;padding-left:1.4em}.mdv mark,.card mark{background:color-mix(in srgb,var(--acc) 30%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+@media (max-width:600px){.tools .fmt button[data-t=mk]{display:none}}
+.field.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field.two label{display:block}
+.chk{display:flex;align-items:center;gap:8px;font-size:14.5px;cursor:pointer;margin-top:4px}.chk input{width:18px;height:18px;accent-color:var(--acc)}
 .nbsvg{display:inline-block;vertical-align:-2px;color:var(--c,var(--mut))}
 .nbi{display:inline-flex;margin-right:5px}.nbi .nbsvg{color:var(--c,currentColor)}
 .rail .nb .ico .nbsvg,.nbm .ico .nbsvg{color:var(--c)}
@@ -548,14 +556,22 @@ const RowCache={db:null,async open(){if(this.db)return this.db;this.db=await new
   async get(k){try{const d=await this.open();return await new Promise(res=>{const q=d.transaction('kinds').objectStore('kinds').get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)})}catch(e){return null}},
   async set(k,v){try{const d=await this.open();d.transaction('kinds','readwrite').objectStore('kinds').put(v,k)}catch(e){}}};
 let OFFLINE=false;
+const isNetErr=e=>!navigator.onLine||/fetch|network|load failed|timeout|ECONN/i.test(String((e&&(e.message||e.details))||e));
 function makeSupa(sb){const T=()=>sb.from('records');const chk=r=>{if(r.error)throw r.error;return r.data};return{
   async open(){return this},
-  async all(k){try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
+  async all(k){await this.flush().catch(()=>{});try{const out=[];for(let f=0;f<100000;f+=500){const d=chk(await T().select('id,iv,ct').eq('kind',k).order('id').range(f,f+499));out.push(...d);if(d.length<500)break}RowCache.set('all:'+k,out);OFFLINE=false;return out}
     catch(e){const c=await RowCache.get('all:'+k);if(c){OFFLINE=true;return c}throw e}},
   async get(k,id){try{const r=chk(await T().select('id,iv,ct').eq('kind',k).eq('id',id).maybeSingle());RowCache.set('one:'+k+'/'+id,r);return r}
     catch(e){const c=await RowCache.get('one:'+k+'/'+id);if(c!==null){OFFLINE=true;return c}throw e}},
-  async put(k,o){chk(await T().upsert({kind:k,id:o.id,iv:o.iv||'',ct:o.ct,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))},
-  async del(k,id){chk(await T().delete().eq('kind',k).eq('id',id))},
+  /* writes made without internet wait in this browser and are sent when the connection comes back */
+  async flush(){if(this._fl)return this._fl;this._fl=(async()=>{let q=(await RowCache.get('outbox'))||[];if(!q.length||!navigator.onLine)return;
+      while(q.length){const op=q[0];try{if(op.op==='put')chk(await T().upsert({kind:op.k,id:op.row.id,iv:op.row.iv,ct:op.row.ct,updated_at:op.at},{onConflict:'user_id,kind,id'}));else chk(await T().delete().eq('kind',op.k).eq('id',op.id))}
+        catch(e){if(isNetErr(e))break;}q.shift();await RowCache.set('outbox',q)}
+      if(!q.length){OFFLINE=false;try{window.dispatchEvent(new Event('lyra-synced'))}catch(e){}}})().finally(()=>{this._fl=null});return this._fl},
+  async queue(op){const q=(await RowCache.get('outbox'))||[];const i=q.findIndex(x=>x.k===op.k&&(x.row?x.row.id:x.id)===(op.row?op.row.id:op.id));if(i>=0)q.splice(i,1);q.push(op);await RowCache.set('outbox',q);
+    const c=(await RowCache.get('all:'+op.k))||[];const id=op.row?op.row.id:op.id;const j=c.findIndex(x=>x.id===id);if(op.op==='put'){if(j>=0)c[j]=op.row;else c.push(op.row)}else if(j>=0)c.splice(j,1);await RowCache.set('all:'+op.k,c);OFFLINE=true;try{window.dispatchEvent(new Event('lyra-offline-write'))}catch(e){}},
+  async put(k,o){const row={id:o.id,iv:o.iv||'',ct:o.ct};try{chk(await T().upsert({kind:k,...row,updated_at:new Date().toISOString()},{onConflict:'user_id,kind,id'}))}catch(e){if(!isNetErr(e))throw e;await this.queue({op:'put',k,row,at:new Date().toISOString()})}},
+  async del(k,id){try{chk(await T().delete().eq('kind',k).eq('id',id))}catch(e){if(!isNetErr(e))throw e;await this.queue({op:'del',k,id})}},
   async clear(k){chk(await T().delete().eq('kind',k))}
 }}
 let sb=null;
@@ -654,7 +670,7 @@ async function init(){
     try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js');sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){sb=null;S.banner='连不上云端，暂时只能用这台设备上的本地账号。'}
   }
   if(sb){
-    S.mode='supa';const raw=makeSupa(sb);
+    S.mode='supa';const raw=makeSupa(sb);let _ow=0;addEventListener('lyra-offline-write',()=>{if(Date.now()-_ow>60000){_ow=Date.now();toast('没有网络：已存在这台设备上，联网后会自动上传',4000)}});addEventListener('lyra-synced',()=>{if(_ow){_ow=0;toast('离线写的内容已上传 ✓')}});addEventListener('online',()=>raw.flush().catch(()=>{}));setInterval(()=>{if(navigator.onLine)raw.flush().catch(()=>{})},60000);
     Sys.accounts={async all(){try{const r=await raw.get('sys','account');return r?[JSON.parse(r.ct)]:[]}catch(e){return[]}},put:(k,a)=>raw.put('sys',{id:'account',iv:'',ct:JSON.stringify(a)}),del:()=>raw.del('sys','account')};
     Sys.mkData=()=>Promise.resolve(raw);
     Sys.legacy=null;
@@ -765,7 +781,7 @@ async function enterAccount(acc,key,isNew){
   if(!S.notebooks.length){const nb={id:uid(),name:'我的日记',color:COLORS[0],created:Date.now(),order:0};S.notebooks.push(nb);Store.put('notebooks',nb).catch(()=>{})}
   render();if(moved)toast(`之前保存的 ${moved} 篇日记已加密放进这个账号`,5000);
   if(OFFLINE)toast('离线模式：显示的是这台设备上次同步的内容',4000);
-  applyHubTheme();startRealtime();setTimeout(autoBackup,5000);
+  applyHubTheme();startRealtime();setTimeout(autoBackup,5000);setTimeout(backupNudge,9000);setTimeout(tripSync,3000);
 }
 /* titles that are just a date (2025.3.12 / 2025年3月12日 周三 / 3-12 / 20250312 / March 12, 2025 …) are diary entries; everything else is an essay */
 const MON='jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?';
@@ -878,7 +894,7 @@ function visible(){
   }).sort((a,b)=>b.date.localeCompare(a.date));
 }
 function hl(text,toks){let h=esc(text);for(const t of toks){const et=esc(t).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');if(et)h=h.replace(new RegExp(et,'gi'),m=>`<mark>${m}</mark>`)}return h}
-function snippet(body,toks){const b=body.replace(/\s+/g,' ').trim();if(!toks.length)return b.slice(0,160);const low=b.toLowerCase();let i=-1;for(const t of toks){i=low.indexOf(t);if(i>=0)break}if(i<0)return b.slice(0,160);const s=Math.max(0,i-40);return (s?'…':'')+b.slice(s,s+160)}
+function snippet(body,toks){const b=mdPlain(body).replace(/\s+/g,' ').trim();if(!toks.length)return b.slice(0,160);const low=b.toLowerCase();let i=-1;for(const t of toks){i=low.indexOf(t);if(i>=0)break}if(i<0)return b.slice(0,160);const s=Math.max(0,i-40);return (s?'…':'')+b.slice(s,s+160)}
 
 /* ---------- streak / stats ---------- */
 function daySet(list=S.entries){return new Set(list.map(e=>e.date.slice(0,10)))}
@@ -1108,6 +1124,11 @@ function renderInsights(){
   <div class="stat" role="button" tabindex="0" data-stat="s"><span>连续</span><b>${st.cur}<i>天</i></b><em>最长 ${st.best} 天</em></div></div>`})()}
   <h3>每月篇数</h3><div class="months">${months.map((n,i)=>`<div title="${i+1}月 ${n} 篇"><span>${n||''}</span><i style="height:${n/mx*100}%"></i><span>${i+1}</span></div>`).join('')}</div>
   <h3>心情</h3>${mc.some(Boolean)?MOODS.map((m,i)=>`<div class="hbar"><span>${m.n}</span><div class="t"><i style="width:${mc[i]/mmax*100}%;background:${m.c}"></i></div><em>${mc[i]}</em></div>`).join(''):'<p class="muted">还没有心情记录</p>'}
+  ${(()=>{const pm=Array.from({length:12},()=>Array(7).fill(0));ys.forEach(e=>{if(e.mood)pm[+e.date.slice(5,7)-1][e.mood-1]++});if(!pm.some(r=>r.some(Boolean)))return'';
+    const avg=r=>{const n=r.reduce((a,b)=>a+b,0);return n?r.reduce((a,c,i)=>a+c*(i+1),0)/n:null};
+    return `<h3>心情变化</h3><div class="mtrend">${pm.map((r,i)=>{const n=r.reduce((a,b)=>a+b,0),av=avg(r);return `<div title="${i+1}月${n?' · 平均 '+MOODS[Math.round(av)-1].n:''}"><div class="mstack">${n?r.map((c,j)=>c?`<i style="flex:${c};background:${MOODS[j].c}"></i>`:'').reverse().join(''):''}</div><span>${i+1}</span></div>`}).join('')}</div>`})()}
+  ${(()=>{const pl={};ys.forEach(e=>{const p=(e.place||'').trim();if(p)pl[p]=(pl[p]||0)+1});const L=Object.entries(pl).sort((a,b)=>b[1]-a[1]);if(!L.length)return'';
+    return `<h3>去过的地方 · ${L.length} 个</h3><div class="tagcloud">${L.slice(0,30).map(([p,n])=>`<button class="chip" data-place="${esc(p)}">${esc(p)} <span style="color:var(--mut)">${n}</span></button>`).join('')}</div>`})()}
   <h3>分区</h3>${nbc.filter(([,c])=>c).sort((x,y)=>y[1]-x[1]).map(([n,c])=>`<div class="hbar"><span>${nbLabel(n)}</span><div class="t"><i style="width:${c/nmax*100}%;background:${esc(n.color)}"></i></div><em>${c}</em></div>`).join('')}
   <h3>常用标签</h3>${top.length?`<div class="tagcloud">${top.map(([t,n])=>`<button class="chip" data-tag="${esc(t)}">#${esc(t)} ${n}</button>`).join('')}</div>`:'<p class="muted">还没有标签。</p>'}
   <p class="muted" style="margin-top:18px">今年拍进日记的照片：${ph} 张</p><div class="reportbox">${renderReportPanel()}</div></section>`;
@@ -1167,7 +1188,7 @@ function renderSettings(){
   <label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" id="impOcr" checked style="width:20px;height:20px"> 照片导入时识别里面的文字</label>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="pickimport">选择文件</button><button class="btn line" data-act="paste">粘贴一大段文字</button></div>
   <h3>导出与备份</h3>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="fixdates">按标题日期改时间</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" data-act="expbook">导出 PDF / Word</button><button class="btn line" data-act="encbak">下载加密备份</button><button class="btn line" data-act="expjson">导出 JSON 备份</button><button class="btn line" data-act="expmd">导出 Markdown</button><button class="btn line" data-act="jbackups">自动备份</button><button class="btn line" data-act="autosplit">按标题分区（日记 / 随笔）</button><button class="btn line" data-act="fixdates">按标题日期改时间</button><button class="btn line" data-act="mapimport">导入分区表</button><input type="file" id="mapFile" accept=".json" hidden></div>
   <h3>账号</h3><p class="muted">已登录：${esc(S.account?.name||'')}。这个账号的日记、照片都用你的密码加密后才保存，没有密码谁也读不出来。</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn line" data-act="logout">退出登录</button><button class="btn line" data-act="chpw">修改密码</button><button class="btn danger" data-act="delacc">删除账号</button></div>
   <h3>识别与语音</h3><p class="muted">文字识别：${caps.sample?'用 Claude 识别（手写中文效果最好）':'用开源的 Tesseract.js 在浏览器里识别'}。语音输入：${caps.dict||window.SpeechRecognition||window.webkitSpeechRecognition?'可用':'这个浏览器不支持'}。</p>
@@ -1191,7 +1212,7 @@ function openEditor(e,isNew=false){
    <div class="moods" id="edMoods"></div>
    <div class="field"><label for="edPlace">地点</label><input type="text" id="edPlace" value="${esc(S.ed.place)}" placeholder="地点"></div>
    <div class="field"><label for="edTagIn">标签</label><div class="tagin" id="edTags"></div></div>`;
-  $('#edTools').innerHTML=`<button data-t="photo">${IC.photo}照片</button><button data-t="ocr">${IC.scan}识别文字</button><button data-t="mic" id="micBtn">${IC.mic}语音</button>${caps.sample?`<button data-t="ai">${IC.spark}智能标签</button>`:''}`;
+  $('#edTools').innerHTML=`<span class="fmt"><button data-t="h" title="小标题"><b>H</b></button><button data-t="b" title="加粗（Ctrl+B）"><b>B</b></button><button data-t="li" title="列表">•≡</button><button data-t="mk" title="高亮"><mark>A</mark></button><button data-t="pv" id="pvBtn" title="预览排版">预览</button></span><button data-t="photo">${IC.photo}照片</button><button data-t="ocr">${IC.scan}识别文字</button><button data-t="mic" id="micBtn">${IC.mic}语音</button>${caps.sample?`<button data-t="ai">${IC.spark}智能标签</button>`:''}`;
   renderEdPhotos();renderEdMoods();renderEdTags();renderEdFav();
   $('#edStatus').textContent=isNew?'新日记':'';
   $('#editor').hidden=false;document.body.style.overflow=innerWidth>=900?'':'hidden';document.querySelectorAll('.card.active').forEach(c=>c.classList.remove('active'));document.querySelector(`.card[data-open="${CSS.escape(e.id)}"]`)?.classList.add('active');
@@ -1213,7 +1234,7 @@ async function persist(){
   try{await Store.put('entries',copy);if(S.ed&&S.ed.id===copy.id)$('#edStatus').textContent='已保存'}
   catch(err){S.dirty=true;$('#edStatus').textContent='保存失败';toast(err&&err.code==='quota_exceeded'?'存储已满：请导出备份并删除一些照片':'保存失败，稍后会再试');saveT=setTimeout(persist,5000)}
 }
-async function closeEditor(){if(document.body.classList.contains('edfull'))setFull(false);await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render()}
+async function closeEditor(){if(document.body.classList.contains('edfull'))setFull(false);await persist();$('#editor').hidden=true;document.body.style.overflow='';S.ed=null;stopMic();render();tripSync().catch(()=>{})}
 $('#edClose').onclick=closeEditor;
 
 /* drag the dividers to resize the sidebar and the list (remembered on this device) */
@@ -1237,7 +1258,7 @@ let calmT=null;document.addEventListener('input',e=>{if(!document.body.classList
 document.addEventListener('mousemove',()=>{if(document.body.classList.contains('calm'))document.body.classList.remove('calm')});
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795778936';let lastChk=0;
+const BUILD='1795781604';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toastAct('有新版本','刷新',()=>location.reload())}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
@@ -1265,7 +1286,18 @@ $('#edBody').addEventListener('click',async ev=>{const t=ev.target.closest('butt
   else if(t.dataset.pdel){const p=t.dataset.pdel;e.photos=e.photos.filter(x=>x!==p);delete e.thumbs[p];renderEdPhotos();touch();Store.del('photos',p).catch(()=>{})}
   else if(t.dataset.view){viewPhoto(t.dataset.view)}});
 $('#edTools').addEventListener('click',ev=>{const t=ev.target.closest('[data-t]');if(!t)return;const k=t.dataset.t;
+  if(['h','b','li','mk'].includes(k))return fmtText(k);if(k==='pv')return togglePreview();
   if(k==='photo')$('#filePhoto').click();else if(k==='ocr')$('#fileOcr').click();else if(k==='mic')toggleMic();else if(k==='ai')aiSuggest(t)});
+/* formatting buttons work on the selection (or the current line) */
+function fmtText(k){const ta=$('#edText');if(!ta||ta.hidden)return;const v=ta.value;let a=ta.selectionStart,b=ta.selectionEnd;
+  if(k==='b'||k==='mk'){const w=k==='b'?'**':'==';const sel=v.slice(a,b)||'';const ins=w+(sel||'文字')+w;ta.setRangeText(ins,a,b,'end');if(!sel){ta.selectionStart=a+w.length;ta.selectionEnd=a+w.length+2}}
+  else{const ls=v.lastIndexOf('\n',a-1)+1;let le=v.indexOf('\n',b);if(le<0)le=v.length;const pre=k==='h'?'## ':'- ';
+    const lines=v.slice(ls,le).split('\n');const on=lines.every(l=>l.startsWith(pre));const out=lines.map(l=>on?l.slice(pre.length):(k==='h'?l.replace(/^#{1,3}\s+/,''):l.replace(/^\s*[-•·]\s+/,''))).map(l=>on?l:pre+l).join('\n');
+    ta.setRangeText(out,ls,le,'end')}
+  ta.focus();S.ed.body=ta.value;autosize();touch()}
+function togglePreview(){const ta=$('#edText');if(!ta)return;let pv=$('#edPv');const on=!pv;
+  if(on){pv=document.createElement('div');pv.id='edPv';pv.className='ed-text mdv';pv.innerHTML=mdHtml(ta.value)||'<p class="muted">（空）</p>';ta.after(pv);ta.hidden=true;pv.onclick=()=>togglePreview()}else{pv.remove();ta.hidden=false;ta.focus()}
+  $('#pvBtn')?.classList.toggle('on',on)}
 $('#filePhoto').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';if(!fs.length)return;toast('正在处理照片…',8000);for(const f of fs)await attachPhoto(S.ed,f);renderEdPhotos();touch();toast('已添加 '+fs.length+' 张照片')};
 $('#fileOcr').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const e=S.ed;
   $('#edStatus').innerHTML='<span class="spin"></span> 正在识别文字…';
@@ -1314,17 +1346,19 @@ async function aiSuggest(btn){
 /* ---------- dictation ---------- */
 let rec=null,listening=false;
 function setupDictation(){const d=caps.dict;if(!d)return;try{d.onFinal(({text})=>appendSpeech(text));d.onState(({state})=>{listening=state==='listening';$('#micBtn')?.classList.toggle('on',listening)})}catch(e){}}
-function appendSpeech(text){if(!S.ed||!text)return;const ta=$('#edText');S.ed.body+=text;if(ta){ta.value=S.ed.body;autosize()}touch()}
+function appendSpeech(text){if(!S.ed||!text)return;const ta=$('#edText');if(ta&&!ta.hidden&&document.activeElement===ta){ta.setRangeText(text,ta.selectionStart,ta.selectionEnd,'end');S.ed.body=ta.value}else{S.ed.body+=text;if(ta)ta.value=S.ed.body}if(ta)autosize();touch()}
+let wantMic=false;
 function toggleMic(){
   if(caps.dict){if(listening){caps.dict.stop().catch(()=>{});return}caps.dict.start().catch(e=>toast(e&&e.code==='not_granted'?'没有麦克风权限':'无法开始语音输入'));return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return toast('这个浏览器不支持语音输入，可以用键盘上的麦克风');
   if(listening){stopMic();return}
   rec=new SR();rec.lang='zh-CN';rec.continuous=true;rec.interimResults=false;
   rec.onresult=ev=>{for(let i=ev.resultIndex;i<ev.results.length;i++)if(ev.results[i].isFinal)appendSpeech(ev.results[i][0].transcript)};
-  rec.onend=()=>{listening=false;$('#micBtn')?.classList.remove('on')};
-  try{rec.start();listening=true;$('#micBtn').classList.add('on')}catch(e){toast('无法开始语音输入')}
+  rec.onend=()=>{if(wantMic&&rec){try{rec.start();return}catch(e){}}listening=false;wantMic=false;$('#micBtn')?.classList.remove('on')};
+  rec.onerror=ev=>{if(ev.error==='not-allowed'){wantMic=false;toast('没有麦克风权限')}};
+  try{rec.start();listening=true;wantMic=true;$('#micBtn').classList.add('on')}catch(e){toast('无法开始语音输入')}
 }
-function stopMic(){if(caps.dict&&listening){caps.dict.stop().catch(()=>{})}if(rec){try{rec.stop()}catch(e){}rec=null}listening=false}
+function stopMic(){wantMic=false;if(caps.dict&&listening){caps.dict.stop().catch(()=>{})}if(rec){try{rec.stop()}catch(e){}rec=null}listening=false}
 
 /* ---------- right-click / long-press menu ---------- */
 function ctxMenu(x,y,items){ctxClose();const m=document.createElement('div');m.className='ctx';m.setAttribute('role','menu');
@@ -1358,6 +1392,7 @@ function nbMenu(nb,cx,cy){const i=S.notebooks.indexOf(nb);const move=d=>{const j
   ctxMenu(cx,cy,[{icon:ICN.open,label:'打开',act:()=>{S.nb=nb.id;S.view='journal';render()}},
    {icon:ICN.edit,label:'重命名 / 换图标…',act:()=>nbEdit(nb)},
    {icon:ICN.tl,label:'按时间线添加日记…',act:()=>fillFromTimeline(nb)},
+   {icon:ICN.open,label:'导出这个分区（PDF / Word）…',act:()=>{S.nb=nb.id;render();exportModal()}},
    i>0&&{icon:ICN.up,label:'上移',act:()=>move(-1)},i<S.notebooks.length-1&&{icon:ICN.down,label:'下移',act:()=>move(1)},
    '-',S.notebooks.length>1&&{icon:ICN.del,label:'删除分区',danger:true,act:()=>delNotebook(nb.id)}].filter(Boolean))}
 function nbEdit(nb){let color=nb.color,ik=nbIconKey(nb);modal(`<h3>编辑分区</h3><div class="field"><label>图标</label><div class="icgrid" id="neI">${Object.keys(NBI).map(k=>`<button type="button" data-ik="${k}" aria-pressed="${nbIconKey(nb)===k}" aria-label="${k}">${nbSvg(k,20)}</button>`).join('')}<button type="button" data-ik="" aria-pressed="${!nbIconKey(nb)}" aria-label="不要图标" class="none">—</button></div></div>
@@ -1462,7 +1497,7 @@ function splitText(text,year,fallback,fallbackTitle){
 }
 async function addImported(items,nb){let n=0;for(const it of items){const e=fixEntry({id:uid(),nb,date:it.date,title:it.title||'',body:it.body||'',created:Date.now(),updated:Date.now()});S.entries.push(e);await Store.put('entries',e);n++}return n}
 async function importBackup(obj){let n=0;
-  for(const nb of obj.notebooks||[])if(nb&&nb.id&&typeof nb.name==='string'){if(!nbById(nb.id))S.notebooks.push({id:String(nb.id),name:nb.name.slice(0,30),icon:[...String(nb.icon||'')].slice(0,2).join(''),color:COLORS.includes(nb.color)?nb.color:COLORS[0],created:nb.created||Date.now(),order:Number.isFinite(nb.order)?nb.order:S.notebooks.length});await Store.put('notebooks',structuredClone(nbById(nb.id)))}
+  for(const nb of obj.notebooks||[])if(nb&&nb.id&&typeof nb.name==='string'){if(!nbById(nb.id))S.notebooks.push({id:String(nb.id),name:nb.name.slice(0,30),icon:NBI[nb.icon]?nb.icon:[...String(nb.icon||'')].slice(0,2).join(''),color:COLORS.includes(nb.color)?nb.color:COLORS[0],created:nb.created||Date.now(),order:Number.isFinite(nb.order)?nb.order:S.notebooks.length});await Store.put('notebooks',structuredClone(nbById(nb.id)))}
   for(const p of obj.photos||[])if(p&&p.id&&typeof p.data==='string'&&p.data.startsWith('data:image/')){await Store.put('photos',{id:String(p.id),data:p.data});S.photos.set(p.id,p.data)}
   for(const r of obj.reports||[])if(r&&typeof r.id==='string'&&r.id.startsWith('rep:')&&typeof r.text==='string'){const rec={id:r.id,text:r.text.slice(0,50000),n:+r.n||0,created:+r.created||Date.now()};S.reports.set(rec.id,rec);await Store.put('meta',rec)}
   for(const raw of obj.entries||[]){if(!raw||!raw.id||typeof raw.date!=='string')continue;const e=fixEntry({...raw,id:String(raw.id),title:String(raw.title||''),body:String(raw.body||''),place:String(raw.place||''),tags:(raw.tags||[]).map(String),photos:(raw.photos||[]).map(String),thumbs:Object.fromEntries(Object.entries(raw.thumbs||{}).filter(([,v])=>typeof v==='string'&&v.startsWith('data:image/'))),mood:Number.isInteger(raw.mood)&&raw.mood>=1&&raw.mood<=7?raw.mood:null,fav:!!raw.fav});
@@ -1475,7 +1510,7 @@ async function importFiles(files){
     try{
       if(/\.zip$/i.test(f.name)||f.type==='application/zip'||f.type==='application/x-zip-compressed'){total+=await importZip(f,nb,useOcr,(t)=>{$('#impProg')&&($('#impProg').textContent=`${i+1} / ${files.length} · ${t}`)})}
       else if(/\.html?$/i.test(f.name)){if(!/^index\.html?$/i.test(f.name)){const it=parseAppleJournal(await f.text(),f.name,new Date(f.lastModified||Date.now()));if(it){const e=fixEntry({id:uid(),nb,...it.entry,created:Date.now(),updated:Date.now()});S.entries.push(e);await Store.put('entries',e);total++}}}
-      else if(/\.json$/i.test(f.name)||f.type==='application/json'){const o=JSON.parse(await f.text());total+=await importBackup(o)}
+      else if(/\.json$/i.test(f.name)||f.type==='application/json'){let o=JSON.parse(await f.text());if(o&&o.app==='lyra-backup-enc'){closeModal();o=await openBackup(o);modal(`<h3>正在导入</h3><p class="muted" id="impProg">解密完成，正在恢复…</p>`)}total+=await importBackup(o)}
       else if(f.type.startsWith('image/')){const d=new Date(f.lastModified||Date.now());const e=fixEntry({id:uid(),nb,date:localISO(d),title:'',body:'',created:Date.now(),updated:Date.now()});await attachPhoto(e,f);if(useOcr){try{e.body=await ocr(f)}catch(err){fail++}}S.entries.push(e);await Store.put('entries',e);total++}
       else{const txt=await f.text();const fd=new Date(f.lastModified||Date.now());const items=splitText(txt,fd.getFullYear(),fd,f.name.replace(/\.[^.]+$/,''));total+=await addImported(items,nb)}
     }catch(err){fail++}}
@@ -1549,13 +1584,136 @@ async function importZip(file,nb,useOcr,progress){
 $('#fileImport').onchange=ev=>{const fs=[...ev.target.files];ev.target.value='';if(fs.length)importFiles(fs)};
 
 /* ---------- export ---------- */
+/* ---------- light formatting (## heading, - list, **bold**) shared by reading view and exports ---------- */
+function mdHtml(src){const L=String(src||'').replace(/\r/g,'').split('\n');let out='',list=false,para=[];
+  const inl=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/==(.+?)==/g,'<mark>$1</mark>');
+  const flush=()=>{if(para.length){out+=`<p>${para.map(inl).join('<br>')}</p>`;para=[]}};
+  for(const raw of L){const l=raw.trimEnd();let m;
+    if((m=l.match(/^#{1,3}\s+(.*)/))){flush();if(list){out+='</ul>';list=false}out+=`<h4>${inl(m[1])}</h4>`;continue}
+    if((m=l.match(/^\s*[-•·]\s+(.*)/))){flush();if(!list){out+='<ul>';list=true}out+=`<li>${inl(m[1])}</li>`;continue}
+    if(list){out+='</ul>';list=false}
+    if(!l.trim()){flush();continue}para.push(l)}
+  flush();if(list)out+='</ul>';return out}
+const mdPlain=s=>String(s||'').replace(/^#{1,3}\s+/gm,'').replace(/^\s*[-•·]\s+/gm,'· ').replace(/\*\*(.+?)\*\*/g,'$1').replace(/==(.+?)==/g,'$1');
+
+/* ---------- export the journal as a book: PDF (print) or Word (.docx) ---------- */
+function exportModal(){const nbOpts=S.notebooks.map(n=>`<option value="${esc(n.id)}" ${S.nb===n.id?'selected':''}>${esc(n.name)}</option>`).join('');
+  const first=[...S.entries].sort((a,b)=>a.date.localeCompare(b.date))[0];
+  modal(`<h3>导出日记</h3>
+   <div class="field"><label>范围</label><div class="chips wrapc" id="exR"><button class="chip" data-r="all" aria-pressed="${S.nb==='all'}">全部</button><button class="chip" data-r="nb" aria-pressed="${S.nb!=='all'}">一个分区</button></div>
+     <select id="exNb" style="margin-top:8px" ${S.nb==='all'?'hidden':''}>${nbOpts}</select></div>
+   <div class="field two"><div><label for="exF">从</label><input type="date" id="exF" value="${first?first.date.slice(0,10):''}"></div><div><label for="exT">到</label><input type="date" id="exT" value="${dayKey(new Date())}"></div></div>
+   <label class="chk"><input type="checkbox" id="exP" checked> 带上照片</label>
+   <p class="muted" id="exN" style="margin:8px 0 0"></p>
+   <div class="row"><button class="btn line" data-a="no">取消</button><button class="btn line" data-a="docx">导出 Word</button><button class="btn pri" data-a="pdf">导出 PDF</button></div>`);
+  let r=S.nb==='all'?'all':'nb';
+  const pick=()=>{const f=$('#exF').value||'0000',t=$('#exT').value||'9999',nb=$('#exNb').value;return S.entries.filter(e=>{const k=e.date.slice(0,10);return k>=f&&k<=t&&(r==='all'||inNb(e,nb))}).sort((a,b)=>a.date.localeCompare(b.date))};
+  const count=()=>{$('#exN').textContent=`共 ${pick().length} 篇`};count();
+  $('#modalBox').oninput=count;$('#modalBox').onchange=count;
+  $('#modalBox').onclick=async e=>{const c=e.target.closest('[data-r]');if(c){r=c.dataset.r;$('#exR').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===c));$('#exNb').hidden=r!=='nb';count();return}
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no'){$('#modalBox').onclick=$('#modalBox').oninput=$('#modalBox').onchange=null;return closeModal()}
+    const list=pick();if(!list.length)return toast('这个范围里没有日记');const photos=$('#exP').checked;
+    const title=r==='nb'?(nbById($('#exNb').value)?.name||'日记'):'Lyra 日记';const range=`${list[0].date.slice(0,10).replace(/-/g,'.')} – ${list[list.length-1].date.slice(0,10).replace(/-/g,'.')}`;
+    $('#modalBox').onclick=$('#modalBox').oninput=$('#modalBox').onchange=null;closeModal();
+    try{if(a==='pdf')await exportPdf(list,title,range,photos);else await exportDocx(list,title,range,photos)}catch(err){console.error(err);toast('导出失败：'+(err.message||err))}}}
+async function photoData(p){let d=S.photos.get(p);if(!d){try{const o=await Store.get('photos',p);d=o&&o.data;if(d)S.photos.set(p,d)}catch(e){}}return d||null}
+const metaLine=e=>[nbsOf(e).map(id=>nbById(id)?.name).filter(Boolean).join(' · '),e.mood?MOODS[e.mood-1].n:'',e.place||'',(e.tags||[]).map(t=>'#'+t).join(' ')].filter(Boolean).join('　');
+const longDate=k=>{const d=parseDate(k.slice(0,10));return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${'日一二三四五六'[d.getDay()]}`};
+async function exportPdf(list,title,range,withPhotos){toast(withPhotos?'正在准备照片…':'正在排版…',8000);
+  let body='',month='';
+  for(const e of list){const mk=e.date.slice(0,7);if(mk!==month){month=mk;body+=`<h2 class="mo">${+mk.slice(0,4)}年${+mk.slice(5,7)}月</h2>`}
+    let ph='';if(withPhotos&&e.photos.length){const ds=[];for(const p of e.photos){const d=await photoData(p);if(d)ds.push(d)}if(ds.length)ph=`<div class="ph">${ds.map(d=>`<img src="${d}">`).join('')}</div>`}
+    body+=`<article><div class="dt">${longDate(e.date)} · ${e.date.slice(11,16)}</div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<div class="mt">${esc(metaLine(e))}</div><div class="tx">${mdHtml(e.body)}</div>${ph}</article>`}
+  const html=`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+<style>@page{size:A4;margin:18mm 18mm 20mm}body{font:11pt/1.85 "Noto Serif SC","Songti SC",serif;color:#1d2533;margin:0}
+.cover{height:240mm;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-left:6mm;page-break-after:always}
+.cover h1{font-size:40pt;font-weight:900;margin:0 0 6mm;letter-spacing:.04em}.cover p{font:12pt "Noto Sans SC",sans-serif;color:#5b6b82;margin:0}
+.cover .line{width:30mm;height:2px;background:#5fb8a4;margin:10mm 0}
+h2.mo{font-size:18pt;font-weight:900;margin:0 0 6mm;padding-bottom:2mm;border-bottom:1px solid #d5dbe4;page-break-before:always}
+h2.mo:first-of-type{page-break-before:auto}
+article{margin:0 0 9mm;break-inside:auto}.dt{font:9.5pt "Noto Sans SC",sans-serif;color:#5fb8a4;font-weight:500}
+article h3{font-size:14pt;margin:1mm 0 0;break-after:avoid}.mt{font:8.5pt "Noto Sans SC",sans-serif;color:#8592a6;margin:1mm 0 2mm}
+.tx p{margin:0 0 2.5mm;text-align:justify}.tx h4{font-size:12pt;margin:3mm 0 1mm}.tx ul{margin:0 0 2.5mm;padding-left:6mm}.tx mark{background:#e6f4ef}
+.ph{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin:3mm 0}.ph img{width:100%;max-height:85mm;object-fit:cover;border-radius:2mm;break-inside:avoid}
+.ph img:only-child{grid-column:1/-1;max-height:120mm}</style></head><body>
+<section class="cover"><h1>${esc(title)}</h1><p>${range}</p><div class="line"></div><p>${list.length} 篇</p></section>${body}</body></html>`;
+  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
+  f.contentDocument.open();f.contentDocument.write(html);f.contentDocument.close();
+  await new Promise(r=>{let done=false;const go=()=>{if(!done){done=true;r()}};f.onload=go;setTimeout(go,4000)});
+  try{await f.contentDocument.fonts.ready}catch(e){}
+  await Promise.all([...f.contentDocument.images].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+  toast('在打印窗口里选「另存为 PDF」',5000);f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)}
+async function exportDocx(list,title,range,withPhotos){toast('正在生成 Word…',8000);
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');if(!window.JSZip)throw new Error('组件没有加载');
+  const X=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const run=(t,o={})=>`<w:r><w:rPr>${o.b?'<w:b/>':''}${o.c?`<w:color w:val="${o.c}"/>`:''}${o.sz?`<w:sz w:val="${o.sz}"/>`:''}</w:rPr><w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+  const runs=t=>t.split(/(\*\*.+?\*\*)/g).filter(Boolean).map(x=>/^\*\*.+\*\*$/.test(x)?run(x.slice(2,-2),{b:1}):run(x.replace(/==(.+?)==/g,'$1'))).join('');
+  const P=(inner,style,extra='')=>`<w:p><w:pPr>${style?`<w:pStyle w:val="${style}"/>`:''}${extra}</w:pPr>${inner}</w:p>`;
+  const zip=new JSZip();const media=[];let body='',month='',rid=10;
+  body+=P(run(title),'Title')+P(run(range+'　·　'+list.length+' 篇',{c:'6B7A90'}))+'<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  for(const e of list){const mk=e.date.slice(0,7);if(mk!==month){if(month)body+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';month=mk;body+=P(run(`${+mk.slice(0,4)}年${+mk.slice(5,7)}月`),'Heading1')}
+    body+=P(run(longDate(e.date)+' · '+e.date.slice(11,16),{c:'3E9C86',sz:20}),null,'<w:spacing w:before="240" w:after="0"/>');
+    if(e.title)body+=P(run(e.title),'Heading2');const m=metaLine(e);if(m)body+=P(run(m,{c:'8592A6',sz:18}));
+    for(const raw of String(e.body||'').replace(/\r/g,'').split('\n')){const l=raw.trimEnd();let mm;
+      if(!l.trim())continue;if((mm=l.match(/^#{1,3}\s+(.*)/)))body+=P(run(mm[1],{b:1}));else if((mm=l.match(/^\s*[-•·]\s+(.*)/)))body+=P(run('•  ')+runs(mm[1]),null,'<w:ind w:left="360"/>');else body+=P(runs(l))}
+    if(withPhotos)for(const p of e.photos){const d=await photoData(p);if(!d)continue;const m2=d.match(/^data:image\/(\w+);base64,(.*)$/);if(!m2)continue;
+      const ext=m2[1]==='png'?'png':'jpeg',name=`img${media.length+1}.${ext==='png'?'png':'jpg'}`,id='rId'+(rid++);media.push({name,id,data:m2[2],ext});
+      const dim=await new Promise(r=>{const im=new Image();im.onload=()=>r([im.naturalWidth,im.naturalHeight]);im.onerror=()=>r([4,3]);im.src=d});
+      const cx=5400000,cy=Math.round(cx*dim[1]/dim[0]);const n=media.length;
+      body+=`<w:p><w:r><w:drawing><wp:inline><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Picture ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="${name}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${id}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`}}
+  const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
+  zip.file('[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`);
+  zip.file('_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+  zip.file('word/_rels/document.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${media.map(m=>`<Relationship Id="${m.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}"/>`).join('')}</Relationships>`);
+  const F='<w:rFonts w:ascii="Georgia" w:hAnsi="Georgia" w:eastAsia="SimSun"/>';
+  zip.file('word/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>${F}<w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="2400" w:after="240"/></w:pPr><w:rPr><w:b/><w:sz w:val="64"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="240"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="40" w:after="60"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style></w:styles>`);
+  zip.file('word/document.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+  for(const m of media)zip.file('word/media/'+m.name,m.data,{base64:true});
+  const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const name=`${title.replace(/[\\/:*?"<>|]/g,'')}-${dayKey(new Date())}.docx`;
+  if(caps.dl){try{await caps.dl.save({filename:name,data:blob});toast('已导出 '+name);return}catch(e){if(e&&(e.code==='dismissed'||e.code==='cancelled'))return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已导出 '+name)}
+
 async function saveFile(name,text,type){
   if(caps.dl){try{await caps.dl.save({filename:name,data:new Blob([text],{type})});toast('已导出 '+name);return}catch(e){if(e&&(e.code==='dismissed'||e.code==='cancelled'))return}}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('已导出 '+name)}catch(e){toast('导出失败')}
 }
-async function exportJson(){toast('正在打包照片…',10000);const photos=[];
+/* monthly encrypted backup file: everything (photos too), sealed with a password of her choice */
+/* trip mode: once the trip on the home page has started, its days get their own partition automatically.
+   Each entry is added once; taking it out again sticks. */
+async function tripSync(){if(S.ed)return;let tr=null;try{tr=await Store.get('hubMeta','trip')}catch(e){return}if(!tr||!/^\d{4}-\d{2}-\d{2}$/.test(tr.start||'')||!/^\d{4}-\d{2}-\d{2}$/.test(tr.end||''))return;
+  const today=dayKey(new Date());if(today<tr.start)return;const to=today<tr.end?today:tr.end;
+  const T=S.settings.trips=S.settings.trips||{};let t=T[tr.start];let ch=false;
+  if(!t||!nbById(t.nb)){const nm=(tr.name||'旅行')+' '+tr.start.slice(0,4);let nb=S.notebooks.find(n=>n.name===nm||n.name===(tr.name||''));
+    if(!nb){nb={id:uid(),name:nm.slice(0,30),icon:'plane',color:COLORS[S.notebooks.length%COLORS.length],created:Date.now(),order:S.notebooks.length};S.notebooks.push(nb);await Store.put('notebooks',nb).catch(()=>{});toast(`旅行开始啦：已建好「${nb.name}」分区`,4000)}
+    t=T[tr.start]={nb:nb.id,seen:[]};ch=true}
+  const seen=new Set(t.seen);let n=0;
+  for(const e of S.entries){const k=e.date.slice(0,10);if(k<tr.start||k>to||seen.has(e.id))continue;seen.add(e.id);ch=true;if(!inNb(e,t.nb)){e.also=[...(e.also||[]),t.nb];await Store.put('entries',e).catch(()=>{});n++}}
+  if(ch){t.seen=[...seen];await Store.put('meta',S.settings).catch(()=>{})}if(n)render()}
+function backupNudge(){let last=0;try{last=+localStorage.getItem('lyra-lastbak')||0}catch(e){}if(!last){try{localStorage.setItem('lyra-lastbak',String(Date.now()))}catch(e){}return}
+  if(Date.now()-last>30*864e5)toastAct('一个多月没下载备份了','下载加密备份',encBackup)}
+function encBackup(){modal(`<h3>下载加密备份</h3><p class="muted">整本日记连照片打包成一个文件，用下面的密码加密。以后在「导入」里选这个文件、输入密码就能恢复。</p>
+  <div class="field"><label for="bkPw">备份密码</label><input type="password" id="bkPw" autocomplete="new-password"></div>
+  <div class="field" style="margin-top:8px"><label for="bkPw2">再输一次</label><input type="password" id="bkPw2" autocomplete="new-password"></div>
+  <div class="row" style="margin-top:14px"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">加密并下载</button></div>`);
+  $('#modalBox').onclick=async ev=>{const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;if(a==='no')return closeModal();
+    const pw=$('#bkPw').value,pw2=$('#bkPw2').value;if(pw.length<4)return toast('密码至少 4 位');if(pw!==pw2)return toast('两次密码不一样');
+    $('#modalBox').onclick=null;closeModal();await exportJson(pw)}}
+async function sealBackup(text,pw){const salt=crypto.getRandomValues(new Uint8Array(16));const k=await deriveKek(pw,salt,ITER);const o=await seal(k,TE.encode(text));return JSON.stringify({app:'lyra-backup-enc',v:1,salt:b64(salt),iter:ITER,...o,at:new Date().toISOString()})}
+async function openBackup(o){for(let t=0;t<3;t++){const pw=await askPw(t?'密码不对，再试一次':'这是加密备份，输入备份密码');if(pw==null)throw new Error('cancel');
+    try{const k=await deriveKek(pw,ub64(o.salt),o.iter||ITER);return JSON.parse(TD.decode(await open_(k,o)))}catch(e){}}throw new Error('pw')}
+function askPw(msg){return new Promise(res=>{modal(`<h3>恢复备份</h3><p class="muted">${esc(msg)}</p><div class="field"><input type="password" id="opPw" autocomplete="off"></div><div class="row" style="margin-top:14px"><button class="btn line" data-a="no">取消</button><button class="btn pri" data-a="ok">解开</button></div>`);
+  const go=v=>{$('#modalBox').onclick=null;closeModal();res(v)};$('#opPw').focus();$('#opPw').onkeydown=e=>{if(e.key==='Enter')go($('#opPw').value)};
+  $('#modalBox').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(a)go(a==='ok'?$('#opPw').value:null)}})}
+async function exportJson(pw){toast('正在打包照片…',10000);const photos=[];
   for(const e of S.entries)for(const p of e.photos){let d=S.photos.get(p);if(!d){try{const o=await Store.get('photos',p);d=o&&o.data}catch(err){}}if(d)photos.push({id:p,data:d})}
   const obj={app:'ego-journal',version:1,exported:new Date().toISOString(),notebooks:S.notebooks,entries:S.entries,photos,reports:[...S.reports.values()]};
+  if(pw){await saveFile(`lyra-journal-${dayKey(new Date())}.lyra.json`,await sealBackup(JSON.stringify(obj),pw),'application/json');try{localStorage.setItem('lyra-lastbak',String(Date.now()))}catch(e){}toast('加密备份已下载 ✓');return}
   await saveFile(`ego-journal-${dayKey(new Date())}.json`,JSON.stringify(obj),'application/json')}
 function exportMd(){const list=[...S.entries].sort((a,b)=>a.date.localeCompare(b.date));
   const md='# Lyra 日记\n\n'+list.map(e=>`## ${e.date.replace('T',' ')}${e.title?' · '+e.title:''}\n\n`+`*${nbById(e.nb)?.name||''}${e.mood?' · '+MOODS[e.mood-1].n:''}${e.place?' · '+e.place:''}${e.tags.length?' · '+e.tags.map(t=>'#'+t).join(' '):''}*\n\n${e.body}\n`).join('\n');
@@ -1575,6 +1733,7 @@ document.addEventListener('click',async ev=>{
   else if(d.mood){S.f.mood=S.f.mood===d.mood?'':d.mood;render()}
   else if(d.day){S.day=d.day;S.view='journal';render();window.scrollTo(0,0)}
   else if(d.year){S.year=+d.year;render()}
+  else if(d.place){S.q=d.place;S.view='journal';S.nb='all';render();const q=$('#q');if(q)q.value=d.place}
   else if(d.tag){S.q='#'+d.tag;S.view='journal';S.day=null;render()}
   else if(d.nbcolor){const nb=nbById(d.nbcolor);nb.color=d.c;saveNb(nb);render()}
   else if(d.nbdel){delNotebook(d.nbdel)}
@@ -1597,7 +1756,7 @@ document.addEventListener('click',async ev=>{
     else if(a==='import'){S.view='settings';render();setTimeout(()=>$('#fileImport').click(),0)}
     else if(a==='pickimport')$('#fileImport').click();
     else if(a==='paste')pasteImport();
-    else if(a==='sfsave'){const v=$('#sfFrom').value;if(!v)return toast('先选一个日期');S.settings.streakFill={from:v,to:dayKey(new Date())};Store.put('meta',S.settings).then(()=>{render();toast(`已连续写了 ${streaks().cur} 天`)},()=>toast('保存失败'))}else if(a==='sfclear'){delete S.settings.streakFill;Store.put('meta',S.settings).catch(()=>{});render()}else if(a==='autosplit')autoSplit();else if(a==='fixdates')fixDates();else if(a==='mapimport'){const f=$('#mapFile');f.onchange=async()=>{try{await importMap(JSON.parse(await f.files[0].text()))}catch(err){toast('分区表读不出来')}};f.click()}else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
+    else if(a==='sfsave'){const v=$('#sfFrom').value;if(!v)return toast('先选一个日期');S.settings.streakFill={from:v,to:dayKey(new Date())};Store.put('meta',S.settings).then(()=>{render();toast(`已连续写了 ${streaks().cur} 天`)},()=>toast('保存失败'))}else if(a==='sfclear'){delete S.settings.streakFill;Store.put('meta',S.settings).catch(()=>{});render()}else if(a==='autosplit')autoSplit();else if(a==='encbak')encBackup();else if(a==='fixdates')fixDates();else if(a==='mapimport'){const f=$('#mapFile');f.onchange=async()=>{try{await importMap(JSON.parse(await f.files[0].text()))}catch(err){toast('分区表读不出来')}};f.click()}else if(a==='expbook')exportModal();else if(a==='jbackups')restoreJournal();else if(a==='expjson')exportJson();else if(a==='expmd')exportMd();
     else if(a==='logout')logout();else if(a==='chpw')changePassword();else if(a==='delacc')deleteAccount();
     else if(a==='calprev'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()-1,1);render()}
     else if(a==='calnext'){S.cal=new Date(S.cal.getFullYear(),S.cal.getMonth()+1,1);render()}
@@ -1613,6 +1772,7 @@ document.addEventListener('input',ev=>{
 });
 document.addEventListener('change',ev=>{if(ev.target.dataset.nbname||ev.target.dataset.nbicon)render()});
 document.addEventListener('keydown',ev=>{
+  if((ev.ctrlKey||ev.metaKey)&&!ev.shiftKey&&(ev.key==='b'||ev.key==='B')&&ev.target.id==='edText'){ev.preventDefault();fmtText('b');return}
   if(!$('#editor').hidden&&innerWidth>=900&&((ev.key==='f'||ev.key==='F')&&(ev.ctrlKey||ev.metaKey)&&ev.shiftKey)){ev.preventDefault();setFull(!document.body.classList.contains('edfull'));return}
   if(!ev.metaKey&&!ev.ctrlKey&&!ev.altKey&&$('#editor').hidden&&$('#modal').hidden&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&S.account){
     if(ev.key==='/'){ev.preventDefault();if(S.view!=='journal'){S.view='journal';render()}$('#q')?.focus();return}
