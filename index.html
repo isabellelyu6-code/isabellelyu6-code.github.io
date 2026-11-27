@@ -152,6 +152,41 @@ section.s{padding:30px 0 6px}
 .tilebtn{color:var(--acc);font-size:13px;font-weight:500}
 .tt-day{margin:14px 0 4px;font-weight:700;color:var(--acc);font-size:14px}
 .box.wide{max-width:640px}
+/* week view (opened from 今天的课) */
+#weekv{position:fixed;inset:0;z-index:60;background:var(--bg);overflow:auto;--H:52px;--wwarn:#e8c98e;--wbad:#f0a0a8;padding:max(14px,env(safe-area-inset-top)) clamp(12px,3vw,32px) 40px}
+#weekv .wv-in{max-width:1280px;margin:0 auto}
+#weekv .wv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#weekv h1{font-family:var(--hf);font-size:clamp(22px,3vw,30px);margin:0;flex:1;min-width:160px;font-weight:600}#weekv h1 small{font:500 14px var(--bf,sans-serif);color:var(--mut);margin-left:10px}
+#weekv .wv-nav{display:flex;gap:6px}#weekv .wv-nav button{height:36px;min-width:36px;padding:0 12px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}#weekv .wv-nav button:hover{border-color:var(--acc);color:var(--acc)}
+#weekv button{font:inherit;color:inherit;cursor:pointer}
+#weekv .wv-lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--mut);margin:0 0 12px}#weekv .wv-lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#weekv .wv-grid{display:grid;grid-template-columns:54px repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--bg2)}
+#weekv .wv-dh{padding:10px 8px 8px;border-left:1px solid var(--line);background:var(--card);min-width:0}#weekv .wv-dh b{display:block;font-family:var(--hf);font-size:20px;line-height:1.1}#weekv .wv-dh span{font-size:12px;color:var(--mut)}
+#weekv .wv-dh.today{background:color-mix(in srgb,var(--acc) 16%,var(--card))}#weekv .wv-dh.today b{color:var(--acc)}#weekv .wv-corner{background:var(--card)}
+#weekv .wv-load{height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}#weekv .wv-load i{display:block;height:100%;background:var(--acc)}#weekv .wv-load.hi i{background:var(--wwarn)}#weekv .wv-load.max i{background:var(--wbad)}
+#weekv .wv-ad{border-left:1px solid var(--line);border-top:1px solid var(--line);padding:5px;display:flex;flex-direction:column;gap:4px;min-height:34px;min-width:0}
+#weekv .wv-adl{border-top:1px solid var(--line);font-size:11px;color:var(--mut);padding:8px 6px;text-align:right}
+#weekv .wv-chip{display:flex;align-items:center;font-size:12px;line-height:1.3;padding:3px 7px;border-radius:7px;background:var(--card2);border:0;border-left:3px solid var(--c);text-align:left;width:100%;overflow:hidden;color:var(--ink)}
+#weekv .wv-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#weekv .wv-chip.plan{border-left-color:var(--mut)}#weekv .done{opacity:.45;text-decoration:line-through}
+#weekv .wv-times{border-top:1px solid var(--line)}#weekv .wv-times div{height:var(--H);font:11px "JetBrains Mono",monospace;color:var(--mut);text-align:right;padding-right:6px;transform:translateY(-7px)}
+#weekv .wv-col{position:relative;border-left:1px solid var(--line);border-top:1px solid var(--line);background:repeating-linear-gradient(var(--bg2) 0 calc(var(--H) - 1px),color-mix(in srgb,var(--line) 55%,transparent) calc(var(--H) - 1px) var(--H))}
+#weekv .wv-col.today{background-color:color-mix(in srgb,var(--acc) 5%,var(--bg2))}
+#weekv .wv-ev{position:absolute;left:4px;right:4px;border-radius:9px;padding:5px 7px;font-size:12px;line-height:1.3;overflow:hidden;background:color-mix(in srgb,var(--c) 22%,var(--card));border:1px solid color-mix(in srgb,var(--c) 55%,transparent);text-align:left;color:var(--ink)}
+#weekv .wv-ev b{display:block;color:var(--c);font-size:12.5px}#weekv .wv-ev small{color:var(--mut);display:block}#weekv .wv-ev:hover{z-index:3;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+#weekv .wv-dl{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--c);z-index:2}
+#weekv .wv-dl button{position:absolute;right:4px;top:-11px;max-width:calc(100% - 8px);font-size:11px;padding:1px 7px;border:0;border-radius:9px;background:var(--c);color:#0b1524;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#weekv .wv-now{position:absolute;left:0;right:0;border-top:2px solid var(--wbad);z-index:4}#weekv .wv-now::before{content:"";position:absolute;left:-5px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--wbad)}
+#weekv .wv-ag{display:none}
+#weekv .wv-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+#weekv .wv-days button{flex:none;width:calc((100% - 36px)/7);min-width:42px;padding:8px 0;border-radius:14px;background:var(--card);border:1px solid var(--line);display:grid;gap:2px;text-align:center}
+#weekv .wv-days b{font-family:var(--hf);font-size:19px}#weekv .wv-days span{font-size:11px;color:var(--mut)}#weekv .wv-days button[aria-pressed=true]{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 16%,var(--card))}
+#weekv .wv-days .dot{width:5px;height:5px;border-radius:50%;background:var(--wwarn);margin:0 auto}#weekv .wv-days i{display:block;height:5px}
+#weekv .wv-item{display:grid;grid-template-columns:62px 4px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+#weekv .wv-item .t{font:12.5px "JetBrains Mono",monospace;color:var(--acc)}#weekv .wv-item>i{width:4px;border-radius:2px;background:var(--c);align-self:stretch}#weekv .wv-item b{display:block;font-weight:600}#weekv .wv-item small{color:var(--mut)}
+#weekv .wv-item.ddl .t{color:var(--wwarn)}#weekv .wv-empty{color:var(--mut);padding:20px 0;text-align:center}
+@media (max-width:760px){#weekv .wv-grid,#weekv .wv-lg{display:none}#weekv .wv-ag{display:block}}
+.wv-pop{position:fixed;z-index:70;max-width:280px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 18px 40px rgba(0,0,0,.5);font-size:13.5px;color:var(--ink)}.wv-pop b{display:block;font-size:15px;margin-bottom:2px}.wv-pop small{color:var(--mut);display:block}
+
 .site b{display:block;font-size:15.5px;line-height:1.3}
 .site span{font-size:12.5px;color:var(--mut);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .site .ed{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;background:var(--card2);display:none;place-items:center;font-size:13px}
@@ -390,7 +425,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
     </div>
     <div class="top">
       <div class="side">
-        <div class="tile" id="mod-today"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
+        <div class="tile" id="mod-today"><h2><span id="todayTitle">今天的课</span><span><span id="todayNote" style="font-weight:400;margin-right:10px"></span><button class="tilebtn" data-act="week" style="margin-right:10px">一周视图</button><button class="tilebtn" data-act="tt">全部课表 →</button></span></h2><div id="today"></div></div>
         <div class="tile trip" id="trip"></div>
       </div>
     </div>
@@ -435,6 +470,7 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
     <p style="font-size:13px;opacity:.7;margin:8px 0 0" id="auWhere"></p>
   </form>
 </div>
+<div id="weekv" hidden role="dialog" aria-modal="true" aria-label="一周视图"></div>
 <div class="modal" id="modal" hidden><div class="box" id="box" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -1188,6 +1224,45 @@ function ttModal(){
   $('#box').classList.add('wide');
   $('#box').onclick=e=>{const t=e.target.closest('[data-tt]');if(t){ttTerm=t.dataset.tt;ttModal();return}if(e.target.closest('[data-a=no]'))closeModal()};
 }
+
+/* ---------- week view: classes, DDLs and plans for one week ---------- */
+let wvStart=null,wvSel=null,wvT=null;
+const wvMonday=d=>{const x=new Date(d);x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+function weekView(){wvStart=wvMonday(new Date());wvSel=dk(new Date());const v=$('#weekv');v.hidden=false;document.body.style.overflow='hidden';renderWeek();clearInterval(wvT);wvT=setInterval(()=>{if(!v.hidden)renderWeek()},60000);
+  setTimeout(()=>{const g=v.querySelector('.wv-grid');const n=v.querySelector('.wv-now');if(n&&g&&innerWidth>760)n.scrollIntoView({block:'center'})},60)}
+function closeWeek(){$('#weekv').hidden=true;document.body.style.overflow='';clearInterval(wvT);document.querySelectorAll('.wv-pop').forEach(p=>p.remove())}
+function renderWeek(){const H0=8,H1=20,mn=t=>{const[h,m]=String(t).split(':').map(Number);return h*60+(m||0)};
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(wvStart);d.setDate(d.getDate()+i);return d}),today=dk(new Date());
+  const ddlOn=k=>(S.work||[]).filter(w=>w.date===k),plansOn=k=>(S.plans||[]).filter(p=>p.due===k);
+  const fin=w=>isFin(w),pj=o=>esc(JSON.stringify(o));
+  const load=d=>{const k=dk(d);const v=classesOn(d).reduce((a,x)=>a+(mn(x.e)-mn(x.s))/60,0)+ddlOn(k).filter(w=>!fin(w)).length*1.5;return{v,cls:v>=7?'max':v>=4.5?'hi':''}};
+  const a=days[0],b=days[6],thisW=today>=dk(a)&&today<=dk(b);
+  const used=new Set();days.forEach(d=>{classesOn(d).forEach(x=>used.add(cKey(x.course)));ddlOn(dk(d)).forEach(x=>used.add(cKey(x.course)))});
+  let g='<div class="wv-dh wv-corner"></div>'+days.map(d=>{const k=dk(d),L=load(d);return `<div class="wv-dh${k===today?' today':''}"><b>${d.getDate()}</b><span>周${WD[d.getDay()]}</span><div class="wv-load ${L.cls}" title="忙碌度"><i style="width:${Math.min(100,L.v/9*100)}%"></i></div></div>`}).join('');
+  const inGrid=w=>w.time&&mn(w.time)>=H0*60&&mn(w.time)<=H1*60;
+  g+='<div class="wv-adl">全天</div>'+days.map(d=>{const k=dk(d);return `<div class="wv-ad">${ddlOn(k).filter(w=>!inGrid(w)).map(w=>`<button class="wv-chip${fin(w)?' done':''}" style="--c:${cColor(w.course)}" data-pop="${pj({t:w.task,s:w.course+' · 截止 '+(w.time||'当天'),n:w.note||w.weight||''})}"><span>⚑ ${w.time?esc(w.time)+' ':''}${esc(w.task)}</span></button>`).join('')}${plansOn(k).map(p=>`<button class="wv-chip plan${p.done?' done':''}" data-pop="${pj({t:p.text,s:p.done?'计划 · 已完成':'计划'})}"><span>○ ${esc(p.text)}</span></button>`).join('')}</div>`}).join('');
+  g+=`<div class="wv-times">${[...Array(H1-H0)].map((_,i)=>`<div>${String(H0+i).padStart(2,'0')}:00</div>`).join('')}</div>`;
+  for(const d of days){const k=dk(d);let c='';
+    for(const x of classesOn(d)){const t=Math.max(0,(mn(x.s)-H0*60)/60),len=Math.max(.5,(Math.min(mn(x.e),H1*60)-Math.max(mn(x.s),H0*60))/60);c+=`<button class="wv-ev" style="--c:${cColor(x.course)};top:calc(var(--H)*${t} + 2px);height:calc(var(--H)*${len} - 4px)" data-pop="${pj({t:x.course+' · '+x.type,s:x.s+'–'+x.e,n:x.room})}"><b>${esc(x.course)}</b>${esc(x.type)}<small>${esc(x.room)}</small></button>`}
+    for(const w of ddlOn(k).filter(inGrid)){const t=(mn(w.time)-H0*60)/60;c+=`<div class="wv-dl" style="--c:${fin(w)?'#5d6f88':'var(--wwarn)'};top:calc(var(--H)*${t})"><button data-pop="${pj({t:w.task,s:w.course+' · 截止 '+w.time,n:w.note||w.weight||''})}">⚑ ${esc(w.time)} ${esc(w.task)}</button></div>`}
+    if(k===today){const n=new Date(),t=(n.getHours()*60+n.getMinutes()-H0*60)/60;if(t>=0&&t<=H1-H0)c+=`<div class="wv-now" style="top:calc(var(--H)*${t})"></div>`}
+    g+=`<div class="wv-col${k===today?' today':''}" style="height:calc(var(--H)*${H1-H0})">${c}</div>`}
+  if(!days.some(d=>dk(d)===wvSel))wvSel=dk(days[0]);
+  const sd=pd(wvSel);
+  const items=[...plansOn(wvSel).map(p=>({t:'全天',c:'#9fb0c8',b:p.text,s:'计划'+(p.done?' · 已完成':''),d:p.done})),...ddlOn(wvSel).map(w=>({t:w.time||'全天',c:cColor(w.course),b:'⚑ '+w.task,s:w.course+(fin(w)?' · 已完成':''),ddl:1,d:fin(w)})),...classesOn(sd).map(x=>({t:x.s,c:cColor(x.course),b:x.course+' · '+x.type,s:x.s+'–'+x.e+' · '+x.room}))].sort((x,y)=>(x.t==='全天'?'00':x.t).localeCompare(y.t==='全天'?'00':y.t));
+  $('#weekv').innerHTML=`<div class="wv-in"><div class="wv-head"><h1>${innerWidth<760?`${a.getMonth()+1}/${a.getDate()} – ${b.getMonth()+1}/${b.getDate()}`:`${a.getMonth()+1}月${a.getDate()}日 – ${b.getMonth()+1}月${b.getDate()}日<small>${thisW?'这周':''}</small>`}</h1>
+   <div class="wv-nav"><button data-wv="prev" aria-label="上一周">‹</button><button data-wv="today">今天</button><button data-wv="next" aria-label="下一周">›</button><button data-wv="close" aria-label="关闭">✕</button></div></div>
+   <div class="wv-lg">${[...used].map(c=>`<span><i style="background:${cColor(c)}"></i>${esc(c)}</span>`).join('')}<span><i style="border:2px dashed var(--wwarn)"></i>DDL</span><span><i style="background:var(--mut)"></i>计划</span></div>
+   <div class="wv-grid">${g}</div>
+   <div class="wv-ag"><div class="wv-days">${days.map(d=>{const k=dk(d);return `<button data-wday="${k}" aria-pressed="${k===wvSel}"><span>周${WD[d.getDay()]}</span><b>${d.getDate()}</b>${ddlOn(k).some(w=>!fin(w))?'<i class="dot"></i>':'<i></i>'}</button>`}).join('')}</div>
+   ${items.length?items.map(i=>`<div class="wv-item${i.ddl?' ddl':''}${i.d?' done':''}"><span class="t">${esc(i.t)}</span><i style="--c:${i.c}"></i><div><b>${esc(i.b)}</b><small>${esc(i.s)}</small></div></div>`).join(''):'<div class="wv-empty">这天没有安排</div>'}</div></div>`}
+$('#weekv').addEventListener('click',e=>{document.querySelectorAll('.wv-pop').forEach(p=>p.remove());
+  const b=e.target.closest('[data-pop]');if(b){const o=JSON.parse(b.dataset.pop),p=document.createElement('div');p.className='wv-pop';p.innerHTML=`<b>${esc(o.t)}</b><small>${esc(o.s)}</small>${o.n?`<small>${esc(o.n)}</small>`:''}`;document.body.appendChild(p);const r=b.getBoundingClientRect();p.style.left=Math.max(10,Math.min(r.left,innerWidth-p.offsetWidth-10))+'px';p.style.top=Math.min(r.bottom+6,innerHeight-p.offsetHeight-10)+'px';return}
+  const d=e.target.closest('[data-wday]');if(d){wvSel=d.dataset.wday;renderWeek();return}
+  const w=e.target.closest('[data-wv]')?.dataset.wv;if(!w)return;if(w==='close')return closeWeek();
+  if(w==='today'){wvStart=wvMonday(new Date());wvSel=dk(new Date())}else{wvStart.setDate(wvStart.getDate()+(w==='next'?7:-7));const s2=new Date(wvStart);if(wvSel){const od=pd(wvSel);s2.setDate(s2.getDate()+((od.getDay()+6)%7));wvSel=dk(s2)}}renderWeek()});
+document.addEventListener('keydown',e=>{if($('#weekv').hidden)return;if(e.key==='Escape')closeWeek();else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){wvStart.setDate(wvStart.getDate()+(e.key==='ArrowRight'?7:-7));renderWeek()}});
+{let x0=null;$('#weekv').addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});$('#weekv').addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>70&&!e.target.closest('.wv-days')){wvStart.setDate(wvStart.getDate()+(dx<0?7:-7));const s2=new Date(wvStart);s2.setDate(s2.getDate()+((pd(wvSel).getDay()+6)%7));wvSel=dk(s2);renderWeek()}},{passive:true})}
 /* ---------- modal ---------- */
 function modal(h){$('#box').classList.remove('wide');$('#box').innerHTML=h;$('#modal').hidden=false;setTimeout(()=>$('#box input')?.focus(),50)}
 function closeModal(){$('#modal').hidden=true;$('#box').onclick=null;$('#box').classList.remove('wide')}
@@ -1240,7 +1315,7 @@ document.addEventListener('click',e=>{
   if(d.gadd!=null||d.gt||d.gpadd!=null||d.gpdel||d.gdel!=null){gradesClick(d);return}
   if(d.skyz){SET.skyZoom=Math.min(140,Math.max(70,(SET.skyZoom||100)+10*+d.skyz));saveSettings();toast(`天气 ${SET.skyZoom}%`);return}
   if(d.skyhide){SET.hidden=[...new Set([...(SET.hidden||[]),'sky'])];saveSettings();return}
-  const a=d.act;if(a==='skyshow'){SET.hidden=(SET.hidden||[]).filter(x=>x!=='sky');saveSettings();return}if(a==='skytoggle'){$('#sky').classList.toggle('open');b.setAttribute('aria-expanded',$('#sky').classList.contains('open'));return}if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
+  const a=d.act;if(a==='skyshow'){SET.hidden=(SET.hidden||[]).filter(x=>x!=='sky');saveSettings();return}if(a==='skytoggle'){$('#sky').classList.toggle('open');b.setAttribute('aria-expanded',$('#sky').classList.contains('open'));return}if(a==='settings')return settingsModal();if(a==='sync')return SY.err?retrySync():null;if(a==='acct')return acctModal();if(a==='tt')return ttModal();if(a==='week')return weekView();if(a==='retry'&&S.account)return enterAccount(S.account,S.key,false);if(a==='editsites'){S.editing=!S.editing;renderSites()}else if(a==='addsite')siteModal(null);else if(a==='addwork')workModal(null);else if(a==='togdone'){S.showDone=!S.showDone;renderPlans()}
 });
 document.addEventListener('click',e=>{const a=e.target.closest('a.site');if(a&&S.editing){e.preventDefault();siteModal(S.sites.find(x=>x.id===a.dataset.site))}},true);
 
@@ -1297,7 +1372,7 @@ const RR={sites:()=>renderSites(),plans:()=>renderPlans(),work:()=>renderWork()}
 function delUndo(kind,it,label){S[kind]=S[kind].filter(y=>y!==it);DB.del(kind,it.id);RR[kind]();toast(`已删除${label?'：'+label:''}`,{label:'撤销',fn:()=>{if(!S[kind].includes(it))S[kind].push(it);DB.put(kind,it);RR[kind]()}})}
 
 /* tell me when a newer version of the page has been published */
-const BUILD='1795781604';let lastChk=0;
+const BUILD='1795781816';let lastChk=0;
 async function checkUpdate(){if(Date.now()-lastChk<60000||!/github\.io$/.test(location.hostname))return;lastChk=Date.now();
   try{const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(\d+)'/);if(m&&m[1]!==BUILD)toast('有新版本',{label:'刷新',fn:()=>location.reload()})}catch(e){}}
 addEventListener('focus',checkUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
